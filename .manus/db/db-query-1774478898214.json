@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `incident_reports` MODIFY COLUMN `injuryType` enum('injury','skin_disorder','respiratory','poisoning','hearing_loss','other_illness','other_injury');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user FT92UrPpRty6woU.root --database 6DTQVcKYnmAua9uKjjRgPe --execute ALTER TABLE `incident_reports` MODIFY COLUMN `injuryType` enum('injury','skin_disorder','respiratory','poisoning','hearing_loss','other_illness','other_injury');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 271
+}

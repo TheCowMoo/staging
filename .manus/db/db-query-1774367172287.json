@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `audit_responses` ADD `conditionTypes` json;\nALTER TABLE `audit_responses` ADD `isUnavoidable` boolean DEFAULT false;\nALTER TABLE `audits` ADD `eapContacts` json;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user FT92UrPpRty6woU.root --database 6DTQVcKYnmAua9uKjjRgPe --execute ALTER TABLE `audit_responses` ADD `conditionTypes` json;\nALTER TABLE `audit_responses` ADD `isUnavoidable` boolean DEFAULT false;\nALTER TABLE `audits` ADD `eapContacts` json;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 3214
+}

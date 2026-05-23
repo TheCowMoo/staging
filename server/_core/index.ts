@@ -1,0 +1,191 @@
+import "dotenv/config";
+import express from "express";
+import { createServer } from "http";
+import net from "net";
+import { createExpressMiddleware } from "@trpc/server/adapters/express";
+import { registerOAuthRoutes } from "./oauth";
+import { appRouter } from "../routers";
+import { createContext } from "./context";
+import { serveStatic, setupVite } from "./vite";
+import { attachmentRouter } from "../attachmentUpload";
+import { flaggedVisitorUploadRouter } from "../flaggedVisitorUpload";
+import { eapPdfRouter } from "../eapPdf";
+import { liabilityScanPdfRouter } from "../liabilityScanPdf";
+import { webhookRouter } from "./webhookRouter";
+import helmet from "helmet";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
+import fs from "fs";
+import path from "path";
+
+function isPortAvailable(port: number): Promise<boolean> {
+  return new Promise(resolve => {
+    const server = net.createServer();
+    server.listen(port, () => {
+      server.close(() => resolve(true));
+    });
+    server.on("error", () => resolve(false));
+  });
+}
+
+async function findAvailablePort(startPort: number = 3000): Promise<number> {
+  for (let port = startPort; port < startPort + 20; port++) {
+    if (await isPortAvailable(port)) {
+      return port;
+    }
+  }
+  throw new Error(`No available port found starting from ${startPort}`);
+}
+
+async function startServer() {
+  const app = express();
+  const server = createServer(app);
+
+  // ─── Security Headers (Helmet.js) ────────────────────────────────────────────
+  // HSTS and strict COOP are disabled when not behind HTTPS to allow plain HTTP
+  // testing (e.g. IP-only access). Re-enable hsts once a TLS certificate is in place.
+  const isHttps = process.env.HTTPS === "true";
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "'unsafe-eval'",
+          "https://fonts.googleapis.com",
+        ],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+        imgSrc: ["'self'", "data:", "blob:", "https:"],
+        connectSrc: [
+          "'self'",
+          "https:",
+          "wss:",
+          "ws:",  // WebSocket over plain HTTP
+        ],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"],
+        // Only upgrade insecure requests when running behind HTTPS
+        ...(isHttps ? { upgradeInsecureRequests: [] } : { upgradeInsecureRequests: null }),
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+    crossOriginOpenerPolicy: isHttps ? { policy: "same-origin" } : false,
+    hsts: isHttps ? { maxAge: 31536000, includeSubDomains: true, preload: true } : false,
+  }));
+
+  // ─── Trust Proxy ─────────────────────────────────────────────────────────────
+  // Required when running behind a reverse proxy (Nginx, Caddy, etc.)
+  // so that express-rate-limit reads the real client IP from X-Forwarded-For
+  app.set("trust proxy", 1);
+
+  // ─── Rate Limiting ────────────────────────────────────────────────────────────
+  // General API rate limit: 200 requests per 15 minutes per IP
+  const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 200,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Too many requests, please try again later." },
+  });
+  app.use("/api/trpc", apiLimiter);
+
+  // Stricter limit for anonymous incident report submission: 10 per hour per IP
+  const incidentSubmitLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Too many incident reports submitted. Please try again later." },
+  });
+  app.use("/api/trpc/incident.submit", incidentSubmitLimiter);
+
+  // ─── Body Parser ─────────────────────────────────────────────────────────────
+  // Configure body parser with larger size limit for file uploads
+  app.use(express.json({ limit: "50mb" }));
+  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+  // ─── Debug Endpoint ──────────────────────────────────────────────────────────
+  // Visit /debug to see server status, env vars (masked), and request headers
+  app.get("/debug", (_req, res) => {
+    const env = process.env;
+    const mask = (val?: string) => val ? (val.length > 8 ? val.slice(0, 4) + "****" + val.slice(-4) : "****") : "(not set)";
+    res.setHeader("Content-Type", "text/plain");
+    res.send([
+      "=== SAFEGUARD DEBUG ===",
+      `Time: ${new Date().toISOString()}`,
+      `Node: ${process.version}`,
+      `ENV: ${env.NODE_ENV || "(not set)"}`,
+      `PORT: ${env.PORT || "3000 (default)"}`,
+      `HTTPS flag: ${env.HTTPS || "(not set)"}`,
+      "",
+      "--- Config ---",
+      `APP_ID: ${env.APP_ID || "(not set)"}`,
+      `DATABASE_URL: ${mask(env.DATABASE_URL)}`,
+      `OPENAI_API_KEY: ${mask(env.OPENAI_API_KEY)}`,
+      `GEMINI_API_KEY: ${mask(env.GEMINI_API_KEY)}`,
+      `LLM_MODEL: ${env.LLM_MODEL || "(not set)"}`,
+      `S3_BUCKET_NAME: ${env.S3_BUCKET_NAME || "(not set)"}`,
+      `S3_REGION: ${env.S3_REGION || "(not set)"}`,
+      `S3_ACCESS_KEY_ID: ${mask(env.S3_ACCESS_KEY_ID)}`,
+      `GOOGLE_MAPS_API_KEY: ${mask(env.GOOGLE_MAPS_API_KEY)}`,
+      "",
+      "--- dist/public contents ---",
+      `cwd: ${process.cwd()}`,
+      `resolved: ${path.resolve(process.cwd(), "dist", "public")}`,
+      (() => { try { return fs.readdirSync(path.resolve(process.cwd(), "dist", "public")).join(", "); } catch (e) { return `(not found: ${e})`; } })(),
+      "",
+      "--- Request Headers ---",
+      ...Object.entries(_req.headers).map(([k, v]) => `${k}: ${v}`),
+    ].join("\n"));
+  });
+
+  // OAuth callback under /api/oauth/callback
+  registerOAuthRoutes(app);
+
+  // File upload routes (multipart)
+  app.use(attachmentRouter);
+  app.use(flaggedVisitorUploadRouter);
+
+  // EAP PDF download
+  app.use(eapPdfRouter);
+
+  // Liability Scan PDF export
+  app.use(liabilityScanPdfRouter);
+
+  // Plan upgrade/downgrade webhook (called by payment processor)
+  app.use(webhookRouter);
+
+  // tRPC API
+  app.use(
+    "/api/trpc",
+    createExpressMiddleware({
+      router: appRouter,
+      createContext,
+    })
+  );
+
+  // development mode uses Vite, production mode uses static files
+  if (process.env.NODE_ENV === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
+
+  const preferredPort = parseInt(process.env.PORT || "3000");
+  const port = await findAvailablePort(preferredPort);
+
+  if (port !== preferredPort) {
+    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
+  }
+
+  // Increase server timeout to 5 minutes to allow long-running LLM calls (EAP generation)
+  server.timeout = 300000; // 5 minutes
+  server.keepAliveTimeout = 305000;
+  server.headersTimeout = 310000;
+  server.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}/`);
+  });
+}
+
+startServer().catch(console.error);

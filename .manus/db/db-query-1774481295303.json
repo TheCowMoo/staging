@@ -1,0 +1,22 @@
+{
+  "query": "\nINSERT INTO org_members (orgId, userId, orgRole, invitedAt, joinedAt)\nVALUES (1, 1, 'org_admin', NOW(), NOW());\n\nUPDATE facilities SET orgId = 1 WHERE id = 1;\nUPDATE audits SET orgId = 1 WHERE facilityId = 1;\n\nSELECT 'org_members' AS tbl, COUNT(*) AS cnt FROM org_members WHERE orgId = 1\nUNION ALL\nSELECT 'facilities', COUNT(*) FROM facilities WHERE orgId = 1\nUNION ALL\nSELECT 'audits', COUNT(*) FROM audits WHERE orgId = 1;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user FT92UrPpRty6woU.root --database 6DTQVcKYnmAua9uKjjRgPe --execute \nINSERT INTO org_members (orgId, userId, orgRole, invitedAt, joinedAt)\nVALUES (1, 1, 'org_admin', NOW(), NOW());\n\nUPDATE facilities SET orgId = 1 WHERE id = 1;\nUPDATE audits SET orgId = 1 WHERE facilityId = 1;\n\nSELECT 'org_members' AS tbl, COUNT(*) AS cnt FROM org_members WHERE orgId = 1\nUNION ALL\nSELECT 'facilities', COUNT(*) FROM facilities WHERE orgId = 1\nUNION ALL\nSELECT 'audits', COUNT(*) FROM audits WHERE orgId = 1;\n",
+  "rows": [
+    {
+      "tbl": "facilities",
+      "cnt": "1"
+    },
+    {
+      "tbl": "org_members",
+      "cnt": "1"
+    },
+    {
+      "tbl": "audits",
+      "cnt": "2"
+    }
+  ],
+  "messages": [],
+  "stdout": "tbl\tcnt\nfacilities\t1\norg_members\t1\naudits\t2\n",
+  "stderr": "",
+  "execution_time_ms": 89
+}

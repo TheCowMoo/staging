@@ -1,0 +1,34 @@
+{
+  "query": "\nSELECT f.id, f.name, f.userId, f.orgId, u.role as userRole\nFROM facilities f\nJOIN users u ON f.userId = u.id\nWHERE f.name LIKE '%CofST%' OR f.name LIKE '%Orchid%';\n\nSELECT * FROM org_members WHERE userId = 1;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user FT92UrPpRty6woU.root --database 6DTQVcKYnmAua9uKjjRgPe --execute \nSELECT f.id, f.name, f.userId, f.orgId, u.role as userRole\nFROM facilities f\nJOIN users u ON f.userId = u.id\nWHERE f.name LIKE '%CofST%' OR f.name LIKE '%Orchid%';\n\nSELECT * FROM org_members WHERE userId = 1;\n",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Orchid Dermatology",
+      "userId": "1",
+      "orgId": "1",
+      "userRole": "admin"
+    },
+    {
+      "id": "60001",
+      "name": "Orchid Dermatology V2",
+      "userId": "1",
+      "orgId": "NULL",
+      "userRole": "admin"
+    },
+    {
+      "id": "120001",
+      "name": "CofST",
+      "userId": "1",
+      "orgId": "NULL",
+      "userRole": "admin"
+    }
+  ],
+  "messages": [
+    "id\torgId\tuserId\torgRole\tinvitedAt\tjoinedAt",
+    "1\t1\t1\torg_admin\t2026-03-25 23:28:15\t2026-03-25 23:28:15"
+  ],
+  "stdout": "id\tname\tuserId\torgId\tuserRole\n1\tOrchid Dermatology\t1\t1\tadmin\n60001\tOrchid Dermatology V2\t1\tNULL\tadmin\n120001\tCofST\t1\tNULL\tadmin\nid\torgId\tuserId\torgRole\tinvitedAt\tjoinedAt\n1\t1\t1\torg_admin\t2026-03-25 23:28:15\t2026-03-25 23:28:15\n",
+  "stderr": "",
+  "execution_time_ms": 78
+}

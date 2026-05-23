@@ -1,0 +1,1 @@
+ALTER TABLE `audit_responses` MODIFY COLUMN `response` enum('Secure / Yes','Minor Concern','Moderate Concern','Serious Vulnerability','No — Not Present','Unlikely / Minimal','Partially Present','Yes — Present','Unknown','Not Applicable');

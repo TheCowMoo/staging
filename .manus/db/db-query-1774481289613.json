@@ -1,0 +1,17 @@
+{
+  "query": "\nSELECT o.id, o.name, o.slug, om.orgRole, u.name AS memberName\nFROM organisations o\nLEFT JOIN org_members om ON om.orgId = o.id\nLEFT JOIN users u ON u.id = om.userId;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user FT92UrPpRty6woU.root --database 6DTQVcKYnmAua9uKjjRgPe --execute \nSELECT o.id, o.name, o.slug, om.orgRole, u.name AS memberName\nFROM organisations o\nLEFT JOIN org_members om ON om.orgId = o.id\nLEFT JOIN users u ON u.id = om.userId;\n",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Orchid Dermatology Group",
+      "slug": "orchid-dermatology",
+      "orgRole": "NULL",
+      "memberName": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tslug\torgRole\tmemberName\n1\tOrchid Dermatology Group\torchid-dermatology\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 128
+}

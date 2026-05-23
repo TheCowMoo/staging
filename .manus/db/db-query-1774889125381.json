@@ -1,0 +1,73 @@
+{
+  "query": "\nSELECT a.id, a.status, a.completedAt, a.overallScore, f.name as facilityName, a.createdAt, a.updatedAt\nFROM audits a\nJOIN facilities f ON a.facilityId = f.id\nORDER BY a.updatedAt DESC\nLIMIT 10;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user FT92UrPpRty6woU.root --database 6DTQVcKYnmAua9uKjjRgPe --execute \nSELECT a.id, a.status, a.completedAt, a.overallScore, f.name as facilityName, a.createdAt, a.updatedAt\nFROM audits a\nJOIN facilities f ON a.facilityId = f.id\nORDER BY a.updatedAt DESC\nLIMIT 10;\n",
+  "rows": [
+    {
+      "id": "150001",
+      "status": "completed",
+      "completedAt": "2026-03-30 16:11:56",
+      "overallScore": "28.3",
+      "facilityName": "CofST",
+      "createdAt": "2026-03-30 14:36:41",
+      "updatedAt": "2026-03-30 16:11:55"
+    },
+    {
+      "id": "120001",
+      "status": "in_progress",
+      "completedAt": "NULL",
+      "overallScore": "NULL",
+      "facilityName": "March 25 TEST",
+      "createdAt": "2026-03-26 00:47:25",
+      "updatedAt": "2026-03-26 00:47:25"
+    },
+    {
+      "id": "1",
+      "status": "completed",
+      "completedAt": "2026-03-13 20:38:16",
+      "overallScore": "56.4",
+      "facilityName": "Orchid Dermatology",
+      "createdAt": "2026-03-13 20:16:46",
+      "updatedAt": "2026-03-25 23:28:15"
+    },
+    {
+      "id": "2",
+      "status": "completed",
+      "completedAt": "2026-03-13 21:03:15",
+      "overallScore": "49.9",
+      "facilityName": "Orchid Dermatology",
+      "createdAt": "2026-03-13 20:42:03",
+      "updatedAt": "2026-03-25 23:28:15"
+    },
+    {
+      "id": "90001",
+      "status": "in_progress",
+      "completedAt": "NULL",
+      "overallScore": "NULL",
+      "facilityName": "March 25 TEST",
+      "createdAt": "2026-03-25 16:14:52",
+      "updatedAt": "2026-03-25 22:33:16"
+    },
+    {
+      "id": "60001",
+      "status": "completed",
+      "completedAt": "2026-03-24 14:55:21",
+      "overallScore": "11.7",
+      "facilityName": "Orchid Dermatology V2",
+      "createdAt": "2026-03-24 14:03:26",
+      "updatedAt": "2026-03-24 14:55:20"
+    },
+    {
+      "id": "30001",
+      "status": "completed",
+      "completedAt": "2026-03-23 17:12:47",
+      "overallScore": "11.1",
+      "facilityName": "Lakewood Ranch Prep Lower",
+      "createdAt": "2026-03-23 16:41:41",
+      "updatedAt": "2026-03-23 17:12:47"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tstatus\tcompletedAt\toverallScore\tfacilityName\tcreatedAt\tupdatedAt\n150001\tcompleted\t2026-03-30 16:11:56\t28.3\tCofST\t2026-03-30 14:36:41\t2026-03-30 16:11:55\n120001\tin_progress\tNULL\tNULL\tMarch 25 TEST\t2026-03-26 00:47:25\t2026-03-26 00:47:25\n1\tcompleted\t2026-03-13 20:38:16\t56.4\tOrchid Dermatology\t2026-03-13 20:16:46\t2026-03-25 23:28:15\n2\tcompleted\t2026-03-13 21:03:15\t49.9\tOrchid Dermatology\t2026-03-13 20:42:03\t2026-03-25 23:28:15\n90001\tin_progress\tNULL\tNULL\tMarch 25 TEST\t2026-03-25 16:14:52\t2026-03-25 22:33:16\n60001\tcompleted\t2026-03-24 14:55:21\t11.7\tOrchid Dermatology V2\t2026-03-24 14:03:26\t2026-03-24 14:55:20\n30001\tcompleted\t2026-03-23 17:12:47\t11.1\tLakewood Ranch Prep Lower\t2026-03-23 16:41:41\t2026-03-23 17:12:47\n",
+  "stderr": "",
+  "execution_time_ms": 146
+}

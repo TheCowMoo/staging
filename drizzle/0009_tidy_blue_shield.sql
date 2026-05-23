@@ -1,0 +1,1 @@
+ALTER TABLE `incident_reports` MODIFY COLUMN `injuryType` enum('injury','skin_disorder','respiratory','poisoning','hearing_loss','other_illness','other_injury');

@@ -1,0 +1,8 @@
+{
+  "query": "SELECT id, audit_id, created_at, LENGTH(sections) as sections_length FROM eap_reports WHERE audit_id = 2 LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user FT92UrPpRty6woU.root --database 6DTQVcKYnmAua9uKjjRgPe --execute SELECT id, audit_id, created_at, LENGTH(sections) as sections_length FROM eap_reports WHERE audit_id = 2 LIMIT 5;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 1: Table '6dtqvckynmaua9ukjjrgpe.eap_reports' doesn't exist"
+  ]
+}

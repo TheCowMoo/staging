@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT a.id, a.status, a.completedAt, a.overallScore, a.riskLevel, f.name as facilityName, a.createdAt, a.updatedAt\nFROM audits a\nJOIN facilities f ON a.facilityId = f.id\nORDER BY a.updatedAt DESC\nLIMIT 10;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user FT92UrPpRty6woU.root --database 6DTQVcKYnmAua9uKjjRgPe --execute \nSELECT a.id, a.status, a.completedAt, a.overallScore, a.riskLevel, f.name as facilityName, a.createdAt, a.updatedAt\nFROM audits a\nJOIN facilities f ON a.facilityId = f.id\nORDER BY a.updatedAt DESC\nLIMIT 10;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'a.risklevel' in 'field list'"
+  ]
+}

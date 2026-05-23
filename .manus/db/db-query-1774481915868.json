@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `audit_logs` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`userId` int,\n\t`userName` varchar(255),\n\t`orgId` int,\n\t`action` enum('create','update','delete','login','logout','invite_sent','invite_accepted','member_removed','role_changed','audit_completed','audit_reopened','incident_submitted','incident_reviewed','report_shared') NOT NULL,\n\t`entityType` varchar(64) NOT NULL,\n\t`entityId` varchar(64),\n\t`description` text,\n\t`metadata` json,\n\t`ipAddress` varchar(64),\n\t`userAgent` varchar(512),\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `audit_logs_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user FT92UrPpRty6woU.root --database 6DTQVcKYnmAua9uKjjRgPe --execute CREATE TABLE `audit_logs` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`userId` int,\n\t`userName` varchar(255),\n\t`orgId` int,\n\t`action` enum('create','update','delete','login','logout','invite_sent','invite_accepted','member_removed','role_changed','audit_completed','audit_reopened','incident_submitted','incident_reviewed','report_shared') NOT NULL,\n\t`entityType` varchar(64) NOT NULL,\n\t`entityId` varchar(64),\n\t`description` text,\n\t`metadata` json,\n\t`ipAddress` varchar(64),\n\t`userAgent` varchar(512),\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `audit_logs_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 251
+}

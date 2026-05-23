@@ -1,0 +1,57 @@
+{
+  "assessment_version": "industry_v1",
+  "sections": [
+    {
+      "key": "planning_documentation",
+      "title": "Planning & Documentation",
+      "question_count": 3,
+      "five_stones_map": ["policy", "plan"]
+    },
+    {
+      "key": "training_awareness",
+      "title": "Training & Awareness",
+      "question_count": 3,
+      "five_stones_map": ["review", "respond"]
+    },
+    {
+      "key": "reporting_communication",
+      "title": "Reporting & Communication",
+      "question_count": 4,
+      "five_stones_map": ["report", "respond"]
+    },
+    {
+      "key": "response_readiness",
+      "title": "Response Readiness",
+      "question_count": 3,
+      "five_stones_map": ["respond"]
+    },
+    {
+      "key": "critical_risk_factors",
+      "title": "Critical Risk Factors",
+      "question_count": 3,
+      "five_stones_map": ["policy", "report", "review"]
+    }
+  ],
+  "answer_scoring": {
+    "yes_no": {"yes": 100, "no": 0},
+    "reporting_mechanism": {
+      "anonymous_formal": 100,
+      "formal_not_anonymous": 70,
+      "informal_manager_based": 35,
+      "none": 0
+    },
+    "alerting_system": {
+      "role_based_with_tracking": 100,
+      "basic_mass_notification": 70,
+      "limited_delayed": 35,
+      "none": 0
+    }
+  },
+  "outcome_bands": [
+    {"min": 85, "max": 100, "label": "Defensible Foundation", "color": "green"},
+    {"min": 70, "max": 84, "label": "Moderate Readiness", "color": "yellow_green"},
+    {"min": 50, "max": 69, "label": "Material Exposure", "color": "yellow"},
+    {"min": 25, "max": 49, "label": "High Exposure", "color": "orange"},
+    {"min": 0, "max": 24, "label": "Critical Exposure", "color": "red"}
+  ]
+}
