@@ -58,6 +58,19 @@ export const orgMembers = mysqlTable("org_members", {
 export type OrgMember = typeof orgMembers.$inferSelect;
 export type InsertOrgMember = typeof orgMembers.$inferInsert;
 
+// ─── Personnel Location Tracking ───────────────────────────────────────────────
+export const personnelLocations = mysqlTable("personnel_locations", {
+  id: int("id").autoincrement().primaryKey(),
+  orgId: int("orgId").notNull(),
+  userId: int("userId").notNull(),
+  latitude: float("latitude").notNull(),
+  longitude: float("longitude").notNull(),
+  status: varchar("status", { length: 64 }).default("Active").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PersonnelLocation = typeof personnelLocations.$inferSelect;
+export type InsertPersonnelLocation = typeof personnelLocations.$inferInsert;
+
 // ─── Organization Invites ─────────────────────────────────────────────────────
 // Pending email invitations sent by org_admins.
 // When the recipient logs in and uses the token, they are added to the org.

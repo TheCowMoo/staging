@@ -176,8 +176,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         href={item.href}
         className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
           isActive
-            ? "bg-primary/10 text-primary"
-            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            ? "bg-white/5 border border-white/10 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+            : "text-muted-foreground hover:bg-white/5 hover:text-white"
         }`}
         onClick={() => setSidebarOpen(false)}
       >
@@ -199,11 +199,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           onClick={() => toggleSection(section.id)}
           className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
             hasActive
-              ? "text-primary bg-primary/5"
-              : "text-foreground/80 hover:bg-accent hover:text-accent-foreground"
+              ? "text-white bg-white/5"
+              : "text-muted-foreground/80 hover:bg-white/5 hover:text-white"
           }`}
         >
-          <span className={`flex-shrink-0 ${hasActive ? "text-primary" : "text-muted-foreground"}`}>
+          <span className={`flex-shrink-0 ${hasActive ? "text-white" : "text-muted-foreground"}`}>
             {section.icon}
           </span>
           <span className="flex-1 text-left">{section.label}</span>
@@ -292,7 +292,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       icon: <MapPin size={18} />,
       items: [
         { href: "#", label: "Facility Mapping", icon: <MapPin size={15} />, locked: "coming-soon" },
-        { href: "#", label: "Personnel Tracking", icon: <MapPin size={15} />, locked: "coming-soon" },
+        { href: "/personnel-tracking", label: "Personnel Tracking", icon: <MapPin size={15} />, locked: isPaid ? undefined : "paid" },
       ],
     },
   ];

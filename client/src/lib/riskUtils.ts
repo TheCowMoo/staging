@@ -1,23 +1,23 @@
 export function getRiskColor(level: string): string {
   const colors: Record<string, string> = {
     Low: "#22c55e",
-    Moderate: "#84cc16",
-    Elevated: "#f59e0b",
-    High: "#f97316",
-    Critical: "#ef4444",
+    Moderate: "#D97706",
+    Elevated: "#FF8C00",
+    High: "#FF6F00",
+    Critical: "#8B0000",
   };
   return colors[level] ?? "#94a3b8";
 }
 
 export function getRiskBadgeClass(level: string): string {
   const classes: Record<string, string> = {
-    Low: "bg-green-100 text-green-800",
-    Moderate: "bg-lime-100 text-lime-800",
-    Elevated: "bg-amber-100 text-amber-800",
-    High: "bg-orange-100 text-orange-800",
-    Critical: "bg-red-100 text-red-800",
+    Low: "bg-emerald-500 text-white",
+    Moderate: "bg-amber-600 text-white",
+    Elevated: "bg-orange-600 text-white",
+    High: "bg-orange-500 text-white",
+    Critical: "bg-[#8B0000] text-white",
   };
-  return classes[level] ?? "bg-slate-100 text-slate-700";
+  return classes[level] ?? "bg-slate-700 text-white";
 }
 
 export function getPriorityBadgeClass(priority: string): string {

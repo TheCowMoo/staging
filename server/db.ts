@@ -15,6 +15,7 @@ import {
   organizations, InsertOrganization,
   orgMembers, InsertOrgMember,
   orgInvites, InsertOrgInvite,
+  personnelLocations, InsertPersonnelLocation,
   auditLogs,
   visitorLogs, InsertVisitorLog,
   eapSections, InsertEapSection,
@@ -507,6 +508,67 @@ export async function getOrgMembersForOrg(orgId: number) {
     .from(orgMembers)
     .leftJoin(users, eq(orgMembers.userId, users.id))
     .where(eq(orgMembers.orgId, orgId));
+}
+
+export async function getOrgMembersWithLocations(orgId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: orgMembers.id,
+    orgId: orgMembers.orgId,
+    userId: orgMembers.userId,
+    role: orgMembers.role,
+    invitedAt: orgMembers.invitedAt,
+    joinedAt: orgMembers.joinedAt,
+    userName: users.name,
+    userEmail: users.email,
+    locationLatitude: personnelLocations.latitude,
+    locationLongitude: personnelLocations.longitude,
+    locationStatus: personnelLocations.status,
+    locationUpdatedAt: personnelLocations.updatedAt,
+  })
+    .from(orgMembers)
+    .leftJoin(users, eq(orgMembers.userId, users.id))
+    .leftJoin(
+      personnelLocations,
+      and(
+        eq(orgMembers.userId, personnelLocations.userId),
+        eq(orgMembers.orgId, personnelLocations.orgId),
+      ),
+    )
+    .where(eq(orgMembers.orgId, orgId));
+}
+
+export async function upsertPersonnelLocation(data: InsertPersonnelLocation) {
+  const db = await getDb();
+  if (!db) return;
+
+  const existing = await db
+    .select()
+    .from(personnelLocations)
+    .where(and(eq(personnelLocations.orgId, data.orgId), eq(personnelLocations.userId, data.userId)))
+    .limit(1);
+
+  if (existing[0]) {
+    await db
+      .update(personnelLocations)
+      .set({
+        latitude: data.latitude,
+        longitude: data.longitude,
+        status: data.status ?? "Active",
+        updatedAt: new Date(),
+      })
+      .where(eq(personnelLocations.id, existing[0].id));
+    return;
+  }
+
+  await db.insert(personnelLocations).values({
+    orgId: data.orgId,
+    userId: data.userId,
+    latitude: data.latitude,
+    longitude: data.longitude,
+    status: data.status ?? "Active",
+  });
 }
 
 export async function getOrgMembershipForUser(userId: number) {

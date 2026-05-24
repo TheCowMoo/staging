@@ -29,6 +29,7 @@ import TermsOfService from "./pages/TermsOfService";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import VisitorManagement from "./pages/VisitorManagement";
 import EmergencyActionPlan from "./pages/EmergencyActionPlan";
+import PersonnelTracking from "./pages/PersonnelTracking";
 import OshaReference from "./pages/OshaReference";
 import Standards from "./pages/Standards";
 import LiabilityScan from "./pages/LiabilityScan";
@@ -99,6 +100,7 @@ function Router() {
       <Route path="/drills/:id/debrief" component={DrillAfterAction} />
       <Route path="/ras" component={EmergencyAlerts} />
       <Route path="/staff-checkin" component={StaffCheckin} />
+      <Route path="/personnel-tracking" component={PersonnelTracking} />
       <Route path="/btam" component={BtamDashboard} />
       <Route path="/btam/new" component={BtamIntake} />
       <Route path="/btam/:id">{(params) => <BtamCaseDetail />}</Route>

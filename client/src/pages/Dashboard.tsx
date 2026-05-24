@@ -12,20 +12,20 @@ import { getRiskBadgeClass, getRiskColor } from "@/lib/riskUtils";
 // ─── Risk level → color mapping for scans ──────────────────────
 const SCAN_RISK_STYLE: Record<string, { badge: string; text: string }> = {
   "Critical Risk": {
-    badge: "bg-red-700 text-white",
-    text: "text-red-700",
+    badge: "bg-[#8B0000] text-white",
+    text: "text-white",
   },
   "High Risk": {
-    badge: "bg-orange-500 text-white",
-    text: "text-orange-600",
+    badge: "bg-[#FF8C00] text-white",
+    text: "text-white",
   },
   "Moderate Risk": {
-    badge: "bg-yellow-400 text-gray-900",
-    text: "text-yellow-600",
+    badge: "bg-[#D97706] text-white",
+    text: "text-white",
   },
   "Low Risk": {
-    badge: "bg-green-600 text-white",
-    text: "text-green-600",
+    badge: "bg-emerald-500 text-white",
+    text: "text-white",
   },
 };
 
@@ -35,14 +35,14 @@ function getScanRiskStyle(status: string | null | undefined) {
 
 function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: number | string; sub?: string }) {
   return (
-    <div className="bg-card border border-border rounded-xl p-5">
+    <div className="metal-card p-5">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm text-muted-foreground mb-1">{label}</p>
-          <p className="text-3xl font-bold text-foreground">{value}</p>
+          <p className="text-sm uppercase tracking-[0.16em] text-muted-foreground mb-2">{label}</p>
+          <p className="metric-number">{value}</p>
           {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
         </div>
-        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+        <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-white shadow-inner shadow-black/20">
           {icon}
         </div>
       </div>
@@ -66,16 +66,16 @@ export default function Dashboard() {
       <AppLayout>
         <div className="p-6 max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-            <p className="text-sm text-muted-foreground mt-1">Overview of your facility safety assessments</p>
+            <h1 className="dashboard-title text-3xl sm:text-4xl">Dashboard</h1>
+            <p className="text-sm text-muted-foreground mt-2 max-w-2xl">Overview of your facility safety assessments</p>
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" asChild>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button variant="outline" size="lg" asChild>
               <Link href="/liability-scan" className="flex items-center gap-2"><ShieldAlert size={16} /> Run Scan</Link>
             </Button>
-            <Button asChild>
+            <Button size="lg" asChild>
               <Link href="/facilities/new" className="flex items-center gap-2"><Plus size={16} /> New Facility</Link>
             </Button>
           </div>
@@ -84,7 +84,7 @@ export default function Dashboard() {
         {isLoading ? (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-card border border-border rounded-xl p-5 h-28 animate-pulse" />
+              <div key={i} className="metal-card p-5 h-28 animate-pulse" />
             ))}
           </div>
         ) : (
@@ -100,8 +100,8 @@ export default function Dashboard() {
 
             <div className="grid lg:grid-cols-3 gap-6">
               {/* Risk Distribution */}
-              <div className="bg-card border border-border rounded-xl p-5">
-                <h2 className="font-semibold text-foreground mb-4">Risk Distribution</h2>
+              <div className="metal-card p-5">
+                <h2 className="section-heading mb-4">Risk Distribution</h2>
                 {data?.completedAudits === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Shield size={32} className="mx-auto mb-2 opacity-30" />
@@ -133,9 +133,9 @@ export default function Dashboard() {
               </div>
 
               {/* Recent Audits */}
-              <div className="bg-card border border-border rounded-xl p-5">
+              <div className="metal-card p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-semibold text-foreground">Recent Audits</h2>
+                  <h2 className="section-heading">Recent Audits</h2>
                   <Button variant="ghost" size="sm" asChild>
                     <Link href="/audits" className="flex items-center gap-1 text-xs">View All <ArrowRight size={12} /></Link>
                   </Button>
@@ -159,7 +159,7 @@ export default function Dashboard() {
                           className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-border"
                         >
                             <div className="flex items-center gap-3">
-                              <div className={`w-2 h-2 rounded-full ${audit.status === "completed" ? "bg-green-500" : "bg-amber-400"}`} />
+                              <div className={`w-2 h-2 rounded-full ${audit.status === "completed" ? "bg-emerald-500" : "bg-white/25"}`} />
                               <div>
                                 <p className="text-sm font-medium text-foreground">{facility?.name ?? `Facility #${audit.facilityId}`}</p>
                                 <p className="text-xs text-muted-foreground">{new Date(audit.auditDate).toLocaleDateString()}</p>
@@ -171,7 +171,7 @@ export default function Dashboard() {
                                   {audit.overallRiskLevel}
                                 </span>
                               )}
-                              <span className={`text-xs px-2 py-0.5 rounded-full ${audit.status === "completed" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+                              <span className={`status-pill ${audit.status === "completed" ? "bg-emerald-500 text-white" : "status-pill-inprogress"}`}>
                                 {audit.status === "completed" ? "Complete" : "In Progress"}
                               </span>
                             </div>
@@ -183,9 +183,9 @@ export default function Dashboard() {
               </div>
 
               {/* Recent Scans */}
-              <div className="bg-card border border-border rounded-xl p-5">
+              <div className="metal-card p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-semibold text-foreground">Recent Scans</h2>
+                  <h2 className="section-heading">Recent Scans</h2>
                   <Button variant="ghost" size="sm" asChild>
                     <Link href="/scan-history" className="flex items-center gap-1 text-xs">View All <ArrowRight size={12} /></Link>
                   </Button>
@@ -229,7 +229,7 @@ export default function Dashboard() {
                           className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-border"
                         >
                             <div className="flex items-center gap-3">
-                              <div className={`w-2 h-2 rounded-full ${style.text.includes('red') ? 'bg-red-500' : style.text.includes('orange') ? 'bg-orange-500' : style.text.includes('yellow') ? 'bg-yellow-500' : 'bg-green-500'}`} />
+                              <div className={`w-2 h-2 rounded-full ${scan.defensibilityStatus === 'Critical Risk' ? 'bg-[#8B0000]' : scan.defensibilityStatus === 'High Risk' ? 'bg-[#FF8C00]' : scan.defensibilityStatus === 'Moderate Risk' ? 'bg-[#D97706]' : 'bg-emerald-500'}`} />
                               <div>
                                 <p className="text-sm font-medium text-foreground">
                                   {scan.jurisdiction && scan.industry ? `${scan.jurisdiction} - ${scan.industry}` : 'Liability Scan'}
@@ -259,11 +259,11 @@ export default function Dashboard() {
 
             {/* Facilities quick access */}
             {data?.facilities && data.facilities.length > 0 && (
-              <div className="mt-6 bg-card border border-border rounded-xl p-5">
+              <div className="mt-6 metal-card p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-semibold text-foreground">Your Facilities</h2>
+                  <h2 className="section-heading">Your Facilities</h2>
                   <Button variant="ghost" size="sm" asChild>
-                    <Link href="/facilities" className="flex items-center gap-1 text-xs">Manage <ArrowRight size={12} /></Link>
+                    <Link href="/facilities" className="flex items-center gap-1 text-xs text-white">Manage <ArrowRight size={12} /></Link>
                   </Button>
                 </div>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">

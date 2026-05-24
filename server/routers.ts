@@ -17,10 +17,11 @@ import {
   getFacilityAttachments, getFacilityAttachmentById, updateAttachmentAnalysis, deleteFacilityAttachment,
   getCorrectiveActionChecks, toggleCorrectiveActionCheck,
   createOrganization, getAllOrganizations, getOrganizationById, getOrganizationBySlug, updateOrganization, deleteOrganization,
-  getOrgMembersForOrg, getOrgMembershipForUser, getOrgMemberRecord, addOrgMember, updateOrgMemberRole, removeOrgMember,
+  getOrgMembersForOrg, getOrgMembersWithLocations, getOrgMembershipForUser, getOrgMemberRecord, addOrgMember, updateOrgMemberRole, removeOrgMember,
   createOrgInvite, getOrgInviteByToken, getPendingInvitesForOrg, markInviteUsed, deleteOrgInvite,
   getFacilitiesByOrg, getIncidentReportsByOrg,
   getAuditLogsByOrg, getAllAuditLogs,
+  upsertPersonnelLocation,
   createVisitorLog, getVisitorLogs, checkOutVisitor, updateVisitorLog, deleteVisitorLog,
   getFlaggedVisitors, getFlaggedVisitorById, stampFlaggedVisitorEscalation, addFlaggedVisitor, deactivateFlaggedVisitor, deleteFlaggedVisitor, checkVisitorAgainstWatchlist,
   getAllUsers, updateUserRole, updateOrgMemberPermissionFlags, getOrgMemberWithFlags,
@@ -1529,6 +1530,36 @@ const orgRouter = router({
       if (!member && (!["admin","ultra_admin"].includes(ctx.user.role))) throw new TRPCError({ code: "FORBIDDEN" });
       return getOrgMembersForOrg(input.orgId);
     }),
+
+  personnel: router({
+    list: paidProcedure
+      .input(z.object({ orgId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const member = await getOrgMemberRecord(input.orgId, ctx.user.id);
+        if (!member && (!["admin","ultra_admin"].includes(ctx.user.role))) throw new TRPCError({ code: "FORBIDDEN" });
+        return getOrgMembersWithLocations(input.orgId);
+      }),
+
+    updateLocation: paidProcedure
+      .input(z.object({
+        orgId: z.number(),
+        latitude: z.number(),
+        longitude: z.number(),
+        status: z.string().max(64).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const member = await getOrgMemberRecord(input.orgId, ctx.user.id);
+        if (!member && (!["admin","ultra_admin"].includes(ctx.user.role))) throw new TRPCError({ code: "FORBIDDEN" });
+        await upsertPersonnelLocation({
+          orgId: input.orgId,
+          userId: ctx.user.id,
+          latitude: input.latitude,
+          longitude: input.longitude,
+          status: input.status ?? "Active",
+        });
+        return { success: true };
+      }),
+  }),
 
   // Invite a user to an org (org_admin or platform admin)
   invite: paidProcedure
