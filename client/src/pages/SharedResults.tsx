@@ -383,7 +383,7 @@ export default function SharedResults() {
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2">
               <ShieldAlert className={`w-5 h-5 ${iconCls}`} />
-              <span className="text-base font-bold" style={{ fontFamily: "Poppins, Inter, sans-serif" }}>
+              <span className="text-base font-bold text-slate-950 dark:text-white" style={{ fontFamily: "Poppins, Inter, sans-serif" }}>
                 Workplace Violence Readiness Score
               </span>
             </div>
@@ -391,7 +391,7 @@ export default function SharedResults() {
               {riskLabel}
             </span>
           </div>
-          <p className="text-sm text-muted-foreground">{descriptor}</p>
+          <p className="text-sm text-slate-700 dark:text-slate-300">{descriptor}</p>
         </div>
 
         {/* ── Section 1: Hero Score Card ── */}

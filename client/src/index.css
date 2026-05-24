@@ -55,35 +55,35 @@
   --risk-moderate:   #D97706;
   --risk-defensible: #22C55E;
 
-  /* ─── Dark industrial theme ─────────────────────────────────────────────── */
+  /* ─── Premium corporate theme ───────────────────────────────────────────── */
   --radius: 0.625rem;
-  --background: #14181D;
-  --foreground: #FFFFFF;
-  --card: #272E38;
-  --card-foreground: #FFFFFF;
-  --popover: #272E38;
-  --popover-foreground: #FFFFFF;
-  --primary: #A0A5A9;
-  --primary-foreground: #14181D;
-  --secondary: #A0A5A9;
+  --background: #F8F9FA;
+  --foreground: #1E232A;
+  --card: #FFFFFF;
+  --card-foreground: #1E232A;
+  --popover: #FFFFFF;
+  --popover-foreground: #1E232A;
+  --primary: #4A525D;
+  --primary-foreground: #FFFFFF;
+  --secondary: #6F7A88;
   --secondary-foreground: #FFFFFF;
-  --muted: #1F262F;
-  --muted-foreground: #A0A5A9;
-  --accent: #FF8C00;
-  --accent-foreground: #14181D;
+  --muted: #E6EAEE;
+  --muted-foreground: #5A6570;
+  --accent: #4A525D;
+  --accent-foreground: #FFFFFF;
   --destructive: #8B0000;
   --destructive-foreground: #FFFFFF;
-  --border: rgba(225, 228, 230, 0.18);
-  --input: rgba(255, 255, 255, 0.08);
-  --ring: rgba(160, 165, 169, 0.35);
-  --sidebar: #1C222B;
-  --sidebar-foreground: #A0A5A9;
-  --sidebar-primary: #A0A5A9;
-  --sidebar-primary-foreground: #14181D;
-  --sidebar-accent: #FF8C00;
-  --sidebar-accent-foreground: #14181D;
-  --sidebar-border: rgba(225, 228, 230, 0.12);
-  --sidebar-ring: rgba(160, 165, 169, 0.18);
+  --border: #4A525D;
+  --input: #FFFFFF;
+  --ring: rgba(74,82,93,0.25);
+  --sidebar: #F0F2F5;
+  --sidebar-foreground: #1E232A;
+  --sidebar-primary: #1E232A;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #4A525D;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: rgba(74,82,93,0.24);
+  --sidebar-ring: rgba(74,82,93,0.18);
   --chart-1: #5EA3FF;
   --chart-2: #FFC75F;
   --chart-3: #FF8C00;
@@ -93,33 +93,33 @@
 
 .dark {
   --radius: 0.625rem;
-  --background: #14181D;
-  --foreground: #FFFFFF;
-  --card: #272E38;
-  --card-foreground: #FFFFFF;
-  --popover: #272E38;
-  --popover-foreground: #FFFFFF;
-  --primary: #A0A5A9;
-  --primary-foreground: #14181D;
-  --secondary: #A0A5A9;
+  --background: #F8F9FA;
+  --foreground: #1E232A;
+  --card: #FFFFFF;
+  --card-foreground: #1E232A;
+  --popover: #FFFFFF;
+  --popover-foreground: #1E232A;
+  --primary: #4A525D;
+  --primary-foreground: #FFFFFF;
+  --secondary: #6F7A88;
   --secondary-foreground: #FFFFFF;
-  --muted: #1F262F;
-  --muted-foreground: #A0A5A9;
-  --accent: #FF8C00;
-  --accent-foreground: #14181D;
+  --muted: #E6EAEE;
+  --muted-foreground: #5A6570;
+  --accent: #4A525D;
+  --accent-foreground: #FFFFFF;
   --destructive: #8B0000;
   --destructive-foreground: #FFFFFF;
-  --border: rgba(225, 228, 230, 0.18);
-  --input: rgba(255, 255, 255, 0.08);
-  --ring: rgba(160, 165, 169, 0.35);
-  --sidebar: #1C222B;
-  --sidebar-foreground: #A0A5A9;
-  --sidebar-primary: #A0A5A9;
-  --sidebar-primary-foreground: #14181D;
-  --sidebar-accent: #FF8C00;
-  --sidebar-accent-foreground: #14181D;
-  --sidebar-border: rgba(225, 228, 230, 0.12);
-  --sidebar-ring: rgba(160, 165, 169, 0.18);
+  --border: #4A525D;
+  --input: #FFFFFF;
+  --ring: rgba(74,82,93,0.25);
+  --sidebar: #F0F2F5;
+  --sidebar-foreground: #1E232A;
+  --sidebar-primary: #1E232A;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #4A525D;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: rgba(74,82,93,0.24);
+  --sidebar-ring: rgba(74,82,93,0.18);
   --chart-1: #5EA3FF;
   --chart-2: #FFC75F;
   --chart-3: #FF8C00;
@@ -144,11 +144,9 @@
     inset: 0;
     pointer-events: none;
     background-image:
-      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px),
-      radial-gradient(circle at 15% 15%, rgba(255,255,255,0.08), transparent 25%),
-      radial-gradient(circle at 85% 80%, rgba(255,255,255,0.05), transparent 18%);
-    background-size: 80px 80px, 80px 80px, 320px 320px, 280px 280px;
+      linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
+    background-size: 90px 90px, 90px 90px;
     opacity: 0.08;
     z-index: -1;
   }
@@ -168,27 +166,36 @@
     @apply cursor-pointer;
   }
   .metal-card {
-    @apply bg-card border border-border rounded-[0.65rem] shadow-[0_18px_50px_-30px_rgba(0,0,0,0.5)];
+    @apply bg-white border border-[#4A525D] rounded-[0.65rem] shadow-[0_18px_50px_-36px_rgba(74,82,93,0.18)];
+  }
+  .sidebar-metallic {
+    background: linear-gradient(135deg, #F0F2F5 0%, #D8DCE2 50%, #BCC3CB 100%);
+    border-right: 1px solid rgba(74,82,93,0.2);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.75), inset 0 -1px 0 rgba(0,0,0,0.1);
+    color: #1E232A;
   }
   .sidebar-logo-wrapper {
-    background: linear-gradient(180deg, rgba(160,165,169,0.08) 0%, rgba(28,34,43,0.12) 100%);
-    border: 1px solid rgba(225,228,230,0.12);
+    background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(226,230,236,0.95) 100%);
+    border: 1px solid rgba(74,82,93,0.14);
     border-radius: 0.75rem;
   }
   .dashboard-title {
-    @apply uppercase tracking-[0.12em] text-foreground;
+    @apply uppercase tracking-[0.12em] text-slate-950;
   }
   .metric-number {
-    @apply text-4xl sm:text-5xl font-extrabold text-foreground;
+    @apply text-4xl sm:text-5xl font-extrabold text-slate-950;
   }
   .section-heading {
-    @apply uppercase tracking-[0.08em] text-sm font-semibold text-foreground;
+    @apply uppercase tracking-[0.08em] text-sm font-semibold text-slate-950;
   }
   .sidebar-menu-item {
-    @apply text-muted-foreground hover:text-foreground;
+    @apply text-slate-900 hover:text-slate-950;
   }
   .sidebar-menu-item-active {
-    @apply bg-white/5 border border-white/10 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)];
+    @apply bg-[#E7ECF1] border border-[#BCC3CB] text-slate-950 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.65)];
+  }
+  .dashboard-shell {
+    @apply bg-white border border-[#4A525D] rounded-[1rem] shadow-[0_20px_40px_-26px_rgba(74,82,93,0.18)];
   }
   .status-pill {
     @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold;

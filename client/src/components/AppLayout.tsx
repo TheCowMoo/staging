@@ -176,8 +176,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         href={item.href}
         className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
           isActive
-            ? "bg-white/5 border border-white/10 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
-            : "text-muted-foreground hover:bg-white/5 hover:text-white"
+            ? "bg-[#E7ECF1] border border-[#BCC3CB] text-slate-950 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.65)]"
+            : "text-slate-900 hover:bg-[#EEF1F4] hover:text-slate-950"
         }`}
         onClick={() => setSidebarOpen(false)}
       >
@@ -199,11 +199,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           onClick={() => toggleSection(section.id)}
           className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
             hasActive
-              ? "text-white bg-white/5"
-              : "text-muted-foreground/80 hover:bg-white/5 hover:text-white"
+              ? "text-slate-950 bg-[#E7ECF1]"
+              : "text-slate-900 hover:bg-[#EEF1F4] hover:text-slate-950"
           }`}
         >
-          <span className={`flex-shrink-0 ${hasActive ? "text-white" : "text-muted-foreground"}`}>
+          <span className={`flex-shrink-0 ${hasActive ? "text-slate-950" : "text-slate-700"}`}>
             {section.icon}
           </span>
           <span className="flex-1 text-left">{section.label}</span>
@@ -298,8 +298,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   ];
 
   const Sidebar = ({ mobile = false }: { mobile?: boolean }) => (
-    <aside className={`${mobile ? "flex flex-col h-full" : "hidden lg:flex flex-col h-screen sticky top-0"} w-64 bg-card border-r border-border`}>
-      <div className="flex items-center justify-center px-5 py-5 border-b border-border">
+    <aside className={`${mobile ? "flex flex-col h-full" : "hidden lg:flex flex-col h-screen sticky top-0"} w-64 sidebar-metallic`}>
+      <div className="flex items-center justify-center px-5 py-5 border-b border-[#BCC3CB]">
         <img src={LOGO_URL} alt="Five Stones Technology" className="h-24 w-full object-contain" />
         {mobile && (
           <button onClick={() => setSidebarOpen(false)} className="ml-auto text-muted-foreground hover:text-foreground">
@@ -420,7 +420,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       )}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-card sticky top-0 z-40">
+        <header className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-[#4A525D] bg-white sticky top-0 z-40">
           <button onClick={() => setSidebarOpen(true)} className="text-muted-foreground hover:text-foreground">
             <Menu size={20} />
           </button>
@@ -453,7 +453,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         )}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto bg-background">
           <div className="border-b border-border bg-background px-6 py-4 sticky top-0 z-20">
             <Button
               variant="ghost"

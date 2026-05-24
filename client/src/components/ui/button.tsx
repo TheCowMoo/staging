@@ -9,16 +9,16 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-gradient-to-r from-[#2B343F] via-[#1F262F] to-[#171C22] border border-border text-white shadow-[0_12px_24px_-10px_rgba(0,0,0,0.55)] hover:from-[#343d4a] hover:to-[#202833] focus-visible:ring-white/15 focus-visible:border-white/10",
+        default: "bg-[#4A525D] text-white border border-[#4A525D] shadow-[0_12px_24px_-10px_rgba(74,82,93,0.45)] hover:bg-[#394652] focus-visible:ring-[#4A525D]/20 focus-visible:border-[#4A525D]",
         destructive:
           "bg-[#8B0000] text-white hover:bg-[#a90000] focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
         outline:
-          "border border-border bg-white/5 text-white shadow-[inset_0_0_0_1px_rgba(225,228,230,0.08)] hover:bg-white/10",
+          "border border-[#4A525D] bg-white text-slate-950 shadow-[inset_0_0_0_1px_rgba(74,82,93,0.12)] hover:bg-[#F5F7FA]",
         secondary:
-          "bg-[#2F3741] text-white hover:bg-[#333f4d]",
+          "bg-[#F2F4F7] text-slate-950 border border-[#BCC3CB] hover:bg-[#E8EDF3]",
         ghost:
-          "bg-transparent text-white hover:bg-white/10",
-        link: "text-primary underline-offset-4 hover:underline",
+          "bg-transparent text-slate-950 hover:bg-[#EEF1F4]",
+        link: "text-[#4A525D] underline-offset-4 hover:underline",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
