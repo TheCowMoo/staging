@@ -61,13 +61,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated]);
 
+  // Determine user role early for feature gating
+  const effectiveRole = (user as any)?._isImpersonated
+    ? ((user as any)?._realAdminRole ?? user?.role)
+    : user?.role;
+  const isUltraAdmin = effectiveRole === "ultra_admin" || !!(user as any)?._isImpersonated;
+
   // Fetch the user\'s org plan for UI gating
   const { data: orgPlan } = trpc.auth.myPlan.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: false,
     enabled: isAuthenticated,
   });
-  const isPaid = orgPlan === "paid";
+  // Ultra admins see everything unlocked — no paywall, no coming-soon blocks
+  const isPaid = isUltraAdmin ? true : orgPlan === "paid";
   const utils = trpc.useUtils();
   const stopImpersonationMutation = trpc.adminUser.stopImpersonation.useMutation({
     onSuccess: async () => {
@@ -126,18 +133,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     : "?";
 
   const isViewer = user?.role === "viewer";
-  // During impersonation, use the real admin's role for admin nav visibility
-  const effectiveRole = (user as any)?._isImpersonated
-    ? ((user as any)?._realAdminRole ?? user?.role)
-    : user?.role;
   const isAdmin  = effectiveRole === "admin" || effectiveRole === "ultra_admin" || user?.role === "admin" || user?.role === "ultra_admin";
-  const isUltraAdmin = effectiveRole === "ultra_admin" || !!(user as any)?._isImpersonated;
   const roleBadge = ROLE_BADGE[user?.role ?? "auditor"] ?? ROLE_BADGE.auditor;
 
   const NavLink = ({ item }: { item: NavItem }) => {
     const isActive = location === item.href || (item.href !== "/dashboard" && item.href !== "/liability-scan" && item.href !== "/scan-history" && location.startsWith(item.href));
 
-    if (item.locked === "coming-soon") {
+    // Ultra admins bypass all locks — show every nav item as clickable
+    if (item.locked === "coming-soon" && !isUltraAdmin) {
       return (
         <div
           className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground/60 cursor-not-allowed select-none"

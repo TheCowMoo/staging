@@ -68,32 +68,65 @@ export default function PersonnelTracking() {
     }
   }, [currentPosition]);
 
+    // Start geolocation immediately (independent of orgId) so the browser prompts for permission
     useEffect(() => {
-    if (!orgId) return;
-    if (!navigator.geolocation) {
-      setGeoError("Geolocation is not supported by your browser.");
-      return;
-    }
+      if (!navigator.geolocation) {
+        setGeoError("Geolocation is not supported by your browser.");
+        return;
+      }
 
-    const watcherId = navigator.geolocation.watchPosition(
-      (position) => {
-        const { latitude: lat, longitude: lng, accuracy: posAccuracy } = position.coords;
-        setCurrentPosition({ lat, lng });
-        setAccuracy(posAccuracy);
-        setLocationTimestamp(new Date());
-        setGeoError(null);
-        updateLocation.mutate({ orgId, latitude: lat, longitude: lng, status: "Active" });
-      },
-      (error) => {
-        setGeoError(error.message || "Unable to determine your location.");
-      },
-      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
-    );
+      // First, get a single position to trigger the browser permission prompt immediately
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude: lat, longitude: lng, accuracy: posAccuracy } = position.coords;
+          setCurrentPosition({ lat, lng });
+          setAccuracy(posAccuracy);
+          setLocationTimestamp(new Date());
+          setGeoError(null);
+          // Send to server if orgId is available
+          if (orgId) {
+            updateLocation.mutate({ orgId, latitude: lat, longitude: lng, status: "Active" });
+          }
+        },
+        (error) => {
+          setGeoError(error.message || "Unable to determine your location.");
+        },
+        { enableHighAccuracy: true, timeout: 15000 },
+      );
 
-    return () => {
-      navigator.geolocation.clearWatch(watcherId);
-    };
-  }, [orgId, updateLocation]);
+      // Then continuously watch for position updates
+      const watcherId = navigator.geolocation.watchPosition(
+        (position) => {
+          const { latitude: lat, longitude: lng, accuracy: posAccuracy } = position.coords;
+          setCurrentPosition({ lat, lng });
+          setAccuracy(posAccuracy);
+          setLocationTimestamp(new Date());
+          setGeoError(null);
+          if (orgId) {
+            updateLocation.mutate({ orgId, latitude: lat, longitude: lng, status: "Active" });
+          }
+        },
+        (error) => {
+          setGeoError(error.message || "Unable to determine your location.");
+        },
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
+      );
+
+      return () => {
+        navigator.geolocation.clearWatch(watcherId);
+      };
+    }, []); // Only run once on mount
+
+    // Also send location to server when orgId becomes available (e.g. after login redirect)
+    useEffect(() => {
+      if (!orgId || !currentPosition) return;
+      updateLocation.mutate({
+        orgId,
+        latitude: currentPosition.lat,
+        longitude: currentPosition.lng,
+        status: "Active",
+      });
+    }, [orgId]);
 
   // Update the accuracy circle and current-user marker on the map
   useEffect(() => {
