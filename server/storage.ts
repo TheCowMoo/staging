@@ -76,3 +76,12 @@ export async function storageGet(relKey: string): Promise<{ key: string; url: st
   );
   return { key, url };
 }
+
+export function storagePublicUrl(relKey: string): string {
+  assertStorageConfig();
+  const key = normalizeKey(relKey);
+  if (ENV.s3Endpoint) {
+    return `${ENV.s3Endpoint.replace(/\/+$/, "")}/${encodeURI(key)}`;
+  }
+  return `https://${ENV.s3BucketName}.s3.amazonaws.com/${encodeURI(key)}`;
+}

@@ -28,6 +28,7 @@ import {
   drillParticipants, InsertDrillParticipant,
   staffCheckins, InsertStaffCheckin,
   apiKeys, InsertApiKey,
+  trainingModules, InsertTrainingModule,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -1052,6 +1053,13 @@ export async function getDrillTemplateById(id: number) {
   if (!db) return undefined;
   const rows = await db.select().from(drillTemplates).where(eq(drillTemplates.id, id)).limit(1);
   return rows[0];
+}
+
+export async function createTrainingModule(data: InsertTrainingModule) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  const [result] = await db.insert(trainingModules).values(data);
+  return result.insertId as number;
 }
 
 export async function createDrillSession(data: InsertDrillSession) {

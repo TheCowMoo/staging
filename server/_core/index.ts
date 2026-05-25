@@ -9,6 +9,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { attachmentRouter } from "../attachmentUpload";
 import { flaggedVisitorUploadRouter } from "../flaggedVisitorUpload";
+import { trainingModuleUploadRouter } from "../trainingModuleUpload";
 import { eapPdfRouter } from "../eapPdf";
 import { liabilityScanPdfRouter } from "../liabilityScanPdf";
 import { webhookRouter } from "./webhookRouter";
@@ -147,6 +148,7 @@ async function startServer() {
   // File upload routes (multipart)
   app.use(attachmentRouter);
   app.use(flaggedVisitorUploadRouter);
+  app.use(trainingModuleUploadRouter);
 
   // API key protected external endpoints
   app.use(apiKeyRouter);

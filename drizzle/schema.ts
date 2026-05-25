@@ -71,6 +71,24 @@ export const personnelLocations = mysqlTable("personnel_locations", {
 export type PersonnelLocation = typeof personnelLocations.$inferSelect;
 export type InsertPersonnelLocation = typeof personnelLocations.$inferInsert;
 
+// ─── Training Modules ─────────────────────────────────────────────────────────
+export const trainingModules = mysqlTable("training_modules", {
+  id: int("id").autoincrement().primaryKey(),
+  orgId: int("orgId"),
+  createdByUserId: int("createdByUserId").notNull(),
+  courseTitle: varchar("courseTitle", { length: 255 }).notNull(),
+  launchPath: text("launchPath").notNull(),
+  playerType: mysqlEnum("playerType", ["Articulate_Storyline_Web"]).default("Articulate_Storyline_Web").notNull(),
+  trackingType: mysqlEnum("trackingType", ["None"]).default("None").notNull(),
+  storagePrefix: varchar("storagePrefix", { length: 512 }).notNull(),
+  sourceFileName: varchar("sourceFileName", { length: 255 }),
+  metaJson: text("metaJson"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type TrainingModule = typeof trainingModules.$inferSelect;
+export type InsertTrainingModule = typeof trainingModules.$inferInsert;
+
 // ─── Organization Invites ─────────────────────────────────────────────────────
 // Pending email invitations sent by org_admins.
 // When the recipient logs in and uses the token, they are added to the org.
