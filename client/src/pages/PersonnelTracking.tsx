@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, MapPin, Users } from "lucide-react";
+import { ArrowLeft, Crosshair, MapPin, Users } from "lucide-react";
 import { useLocation } from "wouter";
 import AppLayout from "@/components/AppLayout";
 import { MapView } from "@/components/Map";
@@ -26,10 +26,14 @@ type PersonnelMember = {
 export default function PersonnelTracking() {
   const [, navigate] = useLocation();
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-  const [geoError, setGeoError] = useState<string | null>(null);
+    const [geoError, setGeoError] = useState<string | null>(null);
   const [currentPosition, setCurrentPosition] = useState<google.maps.LatLngLiteral | null>(null);
+  const [accuracy, setAccuracy] = useState<number | null>(null);
+  const [locationTimestamp, setLocationTimestamp] = useState<Date | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
+  const accuracyCircleRef = useRef<google.maps.Circle | null>(null);
+  const currentUserMarkerRef = useRef<google.maps.Marker | null>(null);
 
   const { data: memberships = [] } = trpc.org.myMemberships.useQuery();
   const orgId = memberships[0]?.orgId ?? 0;
@@ -49,14 +53,22 @@ export default function PersonnelTracking() {
     return currentPosition ?? { lat: 37.7749, lng: -122.4194 };
   }, [currentPosition, selectedMember]);
 
+    const recenterMap = useCallback(() => {
+    if (mapRef.current && currentPosition) {
+      mapRef.current.setZoom(16);
+      mapRef.current.panTo(currentPosition);
+    }
+  }, [currentPosition]);
+
   const onMapReady = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
     if (currentPosition) {
       map.setCenter(currentPosition);
+      map.setZoom(16);
     }
   }, [currentPosition]);
 
-  useEffect(() => {
+    useEffect(() => {
     if (!orgId) return;
     if (!navigator.geolocation) {
       setGeoError("Geolocation is not supported by your browser.");
@@ -65,19 +77,17 @@ export default function PersonnelTracking() {
 
     const watcherId = navigator.geolocation.watchPosition(
       (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
+        const { latitude: lat, longitude: lng, accuracy: posAccuracy } = position.coords;
         setCurrentPosition({ lat, lng });
+        setAccuracy(posAccuracy);
+        setLocationTimestamp(new Date());
         setGeoError(null);
         updateLocation.mutate({ orgId, latitude: lat, longitude: lng, status: "Active" });
-        if (mapRef.current) {
-          mapRef.current.setCenter({ lat, lng });
-        }
       },
       (error) => {
         setGeoError(error.message || "Unable to determine your location.");
       },
-      { enableHighAccuracy: true, maximumAge: 15000, timeout: 20000 },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
     );
 
     return () => {
@@ -85,24 +95,54 @@ export default function PersonnelTracking() {
     };
   }, [orgId, updateLocation]);
 
+  // Update the accuracy circle and current-user marker on the map
   useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !currentPosition || !window.google) return;
+
+    // Remove old accuracy circle
+    if (accuracyCircleRef.current) {
+      accuracyCircleRef.current.setMap(null);
+    }
+
+    // Draw accuracy radius circle
+    if (accuracy != null) {
+      accuracyCircleRef.current = new window.google.maps.Circle({
+        map,
+        center: currentPosition,
+        radius: accuracy,
+        fillColor: "#3b82f6",
+        fillOpacity: 0.12,
+        strokeColor: "#3b82f6",
+        strokeOpacity: 0.3,
+        strokeWeight: 1,
+      });
+    }
+  }, [currentPosition, accuracy]);
+
+    useEffect(() => {
     const map = mapRef.current;
     if (!map || !window.google || !personnel) return;
 
     markersRef.current.forEach((marker) => marker.setMap(null));
     markersRef.current = [];
+    currentUserMarkerRef.current = null;
 
     personnel.forEach((member) => {
       if (member.locationLatitude == null || member.locationLongitude == null) return;
       const isCurrentUser = member.userId === memberships[0]?.userId;
+
+      // Skip the current user — they're shown via the My Location blue dot + accuracy circle
+      if (isCurrentUser) return;
+
       const marker = new window.google.maps.Marker({
         map,
         position: { lat: member.locationLatitude, lng: member.locationLongitude },
         title: member.userName || member.userEmail || "Unknown person",
         icon: {
           path: window.google.maps.SymbolPath.CIRCLE,
-          scale: isCurrentUser ? 12 : 9,
-          fillColor: isCurrentUser ? "#38bdf8" : "#f97316",
+          scale: 9,
+          fillColor: "#f97316",
           fillOpacity: 1,
           strokeWeight: 2,
           strokeColor: "#111827",
@@ -164,14 +204,26 @@ export default function PersonnelTracking() {
         <div className="grid gap-6 xl:grid-cols-[1.8fr_1fr]">
           <section className="rounded-3xl border border-border/70 bg-slate-950/70 p-4 shadow-xl shadow-slate-950/20">
             <div className="flex items-center justify-between gap-4 pb-4">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">Secure map view</p>
-                <p className="mt-1 text-xs text-slate-500">Google Maps markers show the most recent authorized position for tracked personnel.</p>
-              </div>
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">Secure map view</p>
+              <p className="mt-1 text-xs text-slate-500">Google Maps markers show the most recent authorized position for tracked personnel.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={recenterMap}
+                disabled={!currentPosition}
+                className="flex items-center gap-1.5 text-xs"
+              >
+                <Crosshair className="h-3.5 w-3.5" />
+                Recenter
+              </Button>
               <div className="flex flex-col gap-2 text-right">
                 <span className="text-xs uppercase tracking-[0.2em] text-slate-500">Org</span>
                 <span className="text-sm font-semibold text-white">{memberships[0]?.orgName ?? "Unknown org"}</span>
               </div>
+            </div>
             </div>
             <div className="rounded-3xl overflow-hidden border border-slate-800 bg-slate-950">
               <MapView initialCenter={initialCenter} initialZoom={12} onMapReady={onMapReady} />
@@ -181,12 +233,17 @@ export default function PersonnelTracking() {
                 <p className="text-sm text-slate-500 uppercase tracking-[0.18em]">Tracked people</p>
                 <p className="mt-2 text-2xl font-semibold text-white">{personnel?.length ?? 0}</p>
               </div>
-              <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-4">
+                            <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-4">
                 <p className="text-sm text-slate-500 uppercase tracking-[0.18em]">Your device</p>
                 <p className="mt-2 text-2xl font-semibold text-white">
-                  {currentPosition ? "Active" : "Waiting"}
+                  {currentPosition ? "Active" : "Waiting..."}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">Mobile location updates every few seconds.</p>
+                {currentPosition && accuracy != null && (
+                  <p className="mt-1 text-xs text-slate-500">
+                    Accuracy: {accuracy < 1 ? "<1m" : accuracy < 10 ? accuracy.toFixed(1) + "m" : Math.round(accuracy) + "m"}
+                    {locationTimestamp && ` · ${locationTimestamp.toLocaleTimeString()}`}
+                  </p>
+                )}
               </div>
               <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-4">
                 <p className="text-sm text-slate-500 uppercase tracking-[0.18em]">Refresh cadence</p>
