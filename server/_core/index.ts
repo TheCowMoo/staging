@@ -55,11 +55,12 @@ async function startServer() {
           "'unsafe-inline'",
           "'unsafe-eval'",
           "https://fonts.googleapis.com",
+          "https://maps.googleapis.com",
           "https://forge.butterfly-effect.dev",
         ],
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
-        imgSrc: ["'self'", "data:", "blob:", "https:"],
+        imgSrc: ["'self'", "data:", "blob:", "https:", "https://maps.googleapis.com", "https://maps.gstatic.com"],
         connectSrc: [
           "'self'",
           "https:",

@@ -86,7 +86,10 @@ declare global {
   }
 }
 
-const API_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY;
+// Try loading Google Maps directly first (using your own Google Maps API key),
+// fall back to the forge proxy if no direct key is configured.
+const DIRECT_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+const FORGE_API_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY;
 const FORGE_BASE_URL =
   import.meta.env.VITE_FRONTEND_FORGE_API_URL ||
   "https://forge.butterfly-effect.dev";
@@ -94,16 +97,26 @@ const MAPS_PROXY_URL = `${FORGE_BASE_URL}/v1/maps/proxy`;
 
 function loadMapScript() {
   return new Promise((resolve, reject) => {
-    if (!API_KEY || API_KEY === "undefined" || API_KEY === "") {
+    // Determine which key/URL to use
+    let scriptSrc: string;
+    if (DIRECT_API_KEY && DIRECT_API_KEY !== "undefined" && DIRECT_API_KEY !== "") {
+      // Load Google Maps directly
+      scriptSrc = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(DIRECT_API_KEY)}&v=weekly&libraries=marker,places,geocoding,geometry`;
+    } else if (FORGE_API_KEY && FORGE_API_KEY !== "undefined" && FORGE_API_KEY !== "") {
+      // Load through forge proxy
+      scriptSrc = `${MAPS_PROXY_URL}/maps/api/js?key=${encodeURIComponent(FORGE_API_KEY)}&v=weekly&libraries=marker,places,geocoding,geometry`;
+    } else {
       console.error(
-        "Google Maps cannot load: VITE_FRONTEND_FORGE_API_KEY is not set. " +
-        "Please add VITE_FRONTEND_FORGE_API_KEY to your .env file."
+        "Google Maps cannot load: No API key configured. Set either:\n" +
+        "  1. VITE_GOOGLE_MAPS_API_KEY (your Google Maps API key) — recommended\n" +
+        "  2. VITE_FRONTEND_FORGE_API_KEY (forge proxy key)\n" +
+        "in your .env file."
       );
-      reject(new Error("API key not configured"));
+      reject(new Error("No Google Maps API key configured"));
       return;
     }
     const script = document.createElement("script");
-    script.src = `${MAPS_PROXY_URL}/maps/api/js?key=${encodeURIComponent(API_KEY)}&v=weekly&libraries=marker,places,geocoding,geometry`;
+    script.src = scriptSrc;
     script.async = true;
     script.crossOrigin = "anonymous";
     script.onload = () => {
