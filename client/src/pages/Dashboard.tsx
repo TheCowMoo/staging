@@ -263,7 +263,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="section-heading">Your Facilities</h2>
                   <Button variant="ghost" size="sm" asChild>
-                    <Link href="/facilities" className="flex items-center gap-1 text-xs text-white">Manage <ArrowRight size={12} /></Link>
+                    <Link href="/facilities" className="flex items-center gap-1 text-xs">Manage <ArrowRight size={12} /></Link>
                   </Button>
                 </div>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">

@@ -182,13 +182,13 @@ export default function PersonnelTracking() {
         },
       });
 
-      const infoWindow = new window.google.maps.InfoWindow({
+            const infoWindow = new window.google.maps.InfoWindow({
         content: `
-          <div style="font-family: Inter, system-ui, sans-serif; font-size: 13px; line-height: 1.4; color: #f8fafc;">
+          <div style="font-family: Inter, system-ui, sans-serif; font-size: 13px; line-height: 1.4; color: #1E232A;">
             <strong style="display:block; margin-bottom: 4px;">${member.userName ?? member.userEmail ?? "Unknown"}</strong>
-            <div style="margin-bottom: 2px;">${member.role ?? "Staff"}</div>
-            <div style="font-size: 12px; opacity: 0.8;">${member.locationStatus ?? "Active"}</div>
-            ${member.locationUpdatedAt ? `<div style="font-size: 11px; opacity: 0.75; margin-top:4px;">Updated ${new Date(member.locationUpdatedAt).toLocaleString()}</div>` : ""}
+            <div style="margin-bottom: 2px; color: #5A6570;">${member.role ?? "Staff"}</div>
+            <div style="font-size: 12px; color: #5A6570;">${member.locationStatus ?? "Active"}</div>
+            ${member.locationUpdatedAt ? `<div style="font-size: 11px; color: #5A6570; margin-top:4px;">Updated ${new Date(member.locationUpdatedAt).toLocaleString()}</div>` : ""}
           </div>
         `,
       });
@@ -211,14 +211,14 @@ export default function PersonnelTracking() {
   return (
     <AppLayout>
       <div className="p-6 max-w-7xl mx-auto space-y-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-slate-900/80 px-3 py-2 text-sm uppercase tracking-[0.24em] text-slate-300">
+            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-2 text-sm uppercase tracking-[0.24em] text-primary">
               <MapPin className="h-4 w-4" />
               Personnel Tracking
             </div>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white">Live personnel location overview</h1>
-            <p className="max-w-2xl mt-2 text-sm text-slate-400">
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">Live personnel location overview</h1>
+            <p className="max-w-2xl mt-2 text-sm text-muted-foreground">
               Track your own device location and view the latest reported positions for people on your team. Use the menu to select personnel and center the map on their reported location.
             </p>
           </div>
@@ -229,17 +229,17 @@ export default function PersonnelTracking() {
         </div>
 
         {geoError ? (
-          <div className="rounded-3xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
             <strong className="font-semibold">Location access needed.</strong> {geoError}
           </div>
         ) : null}
 
         <div className="grid gap-6 xl:grid-cols-[1.8fr_1fr]">
-          <section className="rounded-3xl border border-border/70 bg-slate-950/70 p-4 shadow-xl shadow-slate-950/20">
-            <div className="flex items-center justify-between gap-4 pb-4">
+          <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+                        <div className="flex items-center justify-between gap-4 pb-4">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">Secure map view</p>
-              <p className="mt-1 text-xs text-slate-500">Google Maps markers show the most recent authorized position for tracked personnel.</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">Secure map view</p>
+              <p className="mt-1 text-xs text-muted-foreground">Google Maps markers show the most recent authorized position for tracked personnel.</p>
             </div>
             <div className="flex items-center gap-3">
               <Button
@@ -253,53 +253,53 @@ export default function PersonnelTracking() {
                 Recenter
               </Button>
               <div className="flex flex-col gap-2 text-right">
-                <span className="text-xs uppercase tracking-[0.2em] text-slate-500">Org</span>
-                <span className="text-sm font-semibold text-white">{memberships[0]?.orgName ?? "Unknown org"}</span>
+                                <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Org</span>
+                <span className="text-sm font-semibold text-foreground">{memberships[0]?.orgName ?? "Unknown org"}</span>
               </div>
             </div>
             </div>
-            <div className="rounded-3xl overflow-hidden border border-slate-800 bg-slate-950">
+            <div className="rounded-2xl overflow-hidden border border-border bg-muted">
               <MapView initialCenter={initialCenter} initialZoom={12} onMapReady={onMapReady} />
             </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-4">
-                <p className="text-sm text-slate-500 uppercase tracking-[0.18em]">Tracked people</p>
-                <p className="mt-2 text-2xl font-semibold text-white">{personnel?.length ?? 0}</p>
+                        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-border bg-card p-4">
+                <p className="text-sm text-muted-foreground uppercase tracking-[0.18em]">Tracked people</p>
+                <p className="mt-2 text-2xl font-semibold text-foreground">{personnel?.length ?? 0}</p>
               </div>
-                            <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-4">
-                <p className="text-sm text-slate-500 uppercase tracking-[0.18em]">Your device</p>
-                <p className="mt-2 text-2xl font-semibold text-white">
+              <div className="rounded-2xl border border-border bg-card p-4">
+                <p className="text-sm text-muted-foreground uppercase tracking-[0.18em]">Your device</p>
+                <p className="mt-2 text-2xl font-semibold text-foreground">
                   {currentPosition ? "Active" : "Waiting..."}
                 </p>
                 {currentPosition && accuracy != null && (
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     Accuracy: {accuracy < 1 ? "<1m" : accuracy < 10 ? accuracy.toFixed(1) + "m" : Math.round(accuracy) + "m"}
                     {locationTimestamp && ` · ${locationTimestamp.toLocaleTimeString()}`}
                   </p>
                 )}
               </div>
-              <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-4">
-                <p className="text-sm text-slate-500 uppercase tracking-[0.18em]">Refresh cadence</p>
-                <p className="mt-2 text-2xl font-semibold text-white">15s</p>
+              <div className="rounded-2xl border border-border bg-card p-4">
+                <p className="text-sm text-muted-foreground uppercase tracking-[0.18em]">Refresh cadence</p>
+                <p className="mt-2 text-2xl font-semibold text-foreground">15s</p>
               </div>
             </div>
           </section>
 
           <aside className="space-y-4">
-            <div className="rounded-3xl border border-border/70 bg-slate-950/70 p-4 shadow-xl shadow-slate-950/20">
+                        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">Team roster</p>
-                  <p className="mt-1 text-xs text-slate-500">Select a person to center the map on their latest reported position.</p>
+                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-foreground">Team roster</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Select a person to center the map on their latest reported position.</p>
                 </div>
                 <Badge variant="secondary">{personnel?.length ?? 0} members</Badge>
               </div>
               <Separator className="my-4" />
 
-              {loadingPersonnel ? (
-                <div className="space-y-3 py-8 text-sm text-slate-500">Loading personnel data...</div>
+                            {loadingPersonnel ? (
+                <div className="space-y-3 py-8 text-sm text-muted-foreground">Loading personnel data...</div>
               ) : !personnel?.length ? (
-                <div className="rounded-3xl border border-dashed border-slate-700 bg-slate-900/80 p-6 text-sm text-slate-400">
+                                <div className="rounded-2xl border border-dashed border-border bg-muted/50 p-6 text-sm text-muted-foreground">
                   No personnel locations are available yet. Make sure teammates have granted location access and are active in the system.
                 </div>
               ) : (
@@ -308,28 +308,28 @@ export default function PersonnelTracking() {
                     const isSelected = member.userId === selectedUserId;
                     const hasLocation = member.locationLatitude != null && member.locationLongitude != null;
                     return (
-                      <button
+                                            <button
                         key={member.userId}
                         type="button"
                         onClick={() => setSelectedUserId(member.userId)}
-                        className={`w-full rounded-3xl border px-4 py-4 text-left transition ${
-                          isSelected ? "border-sky-400 bg-slate-900/95" : "border-slate-800 bg-slate-950/80 hover:border-slate-700"
+                        className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
+                          isSelected ? "border-primary bg-primary/5" : "border-border bg-card hover:bg-muted/50"
                         }`}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className="text-sm font-semibold text-white">{member.userName ?? member.userEmail ?? "Unknown"}</p>
-                            <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">{member.role ?? "Staff"}</p>
+                            <p className="text-sm font-semibold text-foreground">{member.userName ?? member.userEmail ?? "Unknown"}</p>
+                            <p className="mt-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">{member.role ?? "Staff"}</p>
                           </div>
-                          <span className={`rounded-full px-2 py-1 text-[11px] font-semibold uppercase ${hasLocation ? "bg-emerald-500/15 text-emerald-200" : "bg-slate-700 text-slate-300"}`}>
+                          <span className={`rounded-full px-2 py-1 text-[11px] font-semibold uppercase ${hasLocation ? "bg-emerald-100 text-emerald-800" : "bg-muted text-muted-foreground"}`}>
                             {hasLocation ? "Live" : "No GPS"}
                           </span>
                         </div>
-                        <div className="mt-3 text-xs leading-5 text-slate-400">
+                        <div className="mt-3 text-xs leading-5 text-muted-foreground">
                           {hasLocation ? (
                             <>
                               {member.locationLatitude?.toFixed(4)}, {member.locationLongitude?.toFixed(4)}
-                              <div className="mt-1 text-[11px] text-slate-500">
+                              <div className="mt-1 text-[11px] text-muted-foreground/70">
                                 {member.locationStatus ?? "Active"} • {member.locationUpdatedAt ? new Date(member.locationUpdatedAt).toLocaleTimeString() : "Unknown"}
                               </div>
                             </>
@@ -344,15 +344,15 @@ export default function PersonnelTracking() {
               )}
             </div>
 
-            <div className="rounded-3xl border border-border/70 bg-slate-950/70 p-4 shadow-xl shadow-slate-950/20">
-              <div className="flex items-center gap-2 text-sm text-slate-400">
-                <Users className="h-4 w-4 text-slate-300" />
+                        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Users className="h-4 w-4" />
                 <span>Data is delivered securely and refreshed regularly for active team members.</span>
               </div>
-              <div className="mt-4 space-y-3 text-sm text-slate-500">
-                <p><span className="font-semibold text-slate-200">Current organization:</span> {memberships[0]?.orgName ?? "None"}</p>
-                <p><span className="font-semibold text-slate-200">Permission:</span> {memberships[0]?.role ?? "Member"}</p>
-                <p><span className="font-semibold text-slate-200">Backend sync:</span> {updateLocation.status === "pending" ? "Sending latest position..." : "Up to date"}</p>
+              <div className="mt-4 space-y-3 text-sm text-muted-foreground">
+                <p><span className="font-semibold text-foreground">Current organization:</span> {memberships[0]?.orgName ?? "None"}</p>
+                <p><span className="font-semibold text-foreground">Permission:</span> {memberships[0]?.role ?? "Member"}</p>
+                <p><span className="font-semibold text-foreground">Backend sync:</span> {updateLocation.status === "pending" ? "Sending latest position..." : "Up to date"}</p>
               </div>
             </div>
           </aside>
