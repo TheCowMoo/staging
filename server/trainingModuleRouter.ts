@@ -14,14 +14,10 @@ import {
 export const trainingModuleRouter = router({
   list: protectedProcedure
     .query(async ({ ctx }) => {
-      // Derive orgId from the user's own memberships
       const memberships = await getOrgMembershipForUser(ctx.user.id);
       const orgId = memberships[0]?.orgId ?? 0;
-      if (!orgId) {
-        return [];
-      }
 
-      // Try auto-discovering S3 courses silently
+      // Auto-discover S3 courses on every visit
       const s3Prefixes = process.env.S3_COURSES_PREFIX 
         ? process.env.S3_COURSES_PREFIX.split(",").map(s => s.trim())
         : ["courses"];
