@@ -1,11 +1,12 @@
-import { storageGet } from "./storage";
+import { storageGet, storageListDirectories } from "./storage";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, paidProcedure, orgAdminProcedure } from "./_core/trpc";
 import { getOrgMemberRecord } from "./db";
 import {
-  getTrainingModulesByOrg,
+  getTrainingModulesByOrgOrGlobal,
   getTrainingModuleById,
+  getTrainingModuleByStoragePrefix,
   createTrainingModule,
   deleteTrainingModule,
 } from "./db";
@@ -18,7 +19,36 @@ export const trainingModuleRouter = router({
       if (!member && !["admin", "ultra_admin"].includes(ctx.user.role)) {
         throw new TRPCError({ code: "FORBIDDEN" });
       }
-      return getTrainingModulesByOrg(input.orgId);
+
+      // Step 1: auto-discover S3 courses and register any new ones
+      const s3Prefix = process.env.S3_COURSES_PREFIX || "courses";
+      try {
+        const dirs = await storageListDirectories(s3Prefix);
+        for (const dirName of dirs) {
+          const storagePrefix = `${s3Prefix}/${dirName}`;
+          const existing = await getTrainingModuleByStoragePrefix(storagePrefix);
+          if (!existing) {
+            // Auto-register this course
+            await createTrainingModule({
+              orgId: null as any, // global — available to all orgs
+              createdByUserId: ctx.user.id,
+              courseTitle: dirName,
+              launchPath: "story.html",
+              playerType: "Articulate_Storyline_Web",
+              trackingType: "None",
+              storagePrefix,
+              sourceFileName: null,
+              metaJson: JSON.stringify({ autoDiscovered: true, discoveredAt: new Date().toISOString() }),
+            });
+          }
+        }
+      } catch (err) {
+        // Non-blocking — S3 may not have the courses prefix or may not be configured
+        console.warn("[TrainingModule] S3 auto-discovery failed:", err);
+      }
+
+      // Step 2: return all modules (org-specific + global)
+      return getTrainingModulesByOrgOrGlobal(input.orgId);
     }),
 
   get: paidProcedure

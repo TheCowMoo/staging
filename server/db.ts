@@ -1,4 +1,4 @@
-import { eq, desc, and, isNull, lte, gte } from "drizzle-orm";
+import { eq, desc, and, or, isNull, lte, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users,
@@ -1070,10 +1070,30 @@ export async function getTrainingModulesByOrg(orgId: number) {
     .orderBy(desc(trainingModules.createdAt));
 }
 
+export async function getTrainingModulesByOrgOrGlobal(orgId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(trainingModules)
+    .where(
+      or(
+        eq(trainingModules.orgId, orgId),
+        isNull(trainingModules.orgId)
+      )
+    )
+    .orderBy(desc(trainingModules.createdAt));
+}
+
 export async function getTrainingModuleById(id: number) {
   const db = await getDb();
   if (!db) return undefined;
   const rows = await db.select().from(trainingModules).where(eq(trainingModules.id, id)).limit(1);
+  return rows[0];
+}
+
+export async function getTrainingModuleByStoragePrefix(storagePrefix: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select().from(trainingModules).where(eq(trainingModules.storagePrefix, storagePrefix)).limit(1);
   return rows[0];
 }
 

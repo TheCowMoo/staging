@@ -8,7 +8,7 @@
  *   S3_SECRET_ACCESS_KEY — AWS secret access key
  *   S3_ENDPOINT          — (optional) custom endpoint for S3-compatible services
  */
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { ENV } from "./_core/env";
 
@@ -84,4 +84,25 @@ export function storagePublicUrl(relKey: string): string {
     return `${ENV.s3Endpoint.replace(/\/+$/, "")}/${encodeURI(key)}`;
   }
   return `https://${ENV.s3BucketName}.s3.amazonaws.com/${encodeURI(key)}`;
+}
+
+/**
+ * List top-level subdirectories (common prefixes) under a given prefix.
+ * Returns an array of directory/prefix names (e.g. ["Active Threat Response 5_24_26", "De-escalation"]).
+ */
+export async function storageListDirectories(prefix: string): Promise<string[]> {
+  assertStorageConfig();
+  const normalizedPrefix = prefix.replace(/^\/+/, "").replace(/\/+$/, "") + "/";
+  const client = getS3Client();
+  const result = await client.send(
+    new ListObjectsV2Command({
+      Bucket: ENV.s3BucketName,
+      Prefix: normalizedPrefix,
+      Delimiter: "/",
+    })
+  );
+  return (result.CommonPrefixes ?? [])
+    .map((cp) => cp.Prefix ?? "")
+    .filter(Boolean)
+    .map((p) => p.replace(normalizedPrefix, "").replace(/\/+$/, ""));
 }
