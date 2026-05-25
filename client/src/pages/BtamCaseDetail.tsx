@@ -130,8 +130,9 @@ function renderTopFactors(json: string): React.ReactNode {
 
 // ── Main component ─────────────────────────────────────────────────────────
 export default function BtamCaseDetail() {
-  const params = useParams<{ id: string }>();
-  const caseId = parseInt(params.id ?? "0");
+    const params = useParams<{ id: string }>();
+    const rawId = parseInt(params.id ?? "", 10);
+    const caseId = isNaN(rawId) ? 0 : rawId;
   const [, navigate] = useLocation();
   const { data, isLoading, refetch } = trpc.btam.getCase.useQuery(
     { caseId },

@@ -55,6 +55,7 @@ async function startServer() {
           "'unsafe-inline'",
           "'unsafe-eval'",
           "https://fonts.googleapis.com",
+          "https://forge.butterfly-effect.dev",
         ],
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
@@ -64,6 +65,7 @@ async function startServer() {
           "https:",
           "wss:",
           "ws:",  // WebSocket over plain HTTP
+          "https://forge.butterfly-effect.dev",
         ],
         frameSrc: ["'none'"],
         objectSrc: ["'none'"],

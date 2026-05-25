@@ -69,8 +69,9 @@ const STEP_LABELS: Record<Step, string> = {
 };
 
 export default function DrillRunner() {
-  const params = useParams<{ id: string }>();
-  const sessionId = parseInt(params.id ?? "0");
+    const params = useParams<{ id: string }>();
+    const rawId = parseInt(params.id ?? "", 10);
+    const sessionId = isNaN(rawId) ? 0 : rawId;
   const [, navigate] = useLocation();
 
   const [currentStep, setCurrentStep] = useState<Step>("briefing");

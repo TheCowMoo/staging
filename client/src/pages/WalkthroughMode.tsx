@@ -54,8 +54,9 @@ interface QuestionState {
 }
 
 export default function WalkthroughMode() {
-  const params = useParams<{ id: string }>();
-  const auditId = parseInt(params.id ?? "0");
+    const params = useParams<{ id: string }>();
+    const rawId = parseInt(params.id ?? "", 10);
+    const auditId = isNaN(rawId) ? 0 : rawId;
   const [, navigate] = useLocation();
 
   const { data: audit } = trpc.audit.get.useQuery({ id: auditId });

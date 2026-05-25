@@ -33,7 +33,8 @@ function parseRoles(json: string | null | undefined): Record<string, string> {
 
 export default function FacilityDetail() {
   const params = useParams<{ id: string }>();
-  const facilityId = parseInt(params.id ?? "0");
+  const rawId = parseInt(params.id ?? "", 10);
+  const facilityId = isNaN(rawId) ? 0 : rawId;
   const [, navigate] = useLocation();
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Record<string, any>>({});

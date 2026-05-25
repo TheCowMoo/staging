@@ -497,8 +497,9 @@ function EarpSection({
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function EmergencyActionPlan() {
-  const params = useParams<{ id: string }>();
-  const auditId = parseInt(params.id ?? "0");
+    const params = useParams<{ id: string }>();
+    const rawId = parseInt(params.id ?? "", 10);
+    const auditId = isNaN(rawId) ? 0 : rawId;
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "admin";
 

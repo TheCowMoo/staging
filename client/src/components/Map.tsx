@@ -93,17 +93,26 @@ const FORGE_BASE_URL =
 const MAPS_PROXY_URL = `${FORGE_BASE_URL}/v1/maps/proxy`;
 
 function loadMapScript() {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
+    if (!API_KEY || API_KEY === "undefined" || API_KEY === "") {
+      console.error(
+        "Google Maps cannot load: VITE_FRONTEND_FORGE_API_KEY is not set. " +
+        "Please add VITE_FRONTEND_FORGE_API_KEY to your .env file."
+      );
+      reject(new Error("API key not configured"));
+      return;
+    }
     const script = document.createElement("script");
-    script.src = `${MAPS_PROXY_URL}/maps/api/js?key=${API_KEY}&v=weekly&libraries=marker,places,geocoding,geometry`;
+    script.src = `${MAPS_PROXY_URL}/maps/api/js?key=${encodeURIComponent(API_KEY)}&v=weekly&libraries=marker,places,geocoding,geometry`;
     script.async = true;
     script.crossOrigin = "anonymous";
     script.onload = () => {
       resolve(null);
       script.remove(); // Clean up immediately
     };
-    script.onerror = () => {
-      console.error("Failed to load Google Maps script");
+    script.onerror = (err) => {
+      console.error("Failed to load Google Maps script. Check CSP headers and API key configuration.", err);
+      reject(new Error("Failed to load Google Maps script"));
     };
     document.head.appendChild(script);
   });
@@ -126,9 +135,18 @@ export function MapView({
   const map = useRef<google.maps.Map | null>(null);
 
   const init = usePersistFn(async () => {
-    await loadMapScript();
+    try {
+      await loadMapScript();
+    } catch (err) {
+      console.error("Map initialization failed:", err);
+      return;
+    }
     if (!mapContainer.current) {
       console.error("Map container not found");
+      return;
+    }
+    if (!window.google?.maps) {
+      console.error("Google Maps API not available after script load");
       return;
     }
     map.current = new window.google.maps.Map(mapContainer.current, {

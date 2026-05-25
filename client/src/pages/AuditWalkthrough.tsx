@@ -118,8 +118,9 @@ const EAP_CONTACTS_VIRTUAL_IDX = -1;
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AuditWalkthrough() {
-  const params = useParams<{ id: string }>();
-  const auditId = parseInt(params.id ?? "0");
+    const params = useParams<{ id: string }>();
+    const rawId = parseInt(params.id ?? "", 10);
+    const auditId = isNaN(rawId) ? 0 : rawId;
   const [, navigate] = useLocation();
 
   const { data: audit, isLoading: auditLoading } = trpc.audit.get.useQuery({ id: auditId });

@@ -38,8 +38,9 @@ type SystemIntelligence = {
 };
 
 export default function DrillAfterAction() {
-  const params = useParams<{ id: string }>();
-  const sessionId = parseInt(params.id ?? "0");
+    const params = useParams<{ id: string }>();
+    const rawId = parseInt(params.id ?? "", 10);
+    const sessionId = isNaN(rawId) ? 0 : rawId;
   const [, navigate] = useLocation();
 
   const [answers, setAnswers] = useState<Record<string, string>>({});
