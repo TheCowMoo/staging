@@ -47,7 +47,8 @@ import {
   insertLiabilityScan, getLiabilityScanById, getLiabilityScansForUser,
   insertScanShareToken, getScanShareToken, updateLiabilityScanTierScores,
 } from "./db";
-import { randomBytes } from "crypto";
+import { randomBytes, createHash } from "crypto";
+import { createApiKey, getApiKeyByHash, listApiKeysByUser, revokeApiKey } from "./db";
 import { getDb } from "./db";
 import { sql } from "drizzle-orm";
 import { generateLiabilityScanResult } from "./liabilityScanAi";
@@ -3924,6 +3925,37 @@ export const appRouter = router({
   drill: drillRouter,
   ras: rasRouter,
   staffCheckin: staffCheckinRouter,
+  // API Key management (create/list/revoke) — accessible to org admins and platform admins
+  apiKeys: router({
+    create: orgAdminProcedure
+      .input(z.object({ label: z.string().optional(), orgId: z.number().optional(), expiresInDays: z.number().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const token = randomBytes(32).toString("hex");
+        const hash = createHash("sha256").update(token).digest("hex");
+        const expiresAt = input.expiresInDays ? new Date(Date.now() + input.expiresInDays * 24 * 60 * 60 * 1000) : undefined;
+        await createApiKey({
+          userId: ctx.user.id,
+          orgId: input.orgId ?? undefined,
+          label: input.label ?? undefined,
+          keyHash: hash,
+          permissions: [],
+          expiresAt,
+        });
+        return { token };
+      }),
+
+    list: orgAdminProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+      const rows = await listApiKeysByUser(ctx.user.id);
+      return rows.map(r => ({ id: r.id, label: r.label, orgId: r.orgId, revokedAt: r.revokedAt, expiresAt: r.expiresAt, createdAt: r.createdAt }));
+    }),
+
+    revoke: orgAdminProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+      await revokeApiKey(input.id);
+      return { success: true } as const;
+    }),
+  }),
   btam: btamRouter,
   settings: settingsRouter,
   migrate: router({
@@ -3960,6 +3992,7 @@ export const appRouter = router({
         { name: "ADD users.passwordResetExpiresAt", q: sql`ALTER TABLE \`users\` ADD COLUMN IF NOT EXISTS \`passwordResetExpiresAt\` timestamp` },
         { name: "ADD users.ghlContactId", q: sql`ALTER TABLE \`users\` ADD COLUMN IF NOT EXISTS \`ghlContactId\` varchar(64)` },
         { name: "CREATE btam_status_history", q: sql`CREATE TABLE IF NOT EXISTS \`btam_status_history\` (\`id\` int AUTO_INCREMENT NOT NULL, \`caseId\` int NOT NULL, \`changedBy\` int NOT NULL, \`changedAt\` timestamp NOT NULL DEFAULT (now()), \`previousStatus\` varchar(64), \`newStatus\` varchar(64), \`previousConcernLevel\` varchar(32), \`newConcernLevel\` varchar(32), \`reason\` text, CONSTRAINT \`btam_status_history_id\` PRIMARY KEY(\`id\`))` },
+        { name: "CREATE api_keys", q: sql`CREATE TABLE IF NOT EXISTS \`api_keys\` (\`id\` int AUTO_INCREMENT NOT NULL, \`userId\` int NOT NULL, \`orgId\` int, \`label\` varchar(255), \`keyHash\` varchar(128) NOT NULL, \`permissions\` json, \`lastUsedAt\` timestamp, \`revokedAt\` timestamp, \`expiresAt\` timestamp, \`createdAt\` timestamp NOT NULL DEFAULT (now()), CONSTRAINT \`api_keys_id\` PRIMARY KEY(\`id\`))` },
       ];
       const results: { name: string; ok: boolean; err?: string }[] = [];
       for (const s of stmts) {

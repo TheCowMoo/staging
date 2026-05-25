@@ -126,6 +126,24 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+// ─── API Keys ───────────────────────────────────────────────────────────────
+// Stores hashed API keys for programmatic access. Plaintext token is shown
+// once at creation time and is not stored.
+export const apiKeys = mysqlTable("api_keys", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  orgId: int("orgId"),
+  label: varchar("label", { length: 255 }),
+  keyHash: varchar("keyHash", { length: 128 }).notNull(),
+  permissions: json("permissions"),
+  lastUsedAt: timestamp("lastUsedAt"),
+  revokedAt: timestamp("revokedAt"),
+  expiresAt: timestamp("expiresAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ApiKey = typeof apiKeys.$inferSelect;
+export type InsertApiKey = typeof apiKeys.$inferInsert;
+
 // ─── Facilities ───────────────────────────────────────────────────────────────
 export const facilities = mysqlTable("facilities", {
   id: int("id").autoincrement().primaryKey(),

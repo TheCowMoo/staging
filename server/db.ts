@@ -27,6 +27,7 @@ import {
   drillSessions, InsertDrillSession,
   drillParticipants, InsertDrillParticipant,
   staffCheckins, InsertStaffCheckin,
+  apiKeys, InsertApiKey,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -89,6 +90,45 @@ export async function getUserByEmail(email: string) {
   if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.email, email.toLowerCase().trim())).limit(1);
   return result[0];
+}
+
+export async function getUserById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return result[0];
+}
+
+// ─── API Keys ──────────────────────────────────────────────────────────────
+export async function createApiKey(data: InsertApiKey) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  return db.insert(apiKeys).values(data);
+}
+
+export async function getApiKeyByHash(hash: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(apiKeys).where(eq(apiKeys.keyHash, hash)).limit(1);
+  return result[0];
+}
+
+export async function touchApiKeyLastUsed(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  return db.update(apiKeys).set({ lastUsedAt: new Date() }).where(eq(apiKeys.id, id));
+}
+
+export async function listApiKeysByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(apiKeys).where(eq(apiKeys.userId, userId));
+}
+
+export async function revokeApiKey(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  return db.update(apiKeys).set({ revokedAt: new Date() }).where(eq(apiKeys.id, id));
 }
 
 // ─── Facilities ───────────────────────────────────────────────────────────────

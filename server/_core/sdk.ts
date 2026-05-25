@@ -10,6 +10,7 @@ import { ForbiddenError } from "@shared/_core/errors";
 import { parse as parseCookieHeader } from "cookie";
 import type { Request } from "express";
 import type { User } from "../../drizzle/schema";
+import { createHash } from "crypto";
 import * as db from "../db";
 import { ENV } from "./env";
 
@@ -92,17 +93,54 @@ class SDKServer {
     }
   }
 
+  private getApiKeyFromRequest(req: Request): string | null {
+    const authHeader = req.headers.authorization;
+    if (typeof authHeader === "string" && authHeader.trim().toLowerCase().startsWith("bearer ")) {
+      return authHeader.trim().substring(7).trim();
+    }
+    const keyHeader = req.headers["x-api-key"];
+    if (typeof keyHeader === "string" && keyHeader.trim()) {
+      return keyHeader.trim();
+    }
+    return null;
+  }
+
+  async authenticateApiKeyRequest(req: Request): Promise<User> {
+    const apiKey = this.getApiKeyFromRequest(req);
+    if (!apiKey) {
+      throw ForbiddenError("Missing API key");
+    }
+
+    const hash = createHash("sha256").update(apiKey).digest("hex");
+    const row = await db.getApiKeyByHash(hash);
+    if (!row) {
+      throw ForbiddenError("Invalid API key");
+    }
+    if (row.revokedAt) {
+      throw ForbiddenError("API key revoked");
+    }
+    if (row.expiresAt && row.expiresAt.getTime() < Date.now()) {
+      throw ForbiddenError("API key expired");
+    }
+
+    const user = await db.getUserById(row.userId);
+    if (!user) throw ForbiddenError("User not found");
+    await db.touchApiKeyLastUsed(row.id);
+    await db.upsertUser({ openId: user.openId, lastSignedIn: new Date() });
+    return user;
+  }
+
   async authenticateRequest(req: Request): Promise<User> {
     const cookies = this.parseCookies(req.headers.cookie);
     const sessionCookie = cookies.get(COOKIE_NAME);
     const session = await this.verifySession(sessionCookie);
-    if (!session) throw ForbiddenError("Invalid session cookie");
-
-    let user = await db.getUserByOpenId(session.openId);
-    if (!user) throw ForbiddenError("User not found");
-
-    await db.upsertUser({ openId: user.openId, lastSignedIn: new Date() });
-    return user;
+    if (session) {
+      let user = await db.getUserByOpenId(session.openId);
+      if (!user) throw ForbiddenError("User not found");
+      await db.upsertUser({ openId: user.openId, lastSignedIn: new Date() });
+      return user;
+    }
+    return this.authenticateApiKeyRequest(req);
   }
 }
 

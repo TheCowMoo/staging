@@ -36,13 +36,13 @@ function getScanRiskStyle(status: string | null | undefined) {
 function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: number | string; sub?: string }) {
   return (
     <div className="metal-card p-5">
-      <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between">
         <div>
           <p className="text-sm uppercase tracking-[0.16em] text-muted-foreground mb-2">{label}</p>
           <p className="metric-number">{value}</p>
           {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
         </div>
-        <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-white shadow-inner shadow-black/20">
+        <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-foreground shadow-inner shadow-black/20">
           {icon}
         </div>
       </div>

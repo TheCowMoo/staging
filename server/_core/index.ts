@@ -12,6 +12,7 @@ import { flaggedVisitorUploadRouter } from "../flaggedVisitorUpload";
 import { eapPdfRouter } from "../eapPdf";
 import { liabilityScanPdfRouter } from "../liabilityScanPdf";
 import { webhookRouter } from "./webhookRouter";
+import { apiKeyRouter } from "../apiKeyRouter";
 import helmet from "helmet";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import fs from "fs";
@@ -146,6 +147,9 @@ async function startServer() {
   // File upload routes (multipart)
   app.use(attachmentRouter);
   app.use(flaggedVisitorUploadRouter);
+
+  // API key protected external endpoints
+  app.use(apiKeyRouter);
 
   // EAP PDF download
   app.use(eapPdfRouter);
