@@ -20,34 +20,35 @@ export const trainingModuleRouter = router({
         throw new TRPCError({ code: "FORBIDDEN" });
       }
 
-      // Step 1: auto-discover S3 courses and register any new ones
-      const s3Prefix = process.env.S3_COURSES_PREFIX || "courses";
-      try {
-        const dirs = await storageListDirectories(s3Prefix);
-        for (const dirName of dirs) {
-          const storagePrefix = `${s3Prefix}/${dirName}`;
-          const existing = await getTrainingModuleByStoragePrefix(storagePrefix);
-          if (!existing) {
-            // Auto-register this course
-            await createTrainingModule({
-              orgId: null as any, // global — available to all orgs
-              createdByUserId: ctx.user.id,
-              courseTitle: dirName,
-              launchPath: "story.html",
-              playerType: "Articulate_Storyline_Web",
-              trackingType: "None",
-              storagePrefix,
-              sourceFileName: null,
-              metaJson: JSON.stringify({ autoDiscovered: true, discoveredAt: new Date().toISOString() }),
-            });
+      // Try auto-discovering S3 courses silently
+      const s3Prefixes = process.env.S3_COURSES_PREFIX 
+        ? process.env.S3_COURSES_PREFIX.split(",").map(s => s.trim())
+        : ["courses"];
+      for (const prefix of s3Prefixes) {
+        try {
+          const dirs = await storageListDirectories(prefix);
+          for (const dirName of dirs) {
+            const storagePrefix = `${prefix}/${dirName}`;
+            const existing = await getTrainingModuleByStoragePrefix(storagePrefix);
+            if (!existing) {
+              await createTrainingModule({
+                orgId: null as any,
+                createdByUserId: ctx.user.id,
+                courseTitle: dirName,
+                launchPath: "story.html",
+                playerType: "Articulate_Storyline_Web",
+                trackingType: "None",
+                storagePrefix,
+                sourceFileName: null,
+                metaJson: JSON.stringify({ autoDiscovered: true, discoveredAt: new Date().toISOString() }),
+              });
+            }
           }
+        } catch (err: any) {
+          console.warn(`[TrainingModule] S3 auto-discovery failed for prefix "${prefix}":`, err?.message ?? err);
         }
-      } catch (err) {
-        // Non-blocking — S3 may not have the courses prefix or may not be configured
-        console.warn("[TrainingModule] S3 auto-discovery failed:", err);
       }
 
-      // Step 2: return all modules (org-specific + global)
       return getTrainingModulesByOrgOrGlobal(input.orgId);
     }),
 
@@ -65,38 +66,54 @@ export const trainingModuleRouter = router({
       return module;
     }),
 
-  // Register an existing S3 course that wasn't uploaded through the pipeline
-  register: orgAdminProcedure
-    .input(
-      z.object({
-        orgId: z.number(),
-        courseTitle: z.string().min(1),
-        launchPath: z.string().min(1),
-        storagePrefix: z.string().optional(),
-        sourceFileName: z.string().optional(),
-        metaJson: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const moduleId = await createTrainingModule({
-        orgId: input.orgId,
-        createdByUserId: ctx.user.id,
-        courseTitle: input.courseTitle,
-        launchPath: input.launchPath,
-        playerType: "Articulate_Storyline_Web",
-        trackingType: "None",
-        storagePrefix: input.storagePrefix ?? "",
-        sourceFileName: input.sourceFileName ?? null,
-        metaJson: input.metaJson ?? null,
-      });
-      return { success: true, moduleId };
-    }),
-
   delete: orgAdminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
       await deleteTrainingModule(input.id);
       return { success: true };
+    }),
+
+  // Manual trigger to re-scan S3 for new courses
+  syncS3: orgAdminProcedure
+    .input(z.object({ orgId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const results: { dirName: string; status: "registered" | "already_exists" | "error"; error?: string }[] = [];
+      const s3Prefixes = process.env.S3_COURSES_PREFIX
+        ? process.env.S3_COURSES_PREFIX.split(",").map(s => s.trim())
+        : ["courses"];
+      for (const prefix of s3Prefixes) {
+        try {
+          const dirs = await storageListDirectories(prefix);
+          for (const dirName of dirs) {
+            const storagePrefix = `${prefix}/${dirName}`;
+            try {
+              const existing = await getTrainingModuleByStoragePrefix(storagePrefix);
+              if (existing) {
+                results.push({ dirName, status: "already_exists" });
+              } else {
+                await createTrainingModule({
+                  orgId: null as any,
+                  createdByUserId: ctx.user.id,
+                  courseTitle: dirName,
+                  launchPath: "story.html",
+                  playerType: "Articulate_Storyline_Web",
+                  trackingType: "None",
+                  storagePrefix,
+                  sourceFileName: null,
+                  metaJson: JSON.stringify({ autoDiscovered: true, discoveredAt: new Date().toISOString() }),
+                });
+                results.push({ dirName, status: "registered" });
+              }
+            } catch (err: any) {
+              results.push({ dirName, status: "error", error: err?.message ?? String(err) });
+            }
+          }
+        } catch (err: any) {
+          // Prefix-level error
+          results.push({ dirName: prefix, status: "error", error: err?.message ?? String(err) });
+        }
+      }
+      return results;
     }),
 
   // Generate a presigned S3 URL for launching a training course
