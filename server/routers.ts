@@ -1294,6 +1294,46 @@ const incidentRouter = router({
         input.referredTo
       );
 
+      const report = await getIncidentReportById(input.id);
+      if (report?.contactEmail) {
+        try {
+          const statusLabels: Record<string, string> = {
+            new: "Received",
+            under_review: "Under Review",
+            resolved: "Resolved",
+            referred: "Referred",
+          };
+          const statusLabel = statusLabels[input.status] ?? input.status;
+          const appUrl = process.env.APP_BASE_URL || "https://staging.fivestonestechnology.com";
+          await sendGhlEmail({
+            toEmail: report.contactEmail,
+            toName: report.contactEmail,
+            subject: "Your incident report has been updated",
+            html: `
+              <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;">
+                <div style="background:#0B1F33;padding:16px 24px;border-radius:8px 8px 0 0;">
+                  <h2 style="color:#fff;margin:0;font-size:18px;">FiveStones Workplace Violence Prevention</h2>
+                </div>
+                <div style="background:#f9fafb;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;padding:24px;">
+                  <p style="font-size:15px;color:#111827;margin-top:0;">Hello,</p>
+                  <p style="font-size:14px;color:#374151;">The incident report you submitted has been updated by our safety team.</p>
+                  <table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:13px;">
+                    <tr><td style="padding:8px;background:#f3f4f6;border:1px solid #e5e7eb;font-weight:600;width:140px;">Report Token</td><td style="padding:8px;border:1px solid #e5e7eb;">${report.trackingToken}</td></tr>
+                    <tr><td style="padding:8px;background:#f3f4f6;border:1px solid #e5e7eb;font-weight:600;">Status</td><td style="padding:8px;border:1px solid #e5e7eb;">${statusLabel}</td></tr>
+                    <tr><td style="padding:8px;background:#f3f4f6;border:1px solid #e5e7eb;font-weight:600;">Incident Type</td><td style="padding:8px;border:1px solid #e5e7eb;">${(report.incidentType ?? "").replace(/_/g, " ")}</td></tr>
+                    <tr><td style="padding:8px;background:#f3f4f6;border:1px solid #e5e7eb;font-weight:600;">Severity</td><td style="padding:8px;border:1px solid #e5e7eb;">${report.severity ?? "—"}</td></tr>
+                  </table>
+                  <a href="${appUrl}/check-report?token=${encodeURIComponent(String(report.trackingToken ?? ""))}" style="display:inline-block;background:#0B1F33;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px;margin-top:8px;">Check Status</a>
+                  <p style="font-size:12px;color:#9ca3af;margin-top:24px;">This is an automated notification from FiveStones WPV. Do not reply to this email.</p>
+                </div>
+              </div>
+            `,
+          });
+        } catch (err) {
+          console.error("[incident.updateStatus] Failed to send reporter notification email:", err);
+        }
+      }
+
       // Send email notification to the referred person
       if (input.status === "referred" && input.referredTo) {
         try {

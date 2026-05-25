@@ -10,6 +10,8 @@ import {
   Lock, Heart, Stethoscope, Building2
 } from "lucide-react";
 
+import { Bell } from "lucide-react";
+
 const INCIDENT_TYPES = [
   {
     value: "threatening_behavior",
@@ -797,6 +799,12 @@ export default function ReportIncident() {
                 <button onClick={copyToken} className="p-1.5 hover:bg-muted rounded">
                   {tokenCopied ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4 text-muted-foreground" />}
                 </button>
+              </div>
+              <div className="mt-3 text-sm text-slate-600 flex items-start gap-2">
+                <Bell className="w-4 h-4 mt-1 text-slate-500" />
+                <span>
+                  If you provided an email address, we’ll notify you when a safety administrator updates your incident report.
+                </span>
               </div>
             </div>
             <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg text-sm text-blue-800 dark:text-blue-200 mb-4">

@@ -2,7 +2,7 @@ import { trpc } from "@/lib/trpc";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Shield, Search, CheckCircle2, Clock, AlertTriangle, ArrowRight } from "lucide-react";
+import { Shield, Search, CheckCircle2, Clock, AlertTriangle, ArrowRight, Bell } from "lucide-react";
 import { Link } from "wouter";
 
 const STATUS_CONFIG = {
@@ -64,6 +64,12 @@ export default function CheckReport() {
 
           {data && (
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-4 text-sm text-slate-600">
+                <Bell className="w-4 h-4" />
+                <span>
+                  Report status updates are emailed to the contact address provided when the report was submitted.
+                </span>
+              </div>
               <div className="flex items-center gap-3 mb-3">
                 <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm font-semibold ${STATUS_CONFIG[data.status as keyof typeof STATUS_CONFIG]?.color}`}>
                   <StatusIcon size={14} />
