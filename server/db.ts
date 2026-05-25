@@ -1062,6 +1062,27 @@ export async function createTrainingModule(data: InsertTrainingModule) {
   return result.insertId as number;
 }
 
+export async function getTrainingModulesByOrg(orgId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(trainingModules)
+    .where(eq(trainingModules.orgId, orgId))
+    .orderBy(desc(trainingModules.createdAt));
+}
+
+export async function getTrainingModuleById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select().from(trainingModules).where(eq(trainingModules.id, id)).limit(1);
+  return rows[0];
+}
+
+export async function deleteTrainingModule(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.delete(trainingModules).where(eq(trainingModules.id, id));
+}
+
 export async function createDrillSession(data: InsertDrillSession) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");

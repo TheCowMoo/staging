@@ -41,6 +41,7 @@ import { nanoid } from "nanoid";
 import { invokeLLM } from "./_core/llm";
 import { writeAuditLog, buildLogContext } from "./auditLogger";
 import { rasRouter } from "./rasRouter";
+import { trainingModuleRouter } from "./trainingModuleRouter";
 import { initVapid } from "./push";
 import { clearPdfCache } from "./eapPdf";
 import {
@@ -3965,6 +3966,7 @@ export const appRouter = router({
   drill: drillRouter,
   ras: rasRouter,
   staffCheckin: staffCheckinRouter,
+  trainingModule: trainingModuleRouter,
   // API Key management (create/list/revoke) — accessible to org admins and platform admins
   apiKeys: router({
     create: orgAdminProcedure

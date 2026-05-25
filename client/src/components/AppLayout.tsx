@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+
 import { getLoginUrl } from "@/const";
 import { Link, useLocation } from "wouter";
 import { WalkthroughModal } from "@/components/WalkthroughModal";
@@ -283,7 +284,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       label: "Training and drills",
       icon: <GraduationCap size={18} />,
       items: [
-        { href: "#", label: "Training Modules",                 icon: <BookMarked size={15} />,    locked: "coming-soon" },
+        { href: "/training-modules", label: "Training Modules",                 icon: <BookMarked size={15} />,    locked: isPaid ? undefined : "paid" },
         { href: "#", label: "Drill Planner",                    icon: <ClipboardList size={15} />, locked: "coming-soon" },
         { href: "#", label: "Drill After-Action",              icon: <TrendingUp size={15} />,    locked: "coming-soon" },
         { href: "#", label: "Drill Response Activation System", icon: <AlertCircle size={15} />,   locked: "coming-soon" },

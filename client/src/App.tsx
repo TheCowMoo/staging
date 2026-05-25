@@ -47,6 +47,7 @@ import DrillAfterAction from "@/pages/DrillAfterAction";
 import DrillAfterActionIndex from "@/pages/DrillAfterActionIndex";
 import EmergencyAlerts from "@/pages/EmergencyAlerts";
 import StaffCheckin from "@/pages/StaffCheckin";
+import TrainingModules from "@/pages/TrainingModules";
 import BtamDashboard from "@/pages/BtamDashboard";
 import BtamIntake from "@/pages/BtamIntake";
 import BtamCaseDetail from "@/pages/BtamCaseDetail";
@@ -100,6 +101,7 @@ function Router() {
       <Route path="/drills/:id/debrief" component={DrillAfterAction} />
       <Route path="/ras" component={EmergencyAlerts} />
       <Route path="/staff-checkin" component={StaffCheckin} />
+      <Route path="/training-modules" component={TrainingModules} />
       <Route path="/personnel-tracking" component={PersonnelTracking} />
       <Route path="/btam" component={BtamDashboard} />
       <Route path="/btam/new" component={BtamIntake} />
