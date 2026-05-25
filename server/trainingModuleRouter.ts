@@ -1,8 +1,8 @@
 import { storageGet, storageListDirectories } from "./storage";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { router, paidProcedure, orgAdminProcedure } from "./_core/trpc";
-import { getOrgMemberRecord } from "./db";
+import { router, protectedProcedure, paidProcedure, orgAdminProcedure } from "./_core/trpc";
+import { getOrgMembershipForUser, getOrgMemberRecord } from "./db";
 import {
   getTrainingModulesByOrgOrGlobal,
   getTrainingModuleById,
@@ -12,12 +12,13 @@ import {
 } from "./db";
 
 export const trainingModuleRouter = router({
-  list: paidProcedure
-    .input(z.object({ orgId: z.number() }))
-    .query(async ({ ctx, input }) => {
-      const member = await getOrgMemberRecord(input.orgId, ctx.user.id);
-      if (!member && !["admin", "ultra_admin"].includes(ctx.user.role)) {
-        throw new TRPCError({ code: "FORBIDDEN" });
+  list: protectedProcedure
+    .query(async ({ ctx }) => {
+      // Derive orgId from the user's own memberships
+      const memberships = await getOrgMembershipForUser(ctx.user.id);
+      const orgId = memberships[0]?.orgId ?? 0;
+      if (!orgId) {
+        return [];
       }
 
       // Try auto-discovering S3 courses silently
@@ -49,7 +50,7 @@ export const trainingModuleRouter = router({
         }
       }
 
-      return getTrainingModulesByOrgOrGlobal(input.orgId);
+      return getTrainingModulesByOrgOrGlobal(orgId);
     }),
 
   get: paidProcedure
@@ -75,8 +76,7 @@ export const trainingModuleRouter = router({
 
   // Manual trigger to re-scan S3 for new courses
   syncS3: orgAdminProcedure
-    .input(z.object({ orgId: z.number() }))
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx }) => {
       const results: { dirName: string; status: "registered" | "already_exists" | "error"; error?: string }[] = [];
       const s3Prefixes = process.env.S3_COURSES_PREFIX
         ? process.env.S3_COURSES_PREFIX.split(",").map(s => s.trim())

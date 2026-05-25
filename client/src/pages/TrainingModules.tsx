@@ -12,13 +12,11 @@ import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function TrainingModules() {
   const { user } = useAuth();
-  const { data: memberships = [] } = trpc.org.myMemberships.useQuery();
-  const orgId = memberships[0]?.orgId ?? 0;
   const [syncing, setSyncing] = useState(false);
 
   const { data: modules, refetch, isLoading } = trpc.trainingModule.list.useQuery(
-    { orgId: orgId ?? 0 },
-    { enabled: !!orgId }
+    undefined,
+    { enabled: !!user }
   );
 
   const syncMutation = trpc.trainingModule.syncS3.useMutation({
@@ -60,9 +58,8 @@ export default function TrainingModules() {
   };
 
   const handleSyncS3 = () => {
-    if (!orgId) { toast.error("No organization selected"); return; }
     setSyncing(true);
-    syncMutation.mutate({ orgId });
+    syncMutation.mutate();
   };
 
   const canAdmin = user?.role === "admin" || user?.role === "ultra_admin" || user?.role === "super_admin";
