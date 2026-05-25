@@ -29,7 +29,9 @@ export default function TrainingModules() {
         toast.info("No new courses found \u2014 all S3 courses are already registered");
       }
       if (errors.length > 0) {
-        toast.error(`${errors.length} error${errors.length !== 1 ? "s" : ""} during sync \u2014 check server logs`);
+        errors.forEach((e) => {
+          toast.error(`Sync error: ${e.dirName} — ${e.error || "Unknown error"}`);
+        });
       }
       setSyncing(false);
       refetch();
