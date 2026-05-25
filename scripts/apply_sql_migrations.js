@@ -7,10 +7,15 @@
     DATABASE_URL=mysql://user:pass@host:3306/db node scripts/apply_sql_migrations.js
   or set DB_HOST/DB_USER/DB_PASS/DB_NAME/DB_PORT env vars.
 */
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
-const mysql = require('mysql2/promise');
+import fs from 'fs';
+import path, { dirname } from 'path';
+import crypto from 'crypto';
+import mysql from 'mysql2/promise';
+import { fileURLToPath } from 'url';
+
+// ESM replacements for CommonJS globals
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 async function getConfigFromEnv() {
   const url = process.env.DATABASE_URL;
