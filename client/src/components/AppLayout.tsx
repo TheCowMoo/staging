@@ -8,7 +8,7 @@ import {
   Network, Users, Shield, UserCog, Eye,
   MapPin, FileText, GraduationCap, Radio, Lock, ChevronDown, ChevronUp,
   Megaphone, ShieldAlert, BookMarked, ShieldCheck, Flag, Wand2, UserX,
-  Star, Settings, History,
+  Star, Settings, History, Bell,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -425,6 +425,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Menu size={20} />
           </button>
           <img src={LOGO_URL} alt="Five Stones Technology" className="h-12 w-auto max-w-[180px] object-contain" />
+          <Link href="/ras" className="ml-auto inline-flex items-center justify-center rounded-lg border border-border/80 bg-white p-2 text-slate-900 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary/50">
+            <Bell size={18} />
+          </Link>
         </header>
         {/* Impersonation Banner — shown on every page when Ultra Admin is acting as another user */}
         {!!(user as any)?._isImpersonated && (
@@ -455,23 +458,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         )}
         <main className="flex-1 overflow-auto bg-background">
           <div className="border-b border-border bg-background px-6 py-4 sticky top-0 z-20">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                if (window.history.length > 1) {
-                  window.history.back();
-                } else {
-                  navigate("/dashboard");
-                }
-              }}
-              className="inline-flex items-center gap-2"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Back
-            </Button>
-          </div>
-          {children}
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              if (window.history.length > 1) {
+                window.history.back();
+              } else {
+                navigate("/dashboard");
+              }
+            }}
+            className="inline-flex items-center gap-2"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back
+          </Button>
+          <Link href="/ras" className="inline-flex items-center gap-2 rounded-lg border border-border/80 bg-white px-3 py-2 text-sm font-medium text-slate-900 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary/50">
+            <Bell className="w-4 h-4" />
+            Notifications
+          </Link>
+        </div>
+      </div>
+      {children}
         </main>
         <footer className="border-t border-border bg-card px-6 py-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
           <span>&copy; {new Date().getFullYear()} Five Stones Technology. All rights reserved.</span>
