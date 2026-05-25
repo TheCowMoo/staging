@@ -37,6 +37,7 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
+  ExternalLink,
   Lock,
   Shield,
   ShieldAlert,
@@ -178,6 +179,51 @@ function ActivationModal({
   );
 }
 
+// ─── Liability Scan Summary Card (shown on activation screen) ─────────────────
+function ActivationScanSummary() {
+  const scansQuery = trpc.liabilityScan.list.useQuery(undefined, {
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+  const [, navigate] = useLocation();
+
+  const latestScan = scansQuery.data?.[0];
+  if (!latestScan) return null;
+
+  const topGaps = latestScan.topGaps ?? [];
+  if (topGaps.length === 0) return null;
+
+  return (
+    <Card className="border-amber-200 bg-amber-50/50">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm flex items-center gap-1.5">
+          <Shield className="h-4 w-4 text-amber-600" /> Liability Scan Context
+        </CardTitle>
+        <p className="text-xs text-muted-foreground">
+          Your latest Readiness Scan identified gaps relevant to emergency response preparedness.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-medium text-muted-foreground">Scan #{latestScan.id} · {latestScan.classification ?? "Unknown"}</span>
+          <span className="font-bold">{latestScan.score ?? "—"}%</span>
+        </div>
+        <div className="space-y-1.5">
+          {topGaps.slice(0, 3).map((gap: any, i: number) => (
+            <div key={i} className="flex items-start gap-2 text-xs">
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
+              <span className="text-slate-700">{typeof gap === "string" ? gap : gap.title ?? gap.description ?? JSON.stringify(gap)}</span>
+            </div>
+          ))}
+        </div>
+        <Button variant="outline" size="sm" onClick={() => navigate("/scan-history")}>
+          <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> View Full Scan
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── Activation Screen (Admin / Responder — no active alert) ─────────────────
 function ActivationScreen({
   facilityId,
@@ -202,6 +248,9 @@ function ActivationScreen({
           All personnel with registered devices will receive an immediate push notification.
         </p>
       </div>
+
+      {/* Liability scan context */}
+      <ActivationScanSummary />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Lockdown */}

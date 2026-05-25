@@ -274,7 +274,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       icon: <Radio size={18} />,
       items: [
         { href: "#",              label: "Mass Notifications",         icon: <Megaphone size={15} />,   locked: "coming-soon" },
-        { href: "#",              label: "Response Activation System", icon: <AlertCircle size={15} />, locked: "coming-soon" },
+        { href: "/ras",           label: "Response Activation System", icon: <AlertCircle size={15} />, locked: isPaid ? undefined : "paid" },
         { href: "/staff-checkin", label: "Staff Check-In",             icon: <Users size={15} />,       locked: isPaid ? undefined : "paid" },
         { href: "#",              label: "Staff Messaging",            icon: <Radio size={15} />,       locked: "coming-soon" },
       ],
@@ -285,9 +285,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       icon: <GraduationCap size={18} />,
       items: [
         { href: "/training-modules", label: "Training Modules",                 icon: <BookMarked size={15} />,    locked: isPaid ? undefined : "paid" },
-        { href: "#", label: "Drill Planner",                    icon: <ClipboardList size={15} />, locked: "coming-soon" },
-        { href: "#", label: "Drill After-Action",              icon: <TrendingUp size={15} />,    locked: "coming-soon" },
-        { href: "#", label: "Drill Response Activation System", icon: <AlertCircle size={15} />,   locked: "coming-soon" },
+        { href: "/drills", label: "Drill Planner",                    icon: <ClipboardList size={15} />, locked: isPaid ? undefined : "paid" },
+        { href: "/drills/after-action", label: "Drill After-Action",              icon: <TrendingUp size={15} />,    locked: isPaid ? undefined : "paid" },
+        { href: "/ras", label: "Drill Response Activation System", icon: <AlertCircle size={15} />,   locked: isPaid ? undefined : "paid" },
       ],
     },
     {

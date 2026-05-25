@@ -18,7 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   ChevronLeft, Loader2, AlertTriangle, CheckCircle2,
-  Sparkles, ClipboardCheck, TrendingUp, ListChecks,
+  Sparkles, ClipboardCheck, TrendingUp, ListChecks, Shield, ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -36,6 +36,51 @@ type SystemIntelligence = {
   trainingGapsIdentified?: string[];
   overallAssessment?: string;
 };
+
+/** Shows the latest liability scan findings correlated with this drill's gaps */
+function LiabilityScanCorrelationCard() {
+  const scansQuery = trpc.liabilityScan.list.useQuery(undefined, {
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+  const [, navigate] = useLocation();
+
+  const latestScan = scansQuery.data?.[0];
+  if (!latestScan) return null;
+
+  const topGaps = latestScan.topGaps ?? [];
+  if (topGaps.length === 0) return null;
+
+  return (
+    <Card className="border-amber-200 bg-amber-50/50">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm flex items-center gap-1.5">
+          <Shield className="h-4 w-4 text-amber-600" /> Liability Scan Correlation
+        </CardTitle>
+        <p className="text-xs text-muted-foreground">
+          Your latest Readiness Scan identified gaps that may relate to this drill's findings.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-medium text-muted-foreground">Scan #{latestScan.id} · {latestScan.classification ?? "Unknown"}</span>
+          <span className="font-bold">{latestScan.score ?? "—"}%</span>
+        </div>
+        <div className="space-y-1.5">
+          {topGaps.slice(0, 4).map((gap: any, i: number) => (
+            <div key={i} className="flex items-start gap-2 text-xs">
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
+              <span className="text-slate-700">{typeof gap === "string" ? gap : gap.title ?? gap.description ?? JSON.stringify(gap)}</span>
+            </div>
+          ))}
+        </div>
+        <Button variant="outline" size="sm" onClick={() => navigate("/scan-history")}>
+          <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> View Full Scan
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function DrillAfterAction() {
     const params = useParams<{ id: string }>();
@@ -291,6 +336,11 @@ export default function DrillAfterAction() {
               </Button>
             </CardContent>
           </Card>
+        )}
+
+        {/* Liability Scan Correlation */}
+        {displayIntelligence && (
+          <LiabilityScanCorrelationCard />
         )}
 
         {/* Submit / actions */}
