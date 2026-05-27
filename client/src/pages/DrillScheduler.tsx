@@ -26,15 +26,10 @@ import {
   ChevronRight, CheckCircle2, Loader2, Eye, Brain, AlertCircle,
   Zap, Info, Users, GitBranch, MessageSquare, FileText, ChevronDown, ChevronUp,
   RefreshCw, BookOpen, Shield, ShieldAlert, ExternalLink, Target,
+  Shuffle, UserCheck, CheckSquare,
 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  ENVIRONMENTS, THREAT_TYPES, BEHAVIORAL_INDICATORS, RESPONSE_PRESSURES,
-  RESPONSE_FOCUSES, COMPLEXITY_LEVELS,
-  shortIndicatorLabel, shortComplexityLabel, shortPressureLabel, shortFocusLabel,
-  type DrillEnvironment, type DrillThreatType, type DrillBehavioralIndicator,
-  type DrillResponsePressure, type DrillResponseFocus, type DrillComplexityLevel,
-} from "../../../shared/drillEngine";
+import { MICRO_DRILLS, type MicroDrillScenario, type MicroDrillStep2Option } from "../../../shared/microDrillsData";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DRILL_TYPES = [
@@ -52,6 +47,35 @@ const STATUS_COLORS: Record<string, string> = {
   in_progress: "bg-amber-100 text-amber-700",
   completed:   "bg-green-100 text-green-700",
   cancelled:   "bg-slate-100 text-slate-500",
+};
+
+// ─── Category names for the Micro Training Drills ─────────────────────────────
+const CATEGORIES = [
+  { num: 1, label: "Active Shooter — Real or Perceived", count: 8 },
+  { num: 2, label: "Edged Weapon / Knife Attack", count: 6 },
+  { num: 3, label: "Physical Assault / Hands-On Violence", count: 7 },
+  { num: 4, label: "Verbal Threats and Intimidation", count: 7 },
+  { num: 5, label: "Suspicious Persons and Behavior", count: 6 },
+  { num: 6, label: "Bomb Threat / Suspicious Package", count: 5 },
+  { num: 7, label: "Workplace Violence — Domestic Spillover", count: 5 },
+  { num: 8, label: "Mental Health Crisis / Erratic Behavior", count: 5 },
+  { num: 9, label: "Terrorism / Large-Scale Threat", count: 3 },
+  { num: 10, label: "Vehicle as a Weapon", count: 3 },
+  { num: 11, label: "Multiple Simultaneous Threats", count: 4 },
+  { num: 12, label: "Off-Site Employee Scenarios", count: 3 },
+  { num: 13, label: "Repeat / Escalating Behavior", count: 2 },
+  { num: 14, label: "Defend as Primary Response", count: 6 },
+];
+
+const ICON_MAP: Record<string, string> = {
+  "🔒": "Lockdown",
+  "🚪": "Lockout",
+  "🏃": "Evacuate",
+  "🛡️": "Defend",
+  "📋": "Report Anonymously",
+  "📞": "Report to Authority",
+  "⏳": "Monitor / Follow Up",
+  "❌": "Do Nothing",
 };
 
 // ─── TypeScript types ─────────────────────────────────────────────────────────
@@ -1229,6 +1253,196 @@ function ExtendedScenarioCard({ content, onGuidedResponse }: {
   );
 }
 
+// ─── Micro Training Drill Runner ──────────────────────────────────────────────
+function MicroTrainingDrillCard({
+  drill,
+  step,
+  setStep,
+  step1Choice,
+  setStep1Choice,
+  step2Selections,
+  setStep2Selection,
+  considerationsChecked,
+  setConsiderationChecked,
+  onComplete,
+  onRandomDrill,
+}: {
+  drill: MicroDrillScenario;
+  step: number;
+  setStep: (s: number) => void;
+  step1Choice: "A" | "B" | null;
+  setStep1Choice: (c: "A" | "B" | null) => void;
+  step2Selections: Record<string, string[]>;
+  setStep2Selection: (key: string, icon: string) => void;
+  considerationsChecked: Record<number, boolean>;
+  setConsiderationChecked: (idx: number, checked: boolean) => void;
+  onComplete: () => void;
+  onRandomDrill: () => void;
+}) {
+  const step2Key = step1Choice === "A" ? "step2A" : "step2B";
+  const step2Options: MicroDrillStep2Option[] = step1Choice
+    ? drill[step2Key]
+    : [];
+  const selectedIcons = step2Selections[drill.id.toString() + step2Key] ?? [];
+
+  return (
+    <div className="space-y-4">
+      {/* Scenario */}
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-xs">Scenario #{drill.id}</Badge>
+              <Badge className="text-xs bg-indigo-100 text-indigo-700 border-indigo-200">
+                Category {drill.categoryNumber}: {drill.category}
+              </Badge>
+            </div>
+            <Button variant="ghost" size="sm" onClick={onRandomDrill} className="text-xs gap-1">
+              <Shuffle className="h-3 w-3" /> Random Drill
+            </Button>
+          </div>
+          <CardTitle className="text-base mt-2">{drill.title}</CardTitle>
+          <p className="text-sm text-muted-foreground mt-1 leading-relaxed" style={{ overflowWrap: "anywhere" }}>
+            {drill.scenario}
+          </p>
+        </CardHeader>
+      </Card>
+
+      {/* Step 1 — Assess */}
+      {step >= 1 && (
+        <Card className="border-l-4 border-l-blue-400">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-1.5">
+              <Eye className="h-4 w-4 text-blue-600" />
+              Step 1 — Assess: {drill.step1Question}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <button
+              onClick={() => { setStep1Choice("A"); setStep(2); }}
+              className={`w-full text-left rounded-lg border px-3 py-2.5 text-sm transition-all ${
+                step1Choice === "A"
+                  ? "border-blue-400 bg-blue-50 ring-1 ring-blue-400"
+                  : "border-border hover:border-blue-300 hover:bg-accent/30"
+              }`}
+            >
+              <span className="font-medium text-muted-foreground mr-2">A.</span>
+              <span className="font-semibold">{drill.step1A.label}</span>
+              <span className="text-xs text-muted-foreground ml-2">({drill.step1A.description})</span>
+            </button>
+            <button
+              onClick={() => { setStep1Choice("B"); setStep(2); }}
+              className={`w-full text-left rounded-lg border px-3 py-2.5 text-sm transition-all ${
+                step1Choice === "B"
+                  ? "border-blue-400 bg-blue-50 ring-1 ring-blue-400"
+                  : "border-border hover:border-blue-300 hover:bg-accent/30"
+              }`}
+            >
+              <span className="font-medium text-muted-foreground mr-2">B.</span>
+              <span className="font-semibold">{drill.step1B.label}</span>
+              <span className="text-xs text-muted-foreground ml-2">({drill.step1B.description})</span>
+            </button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Step 2 — Act */}
+      {step >= 2 && step1Choice && (
+        <Card className="border-l-4 border-l-amber-400">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-1.5">
+              <Zap className="h-4 w-4 text-amber-600" />
+              Step 2 — Act: Response Options
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Select the response(s) that match your decision.</p>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="flex flex-wrap gap-2">
+              {step2Options.map((opt, i) => {
+                const isSelected = selectedIcons.includes(opt.icon);
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setStep2Selection(step2Key, opt.icon)}
+                    className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-all ${
+                      isSelected
+                        ? "border-amber-400 bg-amber-50 ring-1 ring-amber-400"
+                        : "border-border hover:border-amber-300 hover:bg-accent/30"
+                    }`}
+                  >
+                    <span className="text-lg">{opt.icon}</span>
+                    <span className="font-medium">{opt.label}</span>
+                    <span className="text-xs text-muted-foreground truncate max-w-[180px]">— {opt.description}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Icon legend */}
+            <div className="rounded-md bg-slate-50 border border-slate-200 px-3 py-2 mt-2">
+              <p className="text-xs font-semibold text-slate-600 mb-1">Icon Legend</p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                {Object.entries(ICON_MAP).map(([icon, label]) => (
+                  <span key={icon} className="text-xs text-slate-500">
+                    {icon} = {label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Step 3 — Considerations */}
+      {step >= 3 && (
+        <Card className="border-l-4 border-l-green-400">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-1.5">
+              <BookOpen className="h-4 w-4 text-green-600" />
+              Post-Scenario Considerations
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Read each consideration carefully and check it off.</p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {drill.considerations.map((consideration, idx) => (
+              <div
+                key={idx}
+                className={`flex items-start gap-3 rounded-lg border p-3 transition-all ${
+                  considerationsChecked[idx]
+                    ? "border-green-200 bg-green-50"
+                    : "border-slate-200 bg-white hover:bg-slate-50"
+                }`}
+              >
+                <button
+                  onClick={() => setConsiderationChecked(idx, !considerationsChecked[idx])}
+                  className={`shrink-0 mt-0.5 h-5 w-5 rounded border flex items-center justify-center transition-all ${
+                    considerationsChecked[idx]
+                      ? "bg-green-500 border-green-500 text-white"
+                      : "border-slate-300 hover:border-green-400"
+                  }`}
+                >
+                  {considerationsChecked[idx] && <CheckSquare className="h-4 w-4" />}
+                </button>
+                <p className={`text-xs leading-relaxed ${considerationsChecked[idx] ? "text-green-800" : "text-slate-700"}`} style={{ overflowWrap: "anywhere" }}>
+                  {consideration}
+                </p>
+              </div>
+            ))}
+
+            <Button
+              className="w-full mt-2"
+              onClick={onComplete}
+              disabled={!drill.considerations.every((_, idx) => considerationsChecked[idx])}
+            >
+              <CheckCircle2 className="h-4 w-4 mr-1.5" /> Complete Drill
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function DrillScheduler() {
   const [, navigate] = useLocation();
@@ -1239,14 +1453,19 @@ export default function DrillScheduler() {
   const [jurisdiction, setJurisdiction] = useState("United States");
   const [facilityId, setFacilityId] = useState<number | undefined>();
   const [userPrompt, setUserPrompt] = useState("");
-  // Parameterized scenario generator inputs
-  const [environment, setEnvironment] = useState<DrillEnvironment>(ENVIRONMENTS[0]);
-  const [threatType, setThreatType] = useState<DrillThreatType>(THREAT_TYPES[0]);
-  const [behavioralIndicators, setBehavioralIndicators] = useState<DrillBehavioralIndicator[]>([]);
-  const [responsePressure, setResponsePressure] = useState<DrillResponsePressure>(RESPONSE_PRESSURES[0]);
-  const [responseFocus, setResponseFocus] = useState<DrillResponseFocus>(RESPONSE_FOCUSES[0]);
-  const [complexityLevel, setComplexityLevel] = useState<DrillComplexityLevel>(COMPLEXITY_LEVELS[0]);
 
+  // Micro Training Drill state
+  const [selectedCategoryNum, setSelectedCategoryNum] = useState<number | null>(null);
+  const [selectedDrill, setSelectedDrill] = useState<MicroDrillScenario | null>(null);
+  const [drillStep, setDrillStep] = useState(1);
+  const [step1Choice, setStep1Choice] = useState<"A" | "B" | null>(null);
+  const [step2Selections, setStep2Selections] = useState<Record<string, string[]>>({});
+  const [considerationsChecked, setConsiderationsChecked] = useState<Record<number, boolean>>({});
+  const [assignedPersonnel, setAssignedPersonnel] = useState("");
+  const [completionDate, setCompletionDate] = useState("");
+  const [drillCompleted, setDrillCompleted] = useState(false);
+
+  // AI-generated drill state
   const [generatedTemplateId, setGeneratedTemplateId] = useState<number | null>(null);
   const [generatedContent, setGeneratedContent] = useState<DrillContent | null>(null);
   const [guidedResponseOpen, setGuidedResponseOpen] = useState(false);
@@ -1314,13 +1533,6 @@ export default function DrillScheduler() {
       generationMode: mode,
       userPrompt: mode === "user" ? userPrompt : undefined,
       facilityContext,
-      // Parameterized scenario generator inputs
-      environment,
-      threatType,
-      behavioralIndicators: behavioralIndicators.length > 0 ? behavioralIndicators : undefined,
-      responsePressure,
-      responseFocus,
-      complexityLevel,
     });
   };
 
@@ -1330,6 +1542,49 @@ export default function DrillScheduler() {
     schedule.mutate({ templateId: generatedTemplateId, facilityId, scheduledAt: dt });
   };
 
+  // ─── Micro Training Drill handlers ──────────────────────────────────────────
+  const resetDrill = () => {
+    setDrillStep(1);
+    setStep1Choice(null);
+    setStep2Selections({});
+    setConsiderationsChecked({});
+    setDrillCompleted(false);
+  };
+
+  const selectDrill = (drill: MicroDrillScenario) => {
+    setSelectedDrill(drill);
+    resetDrill();
+  };
+
+  const selectRandomDrill = () => {
+    const randomIndex = Math.floor(Math.random() * MICRO_DRILLS.length);
+    selectDrill(MICRO_DRILLS[randomIndex]);
+  };
+
+  const setStep2Selection = (key: string, icon: string) => {
+    setStep2Selections(prev => {
+      const drillKey = (selectedDrill?.id.toString() ?? "") + key;
+      const current = prev[drillKey] ?? [];
+      // Toggle selection
+      if (current.includes(icon)) {
+        return { ...prev, [drillKey]: current.filter(i => i !== icon) };
+      }
+      return { ...prev, [drillKey]: [...current, icon] };
+    });
+  };
+
+  const handleCompleteDrill = () => {
+    setDrillCompleted(true);
+    const date = new Date().toISOString().split("T")[0];
+    setCompletionDate(date);
+    toast.success("Drill completed! Results have been recorded.");
+  };
+
+  // Filter drills by selected category
+  const drillsInCategory = selectedCategoryNum
+    ? MICRO_DRILLS.filter(d => d.categoryNumber === selectedCategoryNum)
+    : [];
+
   return (
     <AppLayout>
       <div className="container max-w-5xl py-8 space-y-8">
@@ -1338,7 +1593,7 @@ export default function DrillScheduler() {
           <div>
             <h1 className="text-2xl font-bold">Drill Planner</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Generate ACTD-based training drills and schedule them for your team.
+              Generate ACTD-based training drills, assign micro training drills, and schedule them for your team.
             </p>
           </div>
           <Badge variant="outline" className="text-xs gap-1">
@@ -1346,12 +1601,242 @@ export default function DrillScheduler() {
           </Badge>
         </div>
 
-        <Tabs defaultValue="generate">
-          <TabsList>
+        <Tabs defaultValue="micro-training">
+          <TabsList className="flex-wrap">
+            <TabsTrigger value="micro-training"><BookOpen className="h-3.5 w-3.5 mr-1.5" />Micro Training Drills</TabsTrigger>
             <TabsTrigger value="generate"><Sparkles className="h-3.5 w-3.5 mr-1.5" />Generate Drill</TabsTrigger>
             <TabsTrigger value="scan-data"><Shield className="h-3.5 w-3.5 mr-1.5" />Scan Data</TabsTrigger>
             <TabsTrigger value="history"><ClipboardList className="h-3.5 w-3.5 mr-1.5" />Drill History</TabsTrigger>
           </TabsList>
+
+          {/* ── Micro Training Drills tab ── */}
+          <TabsContent value="micro-training" className="space-y-6 mt-4">
+            {/* If no category selected, show the category grid with options */}
+            {!selectedCategoryNum && !selectedDrill && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold">Micro Training Drills</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Select a category, choose a drill, and assign it to personnel. Each drill takes 2–3 minutes.
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={selectRandomDrill} className="gap-1.5">
+                    <Shuffle className="h-3.5 w-3.5" /> Random Drill
+                  </Button>
+                </div>
+
+                {/* Category grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {CATEGORIES.map(cat => (
+                    <button
+                      key={cat.num}
+                      onClick={() => setSelectedCategoryNum(cat.num)}
+                      className="flex items-center justify-between rounded-lg border p-3 text-left hover:border-primary hover:bg-accent/30 transition-all"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold break-words">{cat.label}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{cat.count} scenarios (IDs {cat.num === 1 ? "1-8" : cat.num === 14 ? "65-70" : `varies`})</p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
+                    </button>
+                  ))}
+                </div>
+
+                {/* Quick stats */}
+                <Card className="bg-slate-50 border-slate-200">
+                  <CardContent className="pt-3 pb-3">
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <ClipboardList className="h-4 w-4" />
+                      <span>{MICRO_DRILLS.length} scenarios across {CATEGORIES.length} categories</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Category selected — show drills within category */}
+            {selectedCategoryNum && !selectedDrill && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <button
+                      onClick={() => setSelectedCategoryNum(null)}
+                      className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-1"
+                    >
+                      <ChevronDown className="h-3 w-3 rotate-90" /> Back to categories
+                    </button>
+                    <h2 className="text-lg font-bold">
+                      Category {selectedCategoryNum}: {CATEGORIES.find(c => c.num === selectedCategoryNum)?.label}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      Select a drill to assign. Each drill has two decision steps and post-scenario considerations.
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={selectRandomDrill} className="gap-1.5">
+                    <Shuffle className="h-3.5 w-3.5" /> Random Drill
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2">
+                  {drillsInCategory.map(d => (
+                    <button
+                      key={d.id}
+                      onClick={() => selectDrill(d)}
+                      className="flex items-center justify-between rounded-lg border p-3 text-left hover:border-primary hover:bg-accent/30 transition-all"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold">Scenario #{d.id}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 break-words">{d.scenario}</p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Drill selected — run the drill */}
+            {selectedDrill && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <button
+                      onClick={() => { setSelectedDrill(null); resetDrill(); }}
+                      className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-1"
+                    >
+                      <ChevronDown className="h-3 w-3 rotate-90" /> Back to {drillsInCategory.length > 0 ? "drill list" : "categories"}
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {!drillCompleted && (
+                      <Button variant="ghost" size="sm" onClick={resetDrill} className="gap-1 text-xs">
+                        <RefreshCw className="h-3 w-3" /> Restart
+                      </Button>
+                    )}
+                    <Button variant="outline" size="sm" onClick={selectRandomDrill} className="gap-1.5">
+                      <Shuffle className="h-3.5 w-3.5" /> Random Drill
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Progress indicator */}
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3].map(s => (
+                    <div key={s} className="flex items-center gap-2 flex-1">
+                      <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                        drillStep > s ? "bg-green-500 text-white" :
+                        drillStep === s ? "bg-primary text-primary-foreground" :
+                        "bg-slate-100 text-slate-400"
+                      }`}>
+                        {drillStep > s ? <CheckCircle2 className="h-4 w-4" /> : s}
+                      </div>
+                      <span className={`text-xs ${drillStep >= s ? "font-medium text-foreground" : "text-muted-foreground"}`}>
+                        {s === 1 ? "Assess" : s === 2 ? "Act" : "Reflect"}
+                      </span>
+                      {s < 3 && <div className={`flex-1 h-0.5 ${drillStep > s ? "bg-green-400" : "bg-slate-200"}`} />}
+                    </div>
+                  ))}
+                </div>
+
+                <MicroTrainingDrillCard
+                  drill={selectedDrill}
+                  step={drillStep}
+                  setStep={setDrillStep}
+                  step1Choice={step1Choice}
+                  setStep1Choice={setStep1Choice}
+                  step2Selections={step2Selections}
+                  setStep2Selection={setStep2Selection}
+                  considerationsChecked={considerationsChecked}
+                  setConsiderationChecked={(idx, checked) =>
+                    setConsiderationsChecked(prev => ({ ...prev, [idx]: checked }))
+                  }
+                  onComplete={handleCompleteDrill}
+                  onRandomDrill={selectRandomDrill}
+                />
+
+                {/* Personnel Assignment section */}
+                {drillCompleted && (
+                  <Card className="border-green-300 bg-green-50">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-1.5 text-green-800">
+                        <CheckCircle2 className="h-4 w-4" /> Drill Completed
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="rounded-lg border border-green-200 bg-white/70 p-3 space-y-2">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Badge variant="outline" className="text-xs">Scenario #{selectedDrill.id}</Badge>
+                          <span className="text-xs text-muted-foreground">{selectedDrill.category}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <Label className="text-xs">Assigned Personnel</Label>
+                            <Input
+                              placeholder="Name or team"
+                              value={assignedPersonnel}
+                              onChange={e => setAssignedPersonnel(e.target.value)}
+                              className="h-8 text-xs"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Date Completed</Label>
+                            <Input
+                              type="date"
+                              value={completionDate}
+                              onChange={e => setCompletionDate(e.target.value)}
+                              className="h-8 text-xs"
+                            />
+                          </div>
+                        </div>
+                        <div className="rounded-md bg-green-50 border border-green-200 px-3 py-2">
+                          <p className="text-xs font-semibold text-green-800 mb-1">Choices Made</p>
+                          <p className="text-xs text-green-700">
+                            Step 1 (Assess): {step1Choice === "A" ? "Option A" : "Option B"} —{" "}
+                            {step1Choice === "A" ? selectedDrill.step1A.label : selectedDrill.step1B.label}
+                          </p>
+                          {(() => {
+                            const key = (selectedDrill.id.toString()) + (step1Choice === "A" ? "step2A" : "step2B");
+                            const icons = step2Selections[key] ?? [];
+                            if (icons.length === 0) return null;
+                            return (
+                              <p className="text-xs text-green-700 mt-0.5">
+                                Step 2 (Act): {icons.map(icon => `${icon} ${ICON_MAP[icon] ?? icon}`).join(", ")}
+                              </p>
+                            );
+                          })()}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button
+                          className="flex-1"
+                          onClick={() => {
+                            toast.success("Assignment recorded: " + (assignedPersonnel || "Unassigned") + " completed " + selectedDrill.title + " on " + completionDate);
+                            // Reset for next drill
+                            resetDrill();
+                            setSelectedDrill(null);
+                            setAssignedPersonnel("");
+                          }}
+                        >
+                          <UserCheck className="h-4 w-4 mr-1.5" /> Record & Close
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            resetDrill();
+                            setAssignedPersonnel("");
+                          }}
+                        >
+                          <RefreshCw className="h-4 w-4 mr-1.5" /> Redo Drill
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
+          </TabsContent>
 
           {/* ── Generate tab ── */}
           <TabsContent value="generate" className="space-y-6 mt-4">
@@ -1407,138 +1892,6 @@ export default function DrillScheduler() {
                             <p className="text-xs text-muted-foreground mt-0.5">{dt.desc}</p>
                           </button>
                         ))}
-                      </div>
-                    </div>
-
-                    {/* ── S3 Training Courses ── */}
-                    <div className="space-y-2 rounded-lg border border-blue-100 bg-blue-50/50 p-3">
-                      <div className="flex items-center gap-1.5">
-                        <BookOpen className="h-3.5 w-3.5 text-blue-600" />
-                        <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Available Training Courses (S3)</p>
-                      </div>
-                      <p className="text-[11px] text-blue-600/70">
-                        Courses stored in your S3 bucket that can inform drill scenarios.
-                      </p>
-                      <div className="space-y-1 max-h-32 overflow-y-auto">
-                        {[
-                          "Active Threat Response 5_24_26",
-                          "De-escalation Techniques",
-                          "Workplace Violence Prevention",
-                          "Emergency Communication Protocols",
-                          "Situational Awareness Training",
-                        ].map((course) => (
-                          <div key={course} className="flex items-center gap-2 text-xs text-slate-700 py-0.5">
-                            <BookOpen className="h-3 w-3 text-blue-400 shrink-0" />
-                            <span className="truncate">{course}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <p className="text-[10px] text-blue-500/60 italic">
-                        Courses are loaded from S3 bucket: fivestones-pursuit-pathways/courses/
-                      </p>
-                    </div>
-
-                    {/* ── Scenario Parameters ── */}
-                    <div className="space-y-3 rounded-lg border border-dashed border-border p-3">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Scenario Parameters</p>
-
-                      {/* Environment */}
-                      <div className="space-y-1">
-                        <Label className="text-xs">Environment</Label>
-                        <Select value={environment} onValueChange={v => setEnvironment(v as DrillEnvironment)}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {ENVIRONMENTS.map(e => <SelectItem key={e} value={e} className="text-xs">{e}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Threat Type */}
-                      <div className="space-y-1">
-                        <Label className="text-xs">Threat Type</Label>
-                        <Select value={threatType} onValueChange={v => setThreatType(v as DrillThreatType)}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {THREAT_TYPES.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Behavioral Indicators (multi-select) */}
-                      <div className="space-y-1">
-                        <Label className="text-xs">Behavioral Indicators <span className="text-muted-foreground font-normal">(select up to 3)</span></Label>
-                        <div className="flex flex-wrap gap-1.5">
-                          {BEHAVIORAL_INDICATORS.map(b => {
-                            const selected = behavioralIndicators.includes(b);
-                            return (
-                              <button
-                                key={b}
-                                onClick={() => {
-                                  if (selected) {
-                                    setBehavioralIndicators(prev => prev.filter(x => x !== b));
-                                  } else if (behavioralIndicators.length < 3) {
-                                    setBehavioralIndicators(prev => [...prev, b]);
-                                  }
-                                }}
-                                className={[
-                                  "text-xs px-2 py-1 rounded-full border transition-colors",
-                                  selected
-                                    ? "border-primary bg-primary/10 text-primary font-medium"
-                                    : "border-border text-muted-foreground hover:bg-accent",
-                                ].join(" ")}
-                              >
-                                {shortIndicatorLabel(b)}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Response Pressure */}
-                      <div className="space-y-1">
-                        <Label className="text-xs">Response Pressure</Label>
-                        <Select value={responsePressure} onValueChange={v => setResponsePressure(v as DrillResponsePressure)}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {RESPONSE_PRESSURES.map(p => (
-                              <SelectItem key={p} value={p} className="text-xs">{shortPressureLabel(p)}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Response Focus */}
-                      <div className="space-y-1">
-                        <Label className="text-xs">Response Focus</Label>
-                        <Select value={responseFocus} onValueChange={v => setResponseFocus(v as DrillResponseFocus)}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {RESPONSE_FOCUSES.map(f => (
-                              <SelectItem key={f} value={f} className="text-xs">{shortFocusLabel(f)}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Complexity Level */}
-                      <div className="space-y-1">
-                        <Label className="text-xs">Complexity Level</Label>
-                        <div className="grid grid-cols-3 gap-1.5">
-                          {COMPLEXITY_LEVELS.map(c => (
-                            <button
-                              key={c}
-                              onClick={() => setComplexityLevel(c as DrillComplexityLevel)}
-                              className={[
-                                "text-xs px-2 py-1.5 rounded-md border text-center transition-colors",
-                                complexityLevel === c
-                                  ? "border-primary bg-primary/10 text-primary font-medium"
-                                  : "border-border text-muted-foreground hover:bg-accent",
-                              ].join(" ")}
-                            >
-                              {shortComplexityLabel(c)}
-                            </button>
-                          ))}
-                        </div>
                       </div>
                     </div>
 
