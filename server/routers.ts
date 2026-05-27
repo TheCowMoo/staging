@@ -71,6 +71,7 @@ import { loadStateJurisdictionSection, loadJurisdictionGlossary } from "./jurisd
 import { massNotificationRouter } from "./massNotificationRouter";
 import { microDrillRouter } from "./microDrillRouter";
 import { facilityMapRouter } from "./facilityMapRouter";
+import { incidentCommunicationRouter } from "./incidentCommunicationRouter";
 // ─── Facility Router ──────────────────────────────────────────────────────────
 // Initialise VAPID keys at server startup (no-op if keys not configured)
 initVapid();;
@@ -3920,6 +3921,7 @@ const jurisdictionRouter = router({
 });
 
 export const appRouter = router({
+  incidentCommunication: incidentCommunicationRouter,
   facilityMap: facilityMapRouter,
   microDrill: microDrillRouter,
   system: systemRouter,
