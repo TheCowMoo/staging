@@ -283,6 +283,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       icon: <GraduationCap size={18} />,
       items: [
         { href: "/training-modules", label: "Training Modules",                 icon: <BookMarked size={15} />,    locked: isPaid ? undefined : "paid" },
+        { href: "/extended-drills", label: "Extended Drills",             icon: <Shield size={15} />,       locked: isPaid ? undefined : "paid" },
         { href: "/drills", label: "Drill Planner",                    icon: <ClipboardList size={15} />, locked: isPaid ? undefined : "paid" },
         { href: "/drills/after-action", label: "Drill After-Action",              icon: <TrendingUp size={15} />,    locked: isPaid ? undefined : "paid" },
         { href: "/ras", label: "Drill Response Activation System", icon: <AlertCircle size={15} />,   locked: isPaid ? undefined : "paid" },
