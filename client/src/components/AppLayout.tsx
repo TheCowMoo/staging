@@ -9,7 +9,7 @@ import {
   Network, Users, Shield, UserCog, Eye,
   MapPin, FileText, GraduationCap, Radio, Lock, ChevronDown, ChevronUp,
   Megaphone, ShieldAlert, BookMarked, ShieldCheck, Flag, Wand2, UserX,
-  Star, Settings, History, Bell,
+  Star, Settings, History, Bell, BarChart3,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -352,7 +352,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="pt-2 pb-1">
               <p className="text-[10px] font-semibold text-sidebar-foreground/50 uppercase tracking-wider px-3 mb-1">Admin</p>
             </div>
-            <NavLink item={{ href: "/feedback",      label: "Feedback Dashboard", icon: <TrendingUp size={18} /> }} />
+            <NavLink item={{ href: "/analytics",     label: "Analytics Dashboard", icon: <BarChart3 size={18} /> }} />
             <NavLink item={{ href: "/organizations", label: "Organizations",      icon: <Network size={18} /> }} />
             <NavLink item={{ href: "/admin/users",   label: "User Management",    icon: <UserCog size={18} /> }} />
           </>

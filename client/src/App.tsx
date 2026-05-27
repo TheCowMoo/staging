@@ -15,6 +15,7 @@ import AuditReport from "./pages/AuditReport";
 import AuditHistory from "./pages/AuditHistory";
 import TesterFeedback from "./pages/TesterFeedback";
 import FeedbackDashboard from "./pages/FeedbackDashboard";
+import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import WalkthroughMode from "./pages/WalkthroughMode";
 import ReportIncident from "./pages/ReportIncident";
 import CheckReport from "./pages/CheckReport";
@@ -73,6 +74,7 @@ function Router() {
       <Route path="/audit/:id/report" component={AuditReport} />
       <Route path="/audit/:id/feedback" component={TesterFeedback} />
       <Route path="/feedback" component={FeedbackDashboard} />
+      <Route path="/analytics" component={AnalyticsDashboard} />
       <Route path="/report-incident" component={ReportIncident} />
       <Route path="/check-report" component={CheckReport} />
       <Route path="/incidents" component={IncidentDashboard} />
