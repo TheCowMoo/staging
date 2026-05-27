@@ -210,6 +210,73 @@ function BtamEscalationDetailPanel({ incidentId, isAdmin }: { incidentId: number
   );
 }
 
+/** Communication thread between admin and reporter */
+function CommunicationSection({ incidentId }: { incidentId: number }) {
+  const [newMessage, setNewMessage] = useState("");
+  const messagesQuery = trpc.incidentCommunication.getMessages.useQuery({ incidentId });
+  const sendMessage = trpc.incidentCommunication.sendAdminMessage.useMutation({
+    onSuccess: () => {
+      setNewMessage("");
+      messagesQuery.refetch();
+      toast.success("Message sent to reporter");
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  return (
+    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+      <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-1">Communication with Reporter</p>
+
+      {/* Message history */}
+      <div className="space-y-2 max-h-48 overflow-y-auto">
+        {messagesQuery.isLoading && <p className="text-xs text-blue-500">Loading messages...</p>}
+        {messagesQuery.data?.length === 0 && (
+          <p className="text-xs text-blue-400 italic">No messages yet. Send a message to the reporter below.</p>
+        )}
+        {messagesQuery.data?.map((msg) => (
+          <div key={msg.id} className={`flex gap-2 ${msg.isFromAdmin ? "" : "flex-row-reverse"}`}>
+            <div className={`rounded-lg px-3 py-2 max-w-[80%] text-sm ${
+              msg.isFromAdmin
+                ? "bg-blue-600 text-white rounded-br-sm"
+                : "bg-white border border-blue-200 text-blue-800 rounded-bl-sm"
+            }`}>
+              <p className="text-[11px] font-semibold mb-0.5 opacity-80">
+                {msg.senderName ?? (msg.isFromAdmin ? "Admin" : "Reporter")}
+              </p>
+              <p className="text-sm">{msg.message}</p>
+              <p className="text-[10px] mt-0.5 opacity-60">
+                {new Date(msg.createdAt).toLocaleString()}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* New message input */}
+      <div className="flex gap-2">
+        <Textarea
+          placeholder="Type a message to the reporter..."
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          rows={2}
+          className="resize-none bg-white text-sm"
+        />
+        <Button
+          size="sm"
+          className="shrink-0 self-end"
+          onClick={() => {
+            if (!newMessage.trim()) return;
+            sendMessage.mutate({ incidentId, message: newMessage.trim() });
+          }}
+          disabled={sendMessage.isPending || !newMessage.trim()}
+        >
+          {sendMessage.isPending ? "Sending..." : "Send"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function IncidentDashboard() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
@@ -631,6 +698,8 @@ export default function IncidentDashboard() {
                     </div>
                   </div>
                 )}
+                {/* Communication Thread */}
+                <CommunicationSection incidentId={selectedReport.id} />
                 {/* Threat Flags Panel */}
                 {selectedReport.threatFlags && (
                   <ThreatFlagsPanel
