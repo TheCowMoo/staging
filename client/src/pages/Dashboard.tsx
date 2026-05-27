@@ -245,11 +245,6 @@ export default function Dashboard() {
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              {scan.defensibilityStatus && (
-                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium bg-white/20 ${style.labelText}`}>
-                                  {scan.defensibilityStatus}
-                                </span>
-                              )}
                               {scan.scorePercent != null && (
                                 <span className={`text-xs font-semibold ${style.labelText} opacity-90`}>
                                   {scan.scorePercent}%
