@@ -1370,6 +1370,15 @@ function MicroTrainingDrillCard({
                         : "border-border hover:border-amber-300 hover:bg-accent/30"
                     }`}
                   >
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                      isSelected ? "bg-amber-500 border-amber-500 text-white" : "border-gray-300"
+                    }`}>
+                      {isSelected && (
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
                     <span className="text-lg">{opt.icon}</span>
                     <span className="font-medium">{opt.label}</span>
                     <span className="text-xs text-muted-foreground truncate max-w-[180px]">— {opt.description}</span>
@@ -1377,6 +1386,27 @@ function MicroTrainingDrillCard({
                 );
               })}
             </div>
+
+            {/* Confirm Step 2 checkbox */}
+            {selectedIcons.length > 0 && (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-green-50 border border-green-200 mt-3">
+                <button
+                  onClick={() => setStep(Math.max(step, 3))}
+                  className={`shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                    step >= 3 ? "bg-green-500 border-green-500 text-white" : "border-gray-300 hover:border-green-400"
+                  }`}
+                >
+                  {step >= 3 && (
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+                <span className="text-sm font-medium text-green-800 cursor-pointer" onClick={() => setStep(Math.max(step, 3))}>
+                  ✓ I have selected my response actions — show Reflection Points
+                </span>
+              </div>
+            )}
 
             {/* Icon legend */}
             <div className="rounded-md bg-slate-50 border border-slate-200 px-3 py-2 mt-2">
