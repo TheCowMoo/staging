@@ -1028,6 +1028,26 @@ export const btamStatusHistory = mysqlTable("btam_status_history", {
 export type BtamStatusHistory = typeof btamStatusHistory.$inferSelect;
 export type InsertBtamStatusHistory = typeof btamStatusHistory.$inferInsert;
 
+// ─── Facility Floor Maps ──────────────────────────────────────────────────────
+export const facilityFloorMaps = mysqlTable("facility_floor_maps", {
+  id: int("id").autoincrement().primaryKey(),
+  facilityId: int("facility_id").notNull(),
+  orgId: int("org_id"),
+  name: varchar("name", { length: 255 }).notNull(),
+  floor: varchar("floor", { length: 100 }),
+  imageUrl: text("image_url"),
+  fileKey: text("file_key"),
+  mapData: json("map_data"),
+  annotations: json("annotations"),
+  width: int("width"),
+  height: int("height"),
+  createdByUserId: int("created_by_user_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type FacilityFloorMap = typeof facilityFloorMaps.$inferSelect;
+export type InsertFacilityFloorMap = typeof facilityFloorMaps.$inferInsert;
+
 // ─── Micro Drill Assignments ──────────────────────────────────────────────────
 // Tracks individual drill assignments to personnel, completion status,
 // choices made during the drill, and which considerations were checked off.

@@ -293,7 +293,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       label: "Mapping And Tracking",
       icon: <MapPin size={18} />,
       items: [
-        { href: "#", label: "Facility Mapping", icon: <MapPin size={15} />, locked: "coming-soon" },
+        { href: "/facilities/1", label: "Facility Mapping", icon: <MapPin size={15} />, locked: isPaid ? undefined : "paid" },
         { href: "/personnel-tracking", label: "Personnel Tracking", icon: <MapPin size={15} />, locked: isPaid ? undefined : "paid" },
       ],
     },

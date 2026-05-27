@@ -30,6 +30,7 @@ import {
   apiKeys, InsertApiKey,
   trainingModules, InsertTrainingModule,
   microDrillAssignments, InsertMicroDrillAssignment,
+  facilityFloorMaps, InsertFacilityFloorMap,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -1261,6 +1262,42 @@ export async function clearStaffCheckins(facilityId?: number, orgId?: number) {
   if (conditions.length > 0) {
     await db.delete(staffCheckins).where(and(...conditions));
   }
+}
+
+// ─── Facility Floor Maps ────────────────────────────────────────────────────────
+
+export async function createFacilityFloorMap(data: InsertFacilityFloorMap) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  const [result] = await db.insert(facilityFloorMaps).values(data);
+  return result.insertId as number;
+}
+
+export async function getFacilityFloorMapsByFacility(facilityId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(facilityFloorMaps)
+    .where(eq(facilityFloorMaps.facilityId, facilityId))
+    .orderBy(desc(facilityFloorMaps.createdAt));
+}
+
+export async function getFacilityFloorMapById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select().from(facilityFloorMaps).where(eq(facilityFloorMaps.id, id)).limit(1);
+  return rows[0];
+}
+
+export async function updateFacilityFloorMap(id: number, data: Partial<InsertFacilityFloorMap>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.update(facilityFloorMaps).set(data).where(eq(facilityFloorMaps.id, id));
+}
+
+export async function deleteFacilityFloorMap(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.delete(facilityFloorMaps).where(eq(facilityFloorMaps.id, id));
 }
 
 // ─── Freemium Plan Helpers ────────────────────────────────────────────────────
