@@ -28,22 +28,22 @@ import {
 } from "lucide-react";
 import type { MicroDrillScenario } from "../../../shared/microDrillsData";
 
-// ─── Categories ──────────────────────────────────────────────────────────────
+// ─── Categories with exact labels and scenario counts ──────────────────────
 const CATEGORY_LIST = [
-  { num: 1, label: "Active Shooter" },
-  { num: 2, label: "Knife / Edged Weapon" },
-  { num: 3, label: "Physical Assault" },
-  { num: 4, label: "Verbal Threats" },
-  { num: 5, label: "Suspicious Behavior" },
-  { num: 6, label: "Bomb Threat" },
-  { num: 7, label: "Domestic Spillover" },
-  { num: 8, label: "Mental Health Crisis" },
-  { num: 9, label: "Terrorism / Large Threat" },
-  { num: 10, label: "Vehicle Attack" },
-  { num: 11, label: "Multiple Threats" },
-  { num: 12, label: "Off-Site Incidents" },
-  { num: 13, label: "Escalating Behavior" },
-  { num: 14, label: "Self-Defense" },
+  { num: 1, label: "Active Shooter — Real or Perceived", desc: "8 scenarios (IDs 1-8)" },
+  { num: 2, label: "Edged Weapon / Knife Attack", desc: "6 scenarios" },
+  { num: 3, label: "Physical Assault / Hands-On Violence", desc: "7 scenarios" },
+  { num: 4, label: "Verbal Threats and Intimidation", desc: "7 scenarios" },
+  { num: 5, label: "Suspicious Persons and Behavior", desc: "6 scenarios" },
+  { num: 6, label: "Bomb Threat / Suspicious Package", desc: "5 scenarios" },
+  { num: 7, label: "Workplace Violence — Domestic Spillover", desc: "5 scenarios" },
+  { num: 8, label: "Mental Health Crisis / Erratic Behavior", desc: "5 scenarios" },
+  { num: 9, label: "Terrorism / Large-Scale Threat", desc: "3 scenarios" },
+  { num: 10, label: "Vehicle as a Weapon", desc: "3 scenarios" },
+  { num: 11, label: "Multiple Simultaneous Threats", desc: "4 scenarios" },
+  { num: 12, label: "Off-Site Employee Scenarios", desc: "3 scenarios" },
+  { num: 13, label: "Repeat / Escalating Behavior", desc: "2 scenarios" },
+  { num: 14, label: "Defend as Primary Response", desc: "6 scenarios (IDs 65-70)" },
 ];
 
 export default function MicroDrillAdmin() {
@@ -211,32 +211,33 @@ export default function MicroDrillAdmin() {
                 </p>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                  <button
-                    onClick={() => { setSelectedCategory(""); setSelectedDrillId(null); setSelectedDrill(null); }}
-                    className={`text-left px-3 py-2 rounded-lg border text-sm transition-all ${
-                      !selectedCategory ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-primary/40"
-                    }`}
-                  >
-                    <span className="font-medium">All Categories</span>
-                    <span className="text-xs text-muted-foreground block">({drills.length} drills)</span>
-                  </button>
-                  {CATEGORY_LIST.map(cat => {
-                    const count = drills.filter(d => d.categoryNumber === cat.num).length;
-                    return (
-                      <button
-                        key={cat.num}
-                        onClick={() => { setSelectedCategory(String(cat.num)); setSelectedDrillId(null); setSelectedDrill(null); }}
-                        className={`text-left px-3 py-2 rounded-lg border text-sm transition-all ${
-                          selectedCategory === String(cat.num) ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-primary/40"
-                        }`}
-                      >
-                        <span className="font-medium line-clamp-2">{cat.label}</span>
-                        <span className="text-xs text-muted-foreground block mt-1">{count} drills</span>
-                      </button>
-                    );
-                  })}
-                </div>
+                <Select
+                  value={selectedCategory}
+                  onValueChange={(val) => { setSelectedCategory(val); setSelectedDrillId(null); setSelectedDrill(null); }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a category..." />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-80">
+                    <SelectItem value="">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">All Categories</span>
+                        <span className="text-xs text-muted-foreground">({drills.length} drills)</span>
+                      </div>
+                    </SelectItem>
+                    {CATEGORY_LIST.map(cat => {
+                      const count = drills.filter(d => d.categoryNumber === cat.num).length;
+                      return (
+                        <SelectItem key={cat.num} value={String(cat.num)}>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{cat.label}</span>
+                            <span className="text-xs text-muted-foreground">— {count} scenarios</span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
               </CardContent>
             </Card>
 
