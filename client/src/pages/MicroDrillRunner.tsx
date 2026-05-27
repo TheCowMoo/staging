@@ -4,7 +4,7 @@
  * Guides the trainee through:
  *   1. Scenario display
  *   2. Step 1 (Assess): Two choices (A/B)
- *   3. Step 2 (Act): Response options based on Step 1 choice
+ *   3. Step 2 (Act): Response options — select actions, then mark step as complete
  *   4. Considerations: 2-3 reflection points that must be read and checked off
  *   5. Completion → confirmation sent back to the assigner
  *
@@ -18,11 +18,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import {
   ChevronLeft, ChevronRight, CheckCircle2, Loader2,
   AlertTriangle, Target, Brain, BookOpen, RotateCcw,
-  Shield, ShieldAlert, Play,
+  Shield, ShieldAlert, Play, Square, CheckSquare,
 } from "lucide-react";
 import { MICRO_DRILLS, type MicroDrillScenario, type MicroDrillStep2Option } from "../../../shared/microDrillsData";
 
@@ -45,6 +48,7 @@ export default function MicroDrillRunner() {
   const [currentStep, setCurrentStep] = useState<Step>("scenario");
   const [step1Choice, setStep1Choice] = useState<string | null>(null);
   const [step2Choices, setStep2Choices] = useState<string[]>([]);
+  const [step2Confirmed, setStep2Confirmed] = useState(false);
   const [considerationsChecked, setConsiderationsChecked] = useState<boolean[]>([]);
   const [completed, setCompleted] = useState(false);
   const [started, setStarted] = useState(false);
@@ -59,6 +63,7 @@ export default function MicroDrillRunner() {
     onSuccess: () => {
       toast.success("Drill completed! Confirmation has been sent.");
       setCompleted(true);
+      setCurrentStep("complete");
     },
     onError: (err) => toast.error(err.message),
   });
@@ -96,6 +101,7 @@ export default function MicroDrillRunner() {
   const handleStep1Choice = (choice: string) => {
     setStep1Choice(choice);
     setStep2Choices([]);
+    setStep2Confirmed(false);
   };
 
   const toggleStep2Choice = (label: string) => {
@@ -128,6 +134,7 @@ export default function MicroDrillRunner() {
     setCurrentStep("scenario");
     setStep1Choice(null);
     setStep2Choices([]);
+    setStep2Confirmed(false);
     setConsiderationsChecked(drill ? new Array(drill.considerations.length).fill(false) : []);
     setCompleted(false);
     setStarted(false);
@@ -205,7 +212,7 @@ export default function MicroDrillRunner() {
                 <BookOpen className="h-4 w-4" /> Scenario
               </CardTitle>
               <p className="text-xs text-blue-700 opacity-80">
-                Read the scenario carefully. You will be asked to make decisions based on the situation.
+                Read the situation carefully. You will be asked to make decisions based on what you would do.
               </p>
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
@@ -214,7 +221,7 @@ export default function MicroDrillRunner() {
               </div>
               <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
                 <p className="font-semibold mb-1">⏱ Estimated Time</p>
-                <p>This drill should take approximately 2-3 minutes to complete. Read the scenario, make your decisions, and reflect on the consideration points.</p>
+                <p>This drill should take about 2-3 minutes. Read the situation, make your decisions, and reflect on the questions at the end. There are no wrong answers — this is about building awareness.</p>
               </div>
               <Button className="w-full" onClick={handleStart}>
                 <Play className="h-4 w-4 mr-2" /> Begin Drill
@@ -234,7 +241,7 @@ export default function MicroDrillRunner() {
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="rounded-lg bg-slate-50 border px-4 py-3 mb-2">
-                <p className="text-xs font-semibold text-muted-foreground mb-1">Scenario Recap</p>
+                <p className="text-xs font-semibold text-muted-foreground mb-1">Situation Recap</p>
                 <p className="text-sm text-muted-foreground">{drill.scenario}</p>
               </div>
 
@@ -278,7 +285,7 @@ export default function MicroDrillRunner() {
 
               {step1Choice && (
                 <Button className="w-full" onClick={() => setCurrentStep("step2")}>
-                  Next: Choose Actions <ChevronRight className="h-4 w-4 ml-2" />
+                  Next: Choose Your Actions <ChevronRight className="h-4 w-4 ml-2" />
                 </Button>
               )}
             </CardContent>
@@ -293,12 +300,12 @@ export default function MicroDrillRunner() {
                 <Shield className="h-4 w-4" /> Step 2 — Act
               </CardTitle>
               <p className="text-xs text-red-700 opacity-80">
-                Based on your assessment that the threat is{" "}
-                <strong>{step1Choice === "A" ? "confirmed" : "unconfirmed"}</strong>, 
-                select the response actions you would take. You may select multiple actions.
+                Based on your assessment that this is a{" "}
+                <strong>{step1Choice === "A" ? "real threat" : "potential concern"}</strong>, 
+                choose the actions you would take.
               </p>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-4">
               <div className="rounded-lg bg-slate-50 border px-4 py-3 mb-2">
                 <p className="text-xs font-semibold text-muted-foreground mb-1">Your Assessment</p>
                 <p className="text-sm">
@@ -306,9 +313,7 @@ export default function MicroDrillRunner() {
                 </p>
               </div>
 
-              <p className="text-sm font-semibold">
-                {step1Choice === "A" ? "The threat is confirmed. What action do you take?" : "The threat is unconfirmed. What action do you take?"}
-              </p>
+              <p className="text-sm font-semibold">Select the actions you would take:</p>
 
               <div className="space-y-2">
                 {step2Options.map((option, i) => {
@@ -332,6 +337,17 @@ export default function MicroDrillRunner() {
                           </div>
                           <p className="text-xs text-muted-foreground mt-0.5">{option.description}</p>
                         </div>
+                        <div className="flex-shrink-0 mt-0.5">
+                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                            isSelected ? "bg-red-500 border-red-500" : "border-gray-300"
+                          }`}>
+                            {isSelected && (
+                              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </button>
                   );
@@ -339,6 +355,22 @@ export default function MicroDrillRunner() {
               </div>
 
               {step2Choices.length > 0 && (
+                <>
+                  <Separator />
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-green-50 border border-green-200">
+                    <Checkbox
+                      id="step2-confirm"
+                      checked={step2Confirmed}
+                      onCheckedChange={() => setStep2Confirmed(!step2Confirmed)}
+                    />
+                    <Label htmlFor="step2-confirm" className="text-sm font-medium text-green-800 cursor-pointer">
+                      ✓ Mark Step 2 as complete — I have selected my response actions
+                    </Label>
+                  </div>
+                </>
+              )}
+
+              {step2Confirmed && (
                 <Button className="w-full" onClick={() => setCurrentStep("considerations")}>
                   Next: Reflection Points <ChevronRight className="h-4 w-4 ml-2" />
                 </Button>
@@ -355,8 +387,7 @@ export default function MicroDrillRunner() {
                 <Brain className="h-4 w-4" /> Reflection Points
               </CardTitle>
               <p className="text-xs text-green-700 opacity-80">
-                Read each reflection point carefully and check it off after you have considered it.
-                These are designed to reinforce critical thinking and situational awareness.
+                Read each reflection point below and check it off once you have thought it through. These help reinforce good decision-making.
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -390,8 +421,8 @@ export default function MicroDrillRunner() {
               ))}
 
               <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
-                <p className="font-semibold mb-1">💡 Did You Know?</p>
-                <p>Reflection after a drill is one of the most effective ways to improve decision-making under pressure. These questions help you identify patterns in your response instincts.</p>
+                <p className="font-semibold mb-1">💡 Why Reflect?</p>
+                <p>Taking a moment to reflect after each drill helps you recognize patterns in how you react under pressure. The more you practice, the more prepared you will be in a real situation.</p>
               </div>
 
               <Button
@@ -400,7 +431,7 @@ export default function MicroDrillRunner() {
                 disabled={completeMutation.isPending || considerationsChecked.some(c => !c)}
               >
                 {completeMutation.isPending ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Completing…</>
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Submitting…</>
                 ) : (
                   <><CheckCircle2 className="h-4 w-4 mr-2" /> Complete Drill</>
                 )}
@@ -417,7 +448,7 @@ export default function MicroDrillRunner() {
               <div>
                 <h2 className="text-xl font-bold">Drill Complete!</h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Your responses have been recorded and a completion confirmation has been sent.
+                  Your responses have been recorded and your supervisor has been notified of your completion.
                 </p>
               </div>
 
@@ -430,7 +461,7 @@ export default function MicroDrillRunner() {
                     <span>{step1Choice === "A" ? drill.step1A.label : drill.step1B.label}</span>
                   </div>
                   <div>
-                    <Badge variant="outline" className="text-xs mb-1">Step 2 — Actions Selected</Badge>
+                    <Badge variant="outline" className="text-xs mb-1">Actions Selected</Badge>
                     <ul className="space-y-1 mt-1">
                       {step2Choices.map((choice, i) => {
                         const opt = step2Options.find(o => o.label === choice);
@@ -478,7 +509,7 @@ export default function MicroDrillRunner() {
                 Next <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
             )}
-            {currentStep === "step2" && step2Choices.length > 0 && (
+            {currentStep === "step2" && step2Confirmed && (
               <Button onClick={() => setCurrentStep("considerations")}>
                 Next <ChevronRight className="h-4 w-4 ml-1" />
               </Button>

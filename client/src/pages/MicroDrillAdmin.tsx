@@ -3,13 +3,13 @@
  *
  * Features:
  *   - Browse drills by category
- *   - Select a specific drill
+ *   - Select a specific drill from a dropdown
  *   - Assign to personnel (name/email)
  *   - Set assignment date and completion due date
  *   - Random drill generator
  *   - View assignment stats and tracking
  */
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import AppLayout from "@/components/AppLayout";
@@ -22,28 +22,28 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import {
-  Shuffle, UserCheck, Calendar, Clock, Target, ChevronRight,
+  Shuffle, UserCheck, Calendar, Clock, Target, ChevronDown,
   CheckCircle2, Loader2, AlertTriangle, Play, RotateCcw,
-  Plus, Users, BookOpen, Search,
+  Plus, Users, BookOpen,
 } from "lucide-react";
 import type { MicroDrillScenario } from "../../../shared/microDrillsData";
 
 // ─── Categories ──────────────────────────────────────────────────────────────
 const CATEGORY_LIST = [
-  { num: 1, label: "Active Shooter — Real or Perceived" },
-  { num: 2, label: "Edged Weapon / Knife Attack" },
-  { num: 3, label: "Physical Assault / Hands-On Violence" },
-  { num: 4, label: "Verbal Threats and Intimidation" },
-  { num: 5, label: "Suspicious Persons and Behavior" },
-  { num: 6, label: "Bomb Threat / Suspicious Package" },
-  { num: 7, label: "Workplace Violence — Domestic Spillover" },
-  { num: 8, label: "Mental Health Crisis / Erratic Behavior" },
-  { num: 9, label: "Terrorism / Large-Scale Threat" },
-  { num: 10, label: "Vehicle as a Weapon" },
-  { num: 11, label: "Multiple Simultaneous Threats" },
-  { num: 12, label: "Off-Site Employee Scenarios" },
-  { num: 13, label: "Repeat / Escalating Behavior" },
-  { num: 14, label: "Defend as Primary Response" },
+  { num: 1, label: "Active Shooter" },
+  { num: 2, label: "Knife / Edged Weapon" },
+  { num: 3, label: "Physical Assault" },
+  { num: 4, label: "Verbal Threats" },
+  { num: 5, label: "Suspicious Behavior" },
+  { num: 6, label: "Bomb Threat" },
+  { num: 7, label: "Domestic Spillover" },
+  { num: 8, label: "Mental Health Crisis" },
+  { num: 9, label: "Terrorism / Large Threat" },
+  { num: 10, label: "Vehicle Attack" },
+  { num: 11, label: "Multiple Threats" },
+  { num: 12, label: "Off-Site Incidents" },
+  { num: 13, label: "Escalating Behavior" },
+  { num: 14, label: "Self-Defense" },
 ];
 
 export default function MicroDrillAdmin() {
@@ -56,7 +56,6 @@ export default function MicroDrillAdmin() {
   // Assignment form
   const [assigneeName, setAssigneeName] = useState("");
   const [assigneeEmail, setAssigneeEmail] = useState("");
-  const [assigneeUserId, setAssigneeUserId] = useState<number | undefined>();
   const [dueDate, setDueDate] = useState("");
 
   // Bulk assignment
@@ -77,9 +76,6 @@ export default function MicroDrillAdmin() {
       setAssigneeName("");
       setAssigneeEmail("");
       setDueDate("");
-      if (activeTab !== "tracking") {
-        setActiveTab("tracking");
-      }
       assignmentsQuery.refetch();
     },
     onError: (err) => toast.error(err.message),
@@ -122,7 +118,6 @@ export default function MicroDrillAdmin() {
         setSelectedDrillId(result.data.id);
       }
     } catch {
-      // Fallback: pick from local data
       let local = drills;
       if (catNum) local = local.filter(d => d.categoryNumber === catNum);
       if (local.length === 0) local = drills;
@@ -141,7 +136,7 @@ export default function MicroDrillAdmin() {
       return;
     }
     if (!assigneeName && !assigneeEmail) {
-      toast.error("Please enter a name or email for the assignee");
+      toast.error("Please enter a name or email for the person");
       return;
     }
 
@@ -151,7 +146,6 @@ export default function MicroDrillAdmin() {
       drillTitle: selectedDrill.title,
       assignedToName: assigneeName || undefined,
       assignedToEmail: assigneeEmail || undefined,
-      assignedToUserId: assigneeUserId,
       dueDate: dueDate || undefined,
     });
   };
@@ -185,7 +179,7 @@ export default function MicroDrillAdmin() {
           <div>
             <h1 className="text-2xl font-bold">Micro Training Drills</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Assign quick scenario-based drills (2-3 min each) to personnel for emergency preparedness training.
+              Assign quick scenario-based drills (2-3 min each) to your team for emergency preparedness training.
             </p>
           </div>
           <Button variant="outline" onClick={() => navigate("/micro-drills/tracking")}>
@@ -211,7 +205,10 @@ export default function MicroDrillAdmin() {
             {/* Step 1: Choose Category */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">1. Choose Category</CardTitle>
+                <CardTitle className="text-base">1. Choose a Category</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Select the type of emergency scenario you want to train for.
+                </p>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -243,11 +240,16 @@ export default function MicroDrillAdmin() {
               </CardContent>
             </Card>
 
-            {/* Step 2: Select Drill */}
+            {/* Step 2: Select Drill - Dropdown */}
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">2. Select Drill</CardTitle>
+                  <div>
+                    <CardTitle className="text-base">2. Select a Drill</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Choose from the scenarios below or pick one at random.
+                    </p>
+                  </div>
                   <Button variant="outline" size="sm" onClick={handleRandomDrill}>
                     <Shuffle className="h-3.5 w-3.5 mr-1.5" /> Random Drill
                   </Button>
@@ -260,27 +262,47 @@ export default function MicroDrillAdmin() {
                     <p className="text-sm">No drills found for this category.</p>
                   </div>
                 ) : (
-                  <div className="space-y-2 max-h-80 overflow-y-auto">
-                    {filteredDrills.map(drill => (
-                      <button
-                        key={drill.id}
-                        onClick={() => { setSelectedDrillId(drill.id); setSelectedDrill(drill); }}
-                        className={`w-full text-left rounded-lg border px-3 py-2.5 text-sm transition-all ${
-                          selectedDrillId === drill.id
-                            ? "border-primary bg-primary/5 ring-1 ring-primary"
-                            : "border-border hover:border-primary/40 hover:bg-accent/30"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <span className="font-medium">{drill.title}</span>
-                            <span className="text-xs text-muted-foreground ml-2">{drill.category}</span>
-                          </div>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{drill.scenario}</p>
-                      </button>
-                    ))}
+                  <div className="space-y-3">
+                    <Select
+                      value={selectedDrillId?.toString() ?? ""}
+                      onValueChange={(val) => {
+                        setSelectedDrillId(parseInt(val));
+                        const d = drills.find(d => d.id === parseInt(val));
+                        setSelectedDrill(d ?? null);
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a drill scenario..." />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-80">
+                        {filteredDrills.map(drill => (
+                          <SelectItem key={drill.id} value={drill.id.toString()}>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{drill.title}</span>
+                              <span className="text-xs text-muted-foreground">— {drill.category}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {/* Quick scenario list for browsing */}
+                    <div className="space-y-1 max-h-60 overflow-y-auto border rounded-lg">
+                      {filteredDrills.map(drill => (
+                        <button
+                          key={drill.id}
+                          onClick={() => { setSelectedDrillId(drill.id); setSelectedDrill(drill); }}
+                          className={`w-full text-left px-3 py-2 text-sm transition-all border-b last:border-b-0 ${
+                            selectedDrillId === drill.id
+                              ? "bg-primary/5 text-primary font-medium"
+                              : "hover:bg-accent/30"
+                          }`}
+                        >
+                          <span>{drill.title}</span>
+                          <span className="text-xs text-muted-foreground ml-2">— {drill.scenario.slice(0, 100)}…</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </CardContent>
@@ -290,10 +312,19 @@ export default function MicroDrillAdmin() {
             {selectedDrill && (
               <Card className="border-2 border-primary/20">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Target className="h-4 w-4 text-primary" />
-                    {selectedDrill.title}: {selectedDrill.category}
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Target className="h-4 w-4 text-primary" />
+                      {selectedDrill.title}: {selectedDrill.category}
+                    </CardTitle>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => { setSelectedDrillId(null); setSelectedDrill(null); }}
+                    >
+                      Change
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="rounded-lg bg-slate-50 border px-3 py-2">
@@ -302,17 +333,13 @@ export default function MicroDrillAdmin() {
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="rounded border px-2 py-1.5">
-                      <span className="font-semibold">Step 1 (A): </span>
+                      <span className="font-semibold">Option A: </span>
                       {selectedDrill.step1A.label}
                     </div>
                     <div className="rounded border px-2 py-1.5">
-                      <span className="font-semibold">Step 1 (B): </span>
+                      <span className="font-semibold">Option B: </span>
                       {selectedDrill.step1B.label}
                     </div>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    <span className="font-semibold">{selectedDrill.step2A.length} actions</span> for confirmed threat ·{" "}
-                    <span className="font-semibold">{selectedDrill.step2B.length} actions</span> for unconfirmed
                   </div>
                 </CardContent>
               </Card>
@@ -323,6 +350,9 @@ export default function MicroDrillAdmin() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">3. Assign to Personnel</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Send this drill to one person or multiple people at once.
+                  </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Tabs defaultValue="single">
@@ -412,7 +442,7 @@ export default function MicroDrillAdmin() {
               <Card className="border-2 border-amber-300 bg-amber-50">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center gap-2 text-amber-800">
-                    <Shuffle className="h-4 w-4" /> Randomly Selected Drill
+                    <Shuffle className="h-4 w-4" /> Randomly Selected
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

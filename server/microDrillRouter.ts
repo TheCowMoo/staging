@@ -122,9 +122,9 @@ export const microDrillRouter = router({
 
   // ─── List assignments created by the current user (admin view) ──────────────
   listMyAssignments: paidProcedure
-    .input(z.object({ orgId: z.number().optional() }).optional())
+    .input(z.object({ orgId: z.number().optional() }))
     .query(async ({ ctx, input }) => {
-      return getMicroDrillAssignmentsByAssigner(ctx.user.id, input?.orgId);
+      return getMicroDrillAssignmentsByAssigner(ctx.user.id, input.orgId);
     }),
 
   // ─── List assignments assigned TO the current user (trainee view) ────────────
