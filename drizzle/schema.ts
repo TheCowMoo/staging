@@ -1028,6 +1028,19 @@ export const btamStatusHistory = mysqlTable("btam_status_history", {
 export type BtamStatusHistory = typeof btamStatusHistory.$inferSelect;
 export type InsertBtamStatusHistory = typeof btamStatusHistory.$inferInsert;
 
+// ─── Incident Communications ────────────────────────────────────────────────────
+export const incidentCommunications = mysqlTable("incident_communications", {
+  id: int("id").autoincrement().primaryKey(),
+  incidentId: int("incident_id").notNull(),
+  senderRole: mysqlEnum("sender_role", ["admin", "reporter"]).notNull(),
+  senderName: varchar("sender_name", { length: 255 }),
+  message: text("message").notNull(),
+  isFromAdmin: boolean("is_from_admin").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type IncidentCommunication = typeof incidentCommunications.$inferSelect;
+export type InsertIncidentCommunication = typeof incidentCommunications.$inferInsert;
+
 // ─── Facility Floor Maps ──────────────────────────────────────────────────────
 export const facilityFloorMaps = mysqlTable("facility_floor_maps", {
   id: int("id").autoincrement().primaryKey(),
