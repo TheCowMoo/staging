@@ -275,8 +275,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       items: [
         { href: "/mass-notification", label: "Mass Notifications",         icon: <Megaphone size={15} />,   locked: isPaid ? undefined : "paid" },
         { href: "/ras",           label: "Response Activation System", icon: <AlertCircle size={15} />, locked: isPaid ? undefined : "paid" },
-        { href: "/staff-checkin", label: "Staff Check-In",             icon: <Users size={15} />,       locked: isPaid ? undefined : "paid" },
-        { href: "#",              label: "Staff Messaging",            icon: <Radio size={15} />,       locked: "coming-soon" },
       ],
     },
     {

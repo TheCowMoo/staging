@@ -1602,11 +1602,11 @@ export default function DrillScheduler() {
         </div>
 
         <Tabs defaultValue="micro-training">
-          <TabsList className="flex-wrap">
-            <TabsTrigger value="micro-training"><BookOpen className="h-3.5 w-3.5 mr-1.5" />Micro Training Drills</TabsTrigger>
-            <TabsTrigger value="generate"><Sparkles className="h-3.5 w-3.5 mr-1.5" />Generate Drill</TabsTrigger>
-            <TabsTrigger value="scan-data"><Shield className="h-3.5 w-3.5 mr-1.5" />Scan Data</TabsTrigger>
-            <TabsTrigger value="history"><ClipboardList className="h-3.5 w-3.5 mr-1.5" />Drill History</TabsTrigger>
+          <TabsList className="w-full grid grid-cols-4">
+            <TabsTrigger value="micro-training" className="px-1"><BookOpen className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Micro Training</span></TabsTrigger>
+            <TabsTrigger value="generate" className="px-1"><Sparkles className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Generate</span></TabsTrigger>
+            <TabsTrigger value="scan-data" className="px-1"><Shield className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Scan Data</span></TabsTrigger>
+            <TabsTrigger value="history" className="px-1"><ClipboardList className="h-3.5 w-3.5 shrink-0" /><span className="truncate">History</span></TabsTrigger>
           </TabsList>
 
           {/* ── Micro Training Drills tab ── */}
