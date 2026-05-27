@@ -1027,3 +1027,32 @@ export const btamStatusHistory = mysqlTable("btam_status_history", {
 });
 export type BtamStatusHistory = typeof btamStatusHistory.$inferSelect;
 export type InsertBtamStatusHistory = typeof btamStatusHistory.$inferInsert;
+
+// ─── Micro Drill Assignments ──────────────────────────────────────────────────
+// Tracks individual drill assignments to personnel, completion status,
+// choices made during the drill, and which considerations were checked off.
+export const microDrillAssignments = mysqlTable("micro_drill_assignments", {
+  id: int("id").autoincrement().primaryKey(),
+  orgId: int("org_id"),
+  assignedByUserId: int("assigned_by_user_id").notNull(),
+  assignedToUserId: int("assigned_to_user_id"),
+  assignedToName: varchar("assigned_to_name", { length: 255 }),
+  assignedToEmail: varchar("assigned_to_email", { length: 320 }),
+  drillId: int("drill_id").notNull(),
+  drillCategory: varchar("drill_category", { length: 255 }).notNull(),
+  drillTitle: varchar("drill_title", { length: 255 }).notNull(),
+  assignedDate: timestamp("assigned_date").defaultNow().notNull(),
+  completionDate: timestamp("completion_date"),
+  dueDate: timestamp("due_date"),
+  status: mysqlEnum("status", ["pending", "in_progress", "completed", "expired"]).default("pending").notNull(),
+  step1Choice: varchar("step1_choice", { length: 10 }),
+  step2Choices: json("step2_choices"),
+  considerationsChecked: json("considerations_checked"),
+  completedAt: timestamp("completed_at"),
+  completedByName: varchar("completed_by_name", { length: 255 }),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type MicroDrillAssignment = typeof microDrillAssignments.$inferSelect;
+export type InsertMicroDrillAssignment = typeof microDrillAssignments.$inferInsert;

@@ -69,6 +69,7 @@ import { scanText } from "./threatFlagEngine";
 import { sendGhlEmail } from "./_core/ghl";
 import { loadStateJurisdictionSection, loadJurisdictionGlossary } from "./jurisdictionDocs";
 import { massNotificationRouter } from "./massNotificationRouter";
+import { microDrillRouter } from "./microDrillRouter";
 // ─── Facility Router ──────────────────────────────────────────────────────────
 // Initialise VAPID keys at server startup (no-op if keys not configured)
 initVapid();;
@@ -3918,6 +3919,7 @@ const jurisdictionRouter = router({
 });
 
 export const appRouter = router({
+  microDrill: microDrillRouter,
   system: systemRouter,
   auth: router({
     me: publicProcedure.query((opts) => {

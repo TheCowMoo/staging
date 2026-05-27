@@ -58,6 +58,9 @@ import SetPassword from "@/pages/SetPassword";
 import VerifyEmail from "@/pages/VerifyEmail";
 import Settings from "@/pages/Settings";
 import MassNotification from "@/pages/MassNotification";
+import MicroDrillAdmin from "@/pages/MicroDrillAdmin";
+import MicroDrillRunner from "@/pages/MicroDrillRunner";
+import MicroDrillTracking from "@/pages/MicroDrillTracking";
 
 function Router() {
   return (
@@ -116,6 +119,9 @@ function Router() {
       <Route path="/set-password" component={SetPassword} />
       <Route path="/verify-email" component={VerifyEmail} />
       <Route path="/mass-notification" component={MassNotification} />
+      <Route path="/micro-drills" component={MicroDrillAdmin} />
+      <Route path="/micro-drills/run/:assignmentId" component={MicroDrillRunner} />
+      <Route path="/micro-drills/tracking" component={MicroDrillTracking} />
       <Route path="/settings" component={Settings} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

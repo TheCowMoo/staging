@@ -29,6 +29,7 @@ import {
   staffCheckins, InsertStaffCheckin,
   apiKeys, InsertApiKey,
   trainingModules, InsertTrainingModule,
+  microDrillAssignments, InsertMicroDrillAssignment,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -1147,6 +1148,85 @@ export async function getDrillParticipants(sessionId: number) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(drillParticipants).where(eq(drillParticipants.sessionId, sessionId));
+}
+
+// ─── Micro Drill Assignments ────────────────────────────────────────────────────
+
+export async function createMicroDrillAssignment(data: InsertMicroDrillAssignment) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  const [result] = await db.insert(microDrillAssignments).values(data);
+  return result.insertId as number;
+}
+
+export async function getMicroDrillAssignmentsByAssigner(userId: number, orgId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  if (orgId) {
+    return db.select().from(microDrillAssignments)
+      .where(and(eq(microDrillAssignments.assignedByUserId, userId), eq(microDrillAssignments.orgId, orgId)))
+      .orderBy(desc(microDrillAssignments.assignedDate));
+  }
+  return db.select().from(microDrillAssignments)
+    .where(eq(microDrillAssignments.assignedByUserId, userId))
+    .orderBy(desc(microDrillAssignments.assignedDate));
+}
+
+export async function getMicroDrillAssignmentsToUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(microDrillAssignments)
+    .where(eq(microDrillAssignments.assignedToUserId, userId))
+    .orderBy(desc(microDrillAssignments.assignedDate));
+}
+
+export async function getMicroDrillAssignmentById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select().from(microDrillAssignments).where(eq(microDrillAssignments.id, id)).limit(1);
+  return rows[0];
+}
+
+export async function updateMicroDrillAssignment(id: number, data: Partial<InsertMicroDrillAssignment>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.update(microDrillAssignments).set(data).where(eq(microDrillAssignments.id, id));
+}
+
+export async function completeMicroDrillAssignment(
+  id: number,
+  step1Choice: string,
+  step2Choices: string[],
+  considerationsChecked: boolean[],
+  completedByName: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.update(microDrillAssignments).set({
+    status: "completed",
+    step1Choice,
+    step2Choices: JSON.stringify(step2Choices),
+    considerationsChecked: JSON.stringify(considerationsChecked),
+    completedAt: new Date(),
+    completionDate: new Date(),
+    completedByName,
+  }).where(eq(microDrillAssignments.id, id));
+}
+
+export async function getMicroDrillAssignmentsByOrg(orgId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(microDrillAssignments)
+    .where(eq(microDrillAssignments.orgId, orgId))
+    .orderBy(desc(microDrillAssignments.assignedDate));
+}
+
+export async function getMicroDrillAssignmentsByDrillId(drillId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(microDrillAssignments)
+    .where(eq(microDrillAssignments.drillId, drillId))
+    .orderBy(desc(microDrillAssignments.assignedDate));
 }
 
 // ── Staff Check-Ins ───────────────────────────────────────────────────────────
