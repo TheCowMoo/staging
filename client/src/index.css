@@ -55,76 +55,76 @@
   --risk-moderate:   #D97706;
   --risk-defensible: #22C55E;
 
-  /* ─── Premium corporate theme ───────────────────────────────────────────── */
+  /* ─── Wave-inspired clean light theme ───────────────────────────────────── */
   --radius: 0.625rem;
-  --background: #F8F9FA;
+  --background: #F4F6F8;
   --foreground: #1E232A;
   --card: #FFFFFF;
   --card-foreground: #1E232A;
   --popover: #FFFFFF;
   --popover-foreground: #1E232A;
-  --primary: #4A525D;
+  --primary: #0B1F33;
   --primary-foreground: #FFFFFF;
-  --secondary: #6F7A88;
+  --secondary: #3A5F7D;
   --secondary-foreground: #FFFFFF;
   --muted: #E6EAEE;
   --muted-foreground: #5A6570;
-  --accent: #4A525D;
+  --accent: #3A5F7D;
   --accent-foreground: #FFFFFF;
   --destructive: #8B0000;
   --destructive-foreground: #FFFFFF;
-  --border: #4A525D;
-  --input: #FFFFFF;
-  --ring: rgba(74,82,93,0.25);
-  --sidebar: #F0F2F5;
-  --sidebar-foreground: #1E232A;
-  --sidebar-primary: #1E232A;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #4A525D;
+  --border: #D0D5DD;
+  --input: #D0D5DD;
+  --ring: rgba(11,31,51,0.25);
+  --sidebar: #0B1F33;
+  --sidebar-foreground: #E6EAEE;
+  --sidebar-primary: #C9A86A;
+  --sidebar-primary-foreground: #0B1F33;
+  --sidebar-accent: #1A3350;
   --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: rgba(74,82,93,0.24);
-  --sidebar-ring: rgba(74,82,93,0.18);
-  --chart-1: #5EA3FF;
-  --chart-2: #FFC75F;
+  --sidebar-border: rgba(255,255,255,0.10);
+  --sidebar-ring: rgba(201,168,106,0.3);
+  --chart-1: #3A5F7D;
+  --chart-2: #C9A86A;
   --chart-3: #FF8C00;
   --chart-4: #8B0000;
-  --chart-5: #6EE7B7;
+  --chart-5: #22C55E;
 }
 
 .dark {
   --radius: 0.625rem;
-  --background: #F8F9FA;
-  --foreground: #1E232A;
-  --card: #FFFFFF;
-  --card-foreground: #1E232A;
-  --popover: #FFFFFF;
-  --popover-foreground: #1E232A;
-  --primary: #4A525D;
-  --primary-foreground: #FFFFFF;
-  --secondary: #6F7A88;
+  --background: #0B1F33;
+  --foreground: #E6EAEE;
+  --card: #122A45;
+  --card-foreground: #E6EAEE;
+  --popover: #122A45;
+  --popover-foreground: #E6EAEE;
+  --primary: #C9A86A;
+  --primary-foreground: #0B1F33;
+  --secondary: #3A5F7D;
   --secondary-foreground: #FFFFFF;
-  --muted: #E6EAEE;
-  --muted-foreground: #5A6570;
-  --accent: #4A525D;
+  --muted: #1A3350;
+  --muted-foreground: #9AA8B9;
+  --accent: #3A5F7D;
   --accent-foreground: #FFFFFF;
-  --destructive: #8B0000;
+  --destructive: #B91C1C;
   --destructive-foreground: #FFFFFF;
-  --border: #4A525D;
-  --input: #FFFFFF;
-  --ring: rgba(74,82,93,0.25);
-  --sidebar: #F0F2F5;
-  --sidebar-foreground: #1E232A;
-  --sidebar-primary: #1E232A;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #4A525D;
+  --border: rgba(255,255,255,0.12);
+  --input: rgba(255,255,255,0.15);
+  --ring: rgba(201,168,106,0.4);
+  --sidebar: #081829;
+  --sidebar-foreground: #C9D4E0;
+  --sidebar-primary: #C9A86A;
+  --sidebar-primary-foreground: #0B1F33;
+  --sidebar-accent: #1A3350;
   --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: rgba(74,82,93,0.24);
-  --sidebar-ring: rgba(74,82,93,0.18);
-  --chart-1: #5EA3FF;
-  --chart-2: #FFC75F;
+  --sidebar-border: rgba(255,255,255,0.08);
+  --sidebar-ring: rgba(201,168,106,0.3);
+  --chart-1: #C9A86A;
+  --chart-2: #3A5F7D;
   --chart-3: #FF8C00;
-  --chart-4: #8B0000;
-  --chart-5: #6EE7B7;
+  --chart-4: #B91C1C;
+  --chart-5: #22C55E;
 }
 
 @layer base {
@@ -144,10 +144,10 @@
     inset: 0;
     pointer-events: none;
     background-image:
-      linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
+      linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px);
     background-size: 90px 90px, 90px 90px;
-    opacity: 0.08;
+    opacity: 0.06;
     z-index: -1;
   }
   h1, h2, h3, h4, h5, h6 {
@@ -166,36 +166,53 @@
     @apply cursor-pointer;
   }
   .metal-card {
-    @apply bg-white border border-[#4A525D] rounded-[0.65rem] shadow-[0_18px_50px_-36px_rgba(74,82,93,0.18)];
+    @apply bg-white border border-[#D0D5DD] rounded-[0.65rem] shadow-[0_18px_50px_-36px_rgba(11,31,51,0.10)];
+  }
+  .dark .metal-card {
+    @apply bg-[#122A45] border border-white/10 shadow-[0_18px_50px_-36px_rgba(0,0,0,0.3)];
   }
   .sidebar-metallic {
-    background: linear-gradient(135deg, #F0F2F5 0%, #D8DCE2 50%, #BCC3CB 100%);
-    border-right: 1px solid rgba(74,82,93,0.2);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.75), inset 0 -1px 0 rgba(0,0,0,0.1);
-    color: #1E232A;
+    background: #0B1F33;
+    border-right: 1px solid rgba(255,255,255,0.08);
+    color: #E6EAEE;
+  }
+  .dark .sidebar-metallic {
+    background: #081829;
   }
   .sidebar-logo-wrapper {
-    background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(226,230,236,0.95) 100%);
-    border: 1px solid rgba(74,82,93,0.14);
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
     border-radius: 0.75rem;
   }
   .dashboard-title {
-    @apply uppercase tracking-[0.12em] text-slate-950;
+    @apply uppercase tracking-[0.12em] text-[#0B1F33];
+  }
+  .dark .dashboard-title {
+    @apply text-[#C9A86A];
   }
   .metric-number {
-    @apply text-4xl sm:text-5xl font-extrabold text-slate-950;
+    @apply text-4xl sm:text-5xl font-extrabold text-[#0B1F33];
+  }
+  .dark .metric-number {
+    @apply text-[#E6EAEE];
   }
   .section-heading {
-    @apply uppercase tracking-[0.08em] text-sm font-semibold text-slate-950;
+    @apply uppercase tracking-[0.08em] text-sm font-semibold text-[#0B1F33];
+  }
+  .dark .section-heading {
+    @apply text-[#C9A86A];
   }
   .sidebar-menu-item {
-    @apply text-slate-900 hover:text-slate-950;
+    @apply text-[#C9D4E0] hover:text-white;
   }
   .sidebar-menu-item-active {
-    @apply bg-[#E7ECF1] border border-[#BCC3CB] text-slate-950 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.65)];
+    @apply bg-[#1A3350] border border-white/10 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)];
   }
   .dashboard-shell {
-    @apply bg-white border border-[#4A525D] rounded-[1rem] shadow-[0_20px_40px_-26px_rgba(74,82,93,0.18)];
+    @apply bg-white border border-[#D0D5DD] rounded-[1rem] shadow-[0_20px_40px_-26px_rgba(11,31,51,0.10)];
+  }
+  .dark .dashboard-shell {
+    @apply bg-[#122A45] border border-white/10 shadow-[0_20px_40px_-26px_rgba(0,0,0,0.3)];
   }
   .status-pill {
     @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold;
@@ -209,9 +226,14 @@
     color: #FFFFFF;
   }
   .status-pill-inprogress {
-    background: rgba(255,255,255,0.10);
-    color: #FFFFFF;
-    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(58,95,125,0.10);
+    color: #3A5F7D;
+    border: 1px solid rgba(58,95,125,0.20);
+  }
+  .dark .status-pill-inprogress {
+    background: rgba(201,168,106,0.15);
+    color: #C9A86A;
+    border: 1px solid rgba(201,168,106,0.25);
   }
 }
 
@@ -222,11 +244,22 @@
 .risk-high   { @apply bg-orange-100 text-orange-800 border border-orange-200; }
 .risk-critical { @apply bg-red-100 text-red-800 border border-red-200; }
 
+.dark .risk-low    { @apply bg-green-900/30 text-green-300 border-green-800; }
+.dark .risk-moderate { @apply bg-lime-900/30 text-lime-300 border-lime-800; }
+.dark .risk-elevated { @apply bg-amber-900/30 text-amber-300 border-amber-800; }
+.dark .risk-high   { @apply bg-orange-900/30 text-orange-300 border-orange-800; }
+.dark .risk-critical { @apply bg-red-900/30 text-red-300 border-red-800; }
+
 /* Priority badge utilities */
 .priority-immediate { @apply bg-red-100 text-red-800 border border-red-200; }
 .priority-30day     { @apply bg-orange-100 text-orange-800 border border-orange-200; }
 .priority-90day     { @apply bg-amber-100 text-amber-800 border border-amber-200; }
 .priority-longterm  { @apply bg-blue-100 text-blue-800 border border-blue-200; }
+
+.dark .priority-immediate { @apply bg-red-900/30 text-red-300 border-red-800; }
+.dark .priority-30day     { @apply bg-orange-900/30 text-orange-300 border-orange-800; }
+.dark .priority-90day     { @apply bg-amber-900/30 text-amber-300 border-amber-800; }
+.dark .priority-longterm  { @apply bg-blue-900/30 text-blue-300 border-blue-800; }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }

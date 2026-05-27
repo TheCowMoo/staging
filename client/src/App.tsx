@@ -56,6 +56,7 @@ import ResetPassword from "@/pages/ResetPassword";
 import SetPassword from "@/pages/SetPassword";
 import VerifyEmail from "@/pages/VerifyEmail";
 import Settings from "@/pages/Settings";
+import MassNotification from "@/pages/MassNotification";
 
 function Router() {
   return (
@@ -112,6 +113,7 @@ function Router() {
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/set-password" component={SetPassword} />
       <Route path="/verify-email" component={VerifyEmail} />
+      <Route path="/mass-notification" component={MassNotification} />
       <Route path="/settings" component={Settings} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

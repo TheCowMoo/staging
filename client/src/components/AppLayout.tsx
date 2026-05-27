@@ -68,7 +68,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     : user?.role;
   const isUltraAdmin = effectiveRole === "ultra_admin" || !!(user as any)?._isImpersonated;
 
-  // Fetch the user\'s org plan for UI gating
+  // Fetch the user's org plan for UI gating
   const { data: orgPlan } = trpc.auth.myPlan.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: false,
@@ -144,14 +144,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (item.locked === "coming-soon" && !isUltraAdmin) {
       return (
         <div
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground/60 cursor-not-allowed select-none"
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/50 cursor-not-allowed select-none"
           title="Coming soon"
           onClick={() => toast.info("This feature is coming soon. Stay tuned!")}
         >
           {item.icon}
           <span className="flex-1">{item.label}</span>
-          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 leading-none">Soon</span>
-          <Lock size={10} className="text-muted-foreground/40 flex-shrink-0" />
+          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-900/40 text-amber-300 border border-amber-700/50 leading-none">Soon</span>
+          <Lock size={10} className="text-sidebar-foreground/30 flex-shrink-0" />
         </div>
       );
     }
@@ -159,7 +159,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (item.locked === "paid" && !isPaid) {
       return (
         <div
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground/50 cursor-not-allowed select-none"
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/40 cursor-not-allowed select-none"
           title="Upgrade to Pro to unlock"
           onClick={() =>
             toast.info("This feature requires a paid plan. Contact your administrator to upgrade.")
@@ -167,10 +167,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         >
           {item.icon}
           <span className="flex-1">{item.label}</span>
-          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 leading-none flex items-center gap-0.5">
+          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-sidebar-primary/20 text-sidebar-primary border border-sidebar-primary/30 leading-none flex items-center gap-0.5">
             <Star size={7} className="inline" /> Pro
           </span>
-          <Lock size={10} className="text-primary/40 flex-shrink-0" />
+          <Lock size={10} className="text-sidebar-primary/40 flex-shrink-0" />
         </div>
       );
     }
@@ -180,14 +180,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         href={item.href}
         className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
           isActive
-            ? "bg-[#E7ECF1] border border-[#BCC3CB] text-slate-950 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.65)]"
-            : "text-slate-900 hover:bg-[#EEF1F4] hover:text-slate-950"
+            ? "bg-sidebar-accent border border-white/10 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+            : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-white"
         }`}
         onClick={() => setSidebarOpen(false)}
       >
         {item.icon}
         {item.label}
-        {isActive && <ChevronRight size={14} className="ml-auto" />}
+        {isActive && <ChevronRight size={14} className="ml-auto text-sidebar-primary" />}
       </Link>
     );
   };
@@ -203,22 +203,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           onClick={() => toggleSection(section.id)}
           className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
             hasActive
-              ? "text-slate-950 bg-[#E7ECF1]"
-              : "text-slate-900 hover:bg-[#EEF1F4] hover:text-slate-950"
+              ? "text-sidebar-primary bg-sidebar-accent/50"
+              : "text-sidebar-foreground/80 hover:bg-sidebar-accent/40 hover:text-white"
           }`}
         >
-          <span className={`flex-shrink-0 ${hasActive ? "text-slate-950" : "text-slate-700"}`}>
+          <span className={`flex-shrink-0 ${hasActive ? "text-sidebar-primary" : "text-sidebar-foreground/60"}`}>
             {section.icon}
           </span>
           <span className="flex-1 text-left">{section.label}</span>
           {isOpen ? (
-            <ChevronUp size={14} className="text-muted-foreground flex-shrink-0" />
+            <ChevronUp size={14} className="text-sidebar-foreground/50 flex-shrink-0" />
           ) : (
-            <ChevronDown size={14} className="text-muted-foreground flex-shrink-0" />
+            <ChevronDown size={14} className="text-sidebar-foreground/50 flex-shrink-0" />
           )}
         </button>
         {isOpen && (
-          <div className="ml-3 pl-3 border-l border-border/60 mt-0.5 mb-1 space-y-0.5">
+          <div className="ml-3 pl-3 border-l border-sidebar-border mt-0.5 mb-1 space-y-0.5">
             {section.items.map((item) => (
               <NavLink key={item.href + item.label} item={item} />
             ))}
@@ -273,7 +273,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       label: "Communication",
       icon: <Radio size={18} />,
       items: [
-        { href: "#",              label: "Mass Notifications",         icon: <Megaphone size={15} />,   locked: "coming-soon" },
+        { href: "/mass-notification", label: "Mass Notifications",         icon: <Megaphone size={15} />,   locked: isPaid ? undefined : "paid" },
         { href: "/ras",           label: "Response Activation System", icon: <AlertCircle size={15} />, locked: isPaid ? undefined : "paid" },
         { href: "/staff-checkin", label: "Staff Check-In",             icon: <Users size={15} />,       locked: isPaid ? undefined : "paid" },
         { href: "#",              label: "Staff Messaging",            icon: <Radio size={15} />,       locked: "coming-soon" },
@@ -303,34 +303,34 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const Sidebar = ({ mobile = false }: { mobile?: boolean }) => (
     <aside className={`${mobile ? "flex flex-col h-full" : "hidden lg:flex flex-col h-screen sticky top-0"} w-64 sidebar-metallic`}>
-      <div className="flex items-center justify-center px-5 py-5 border-b border-[#BCC3CB]">
-        <img src={LOGO_URL} alt="Five Stones Technology" className="h-24 w-full object-contain" />
+      <div className="flex items-center justify-center px-5 py-5 border-b border-sidebar-border">
+        <img src={LOGO_URL} alt="Five Stones Technology" className="h-24 w-full object-contain brightness-0 invert" />
         {mobile && (
-          <button onClick={() => setSidebarOpen(false)} className="ml-auto text-muted-foreground hover:text-foreground">
+          <button onClick={() => setSidebarOpen(false)} className="ml-auto text-sidebar-foreground hover:text-white">
             <X size={18} />
           </button>
         )}
       </div>
-      <div className="px-5 py-2 border-b border-border/50">
-        <p className="text-[10px] text-muted-foreground font-medium">Legal defensibility platform</p>
+      <div className="px-5 py-2 border-b border-sidebar-border">
+        <p className="text-[10px] text-sidebar-foreground/60 font-medium">Legal defensibility platform</p>
       </div>
 
       {isViewer && (
         <div className="mx-3 mt-3 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center gap-2">
-          <Eye size={14} className="text-amber-500 flex-shrink-0" />
-          <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium leading-tight">
+          <Eye size={14} className="text-amber-400 flex-shrink-0" />
+          <p className="text-[11px] text-amber-300 font-medium leading-tight">
             Read-only access. Contact your admin to request Auditor access.
           </p>
         </div>
       )}
 
       {!isPaid && (
-        <div className="mx-3 mt-3 px-3 py-2.5 rounded-lg bg-primary/5 border border-primary/20 flex flex-col gap-1">
+        <div className="mx-3 mt-3 px-3 py-2.5 rounded-lg bg-sidebar-accent/50 border border-sidebar-border flex flex-col gap-1">
           <div className="flex items-center gap-1.5">
-            <Star size={12} className="text-primary flex-shrink-0" />
-            <p className="text-[11px] text-primary font-semibold leading-tight">Free Plan</p>
+            <Star size={12} className="text-sidebar-primary flex-shrink-0" />
+            <p className="text-[11px] text-sidebar-primary font-semibold leading-tight">Free Plan</p>
           </div>
-          <p className="text-[10px] text-muted-foreground leading-tight">
+          <p className="text-[10px] text-sidebar-foreground/60 leading-tight">
             Upgrade to unlock all modules: audits, EAP, BTAM, visitor management, and more.
           </p>
         </div>
@@ -344,13 +344,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <SectionHeader key={section.id} section={section} />
         ))}
         <div className="pt-2 pb-1">
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-1">Resources</p>
+          <p className="text-[10px] font-semibold text-sidebar-foreground/50 uppercase tracking-wider px-3 mb-1">Resources</p>
         </div>
         <NavLink item={{ href: "/standards",      label: "Standards & Regs", icon: <ShieldCheck size={18} /> }} />
         {isAdmin && (
           <>
             <div className="pt-2 pb-1">
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-1">Admin</p>
+              <p className="text-[10px] font-semibold text-sidebar-foreground/50 uppercase tracking-wider px-3 mb-1">Admin</p>
             </div>
             <NavLink item={{ href: "/feedback",      label: "Feedback Dashboard", icon: <TrendingUp size={18} /> }} />
             <NavLink item={{ href: "/organizations", label: "Organizations",      icon: <Network size={18} /> }} />
@@ -359,20 +359,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         )}
       </nav>
 
-      <div className="px-3 py-4 border-t border-border">
-        <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/50">
-          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold flex-shrink-0">
+      <div className="px-3 py-4 border-t border-sidebar-border">
+        <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-sidebar-accent/40">
+          <div className="w-8 h-8 rounded-full bg-sidebar-primary/20 flex items-center justify-center text-sidebar-primary text-xs font-bold flex-shrink-0">
             {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">{user?.name ?? "Auditor"}</p>
+            <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.name ?? "Auditor"}</p>
             <Badge variant={roleBadge.variant} className="text-[10px] h-4 px-1.5 mt-0.5">
               {roleBadge.label}
             </Badge>
           </div>
           <Link
             href="/settings"
-            className="text-muted-foreground hover:text-primary transition-colors"
+            className="text-sidebar-foreground/60 hover:text-sidebar-primary transition-colors"
             title="Settings"
             onClick={() => setSidebarOpen(false)}
           >
@@ -380,7 +380,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </Link>
           <button
             onClick={() => logout.mutate()}
-            className="text-muted-foreground hover:text-destructive transition-colors"
+            className="text-sidebar-foreground/60 hover:text-destructive transition-colors"
             title="Sign out"
           >
             <LogOut size={15} />
@@ -417,19 +417,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <Sidebar />
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />
+          <div className="absolute inset-0 bg-black/60" onClick={() => setSidebarOpen(false)} />
           <div className="absolute left-0 top-0 bottom-0 w-64">
             <Sidebar mobile />
           </div>
         </div>
       )}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-[#4A525D] bg-white sticky top-0 z-40">
+        <header className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-card sticky top-0 z-40">
           <button onClick={() => setSidebarOpen(true)} className="text-muted-foreground hover:text-foreground">
             <Menu size={20} />
           </button>
           <img src={LOGO_URL} alt="Five Stones Technology" className="h-12 w-auto max-w-[180px] object-contain" />
-          <Link href="/ras" className="ml-auto inline-flex items-center justify-center rounded-lg border border-border/80 bg-white p-2 text-slate-900 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary/50">
+          <Link href="/ras" className="ml-auto inline-flex items-center justify-center rounded-lg border border-border bg-card p-2 text-foreground shadow-sm transition hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring">
             <Bell size={18} />
           </Link>
         </header>
@@ -461,7 +461,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         )}
         <main className="flex-1 overflow-auto bg-background">
-          <div className="border-b border-border bg-background px-6 py-4 sticky top-0 z-20">
+          <div className="border-b border-border bg-card px-6 py-4 sticky top-0 z-20">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <Button
             variant="ghost"
@@ -478,7 +478,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <ChevronLeft className="w-4 h-4" />
             Back
           </Button>
-          <Link href="/ras" className="inline-flex items-center gap-2 rounded-lg border border-border/80 bg-white px-3 py-2 text-sm font-medium text-slate-900 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary/50">
+          <Link href="/ras" className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground shadow-sm transition hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring">
             <Bell className="w-4 h-4" />
             Notifications
           </Link>

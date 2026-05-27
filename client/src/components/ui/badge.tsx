@@ -10,13 +10,13 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          "border border-border bg-white/5 text-foreground [a&]:hover:bg-white/10",
+          "border-border bg-[#0B1F33] text-white [a&]:hover:bg-[#1A3350]",
         secondary:
-          "border border-border bg-[#2F3741] text-white [a&]:hover:bg-[#343e4d]",
+          "border-border bg-[#E6EAEE] text-[#1E232A] [a&]:hover:bg-[#D9E2EC]",
         destructive:
-          "border border-border bg-[#8B0000] text-white [a&]:hover:bg-[#a90000] focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
+          "border-border bg-[#8B0000] text-white [a&]:hover:bg-[#a90000] focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
         outline:
-          "border border-border text-foreground bg-transparent [a&]:hover:bg-white/10 [a&]:hover:text-foreground",
+          "border-border text-foreground bg-transparent [a&]:hover:bg-muted [a&]:hover:text-foreground",
       },
     },
     defaultVariants: {

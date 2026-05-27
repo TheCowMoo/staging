@@ -42,7 +42,7 @@ function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: s
           <p className="metric-number">{value}</p>
           {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
         </div>
-        <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-foreground shadow-inner shadow-black/20">
+        <div className="w-12 h-12 rounded-xl bg-[#0B1F33]/5 flex items-center justify-center text-[#0B1F33] shadow-inner shadow-black/5">
           {icon}
         </div>
       </div>
@@ -159,7 +159,7 @@ export default function Dashboard() {
                           className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-border"
                         >
                             <div className="flex items-center gap-3">
-                              <div className={`w-2 h-2 rounded-full ${audit.status === "completed" ? "bg-emerald-500" : "bg-white/25"}`} />
+                              <div className={`w-2 h-2 rounded-full ${audit.status === "completed" ? "bg-emerald-500" : "bg-[#3A5F7D]"}`} />
                               <div>
                                 <p className="text-sm font-medium text-foreground">{facility?.name ?? `Facility #${audit.facilityId}`}</p>
                                 <p className="text-xs text-muted-foreground">{new Date(audit.auditDate).toLocaleDateString()}</p>
@@ -195,13 +195,13 @@ export default function Dashboard() {
                     {[1, 2, 3].map((i) => (
                       <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-border animate-pulse">
                         <div className="flex items-center gap-3">
-                          <div className="w-2 h-2 rounded-full bg-gray-300" />
+                          <div className="w-2 h-2 rounded-full bg-muted" />
                           <div>
-                            <div className="h-4 w-32 bg-gray-300 rounded mb-1" />
-                            <div className="h-3 w-24 bg-gray-300 rounded" />
+                            <div className="h-4 w-32 bg-muted rounded mb-1" />
+                            <div className="h-3 w-24 bg-muted rounded" />
                           </div>
                         </div>
-                        <div className="h-5 w-16 bg-gray-300 rounded-full" />
+                        <div className="h-5 w-16 bg-muted rounded-full" />
                       </div>
                     ))}
                   </div>
@@ -273,8 +273,8 @@ export default function Dashboard() {
                       href={`/facilities/${facility.id}`}
                       className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
                     >
-                        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Building2 size={16} className="text-primary" />
+                        <div className="w-9 h-9 rounded-lg bg-[#0B1F33]/10 flex items-center justify-center">
+                          <Building2 size={16} className="text-[#0B1F33]" />
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{facility.name}</p>

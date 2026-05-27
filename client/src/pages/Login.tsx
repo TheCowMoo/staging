@@ -69,15 +69,15 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#F4F6F8] px-4">
       <div className="w-full max-w-md">
         {/* Logo / Brand */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 bg-[#1a1a19] rounded-2xl flex items-center justify-center mb-4">
+          <div className="w-14 h-14 bg-[#0B1F33] rounded-2xl flex items-center justify-center mb-4 shadow-[0_12px_24px_-10px_rgba(11,31,51,0.35)]">
             <Shield className="text-white w-7 h-7" />
           </div>
-          <h1 className="text-2xl font-bold text-[#1a1a19] tracking-tight">Liability Defense System</h1>
-          <p className="text-sm text-gray-500 mt-1">Workplace Safety Assessment Platform</p>
+          <h1 className="text-2xl font-bold text-[#0B1F33] tracking-tight">Liability Defense System</h1>
+          <p className="text-sm text-[#5A6570] mt-1">Workplace Safety Assessment Platform</p>
         </div>
 
         <Tabs defaultValue="login" className="w-full">
@@ -127,7 +127,7 @@ export default function Login() {
                   <button
                     type="button"
                     onClick={() => setLocation("/forgot-password")}
-                    className="text-sm text-gray-500 hover:text-gray-800 underline-offset-2 hover:underline"
+                    className="text-sm text-[#5A6570] hover:text-[#0B1F33] underline-offset-2 hover:underline"
                   >
                     Forgot your password?
                   </button>

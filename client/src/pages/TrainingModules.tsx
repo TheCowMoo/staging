@@ -45,7 +45,7 @@ export default function TrainingModules() {
             <h1 className="text-xl font-bold text-foreground">Training Modules</h1>
           </div>
           <p className="text-sm text-muted-foreground">
-            Training courses are automatically discovered from S3. Click any course to launch it.
+            New courses appear on refresh. Click any course to launch it.
           </p>
         </div>
 
@@ -78,7 +78,7 @@ export default function TrainingModules() {
           <>
             <div className="bg-muted/30 border border-border rounded-lg px-4 py-2 text-xs text-muted-foreground flex items-center gap-2">
               <Cloud size={12} />
-              Courses are automatically discovered from S3. New courses appear on refresh.
+              New courses appear on refresh.
             </div>
             <div className="grid gap-4">
               {modules.map((mod: any) => {
@@ -101,9 +101,6 @@ export default function TrainingModules() {
                                 auto-discovered
                               </Badge>
                             )}
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">
-                              {mod.playerType?.replace(/_/g, " ") || "Articulate"}
-                            </Badge>
                           </div>
                           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
                             {mod.storagePrefix && (

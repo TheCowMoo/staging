@@ -68,6 +68,7 @@ import { notifyOwner } from "./_core/notification";
 import { scanText } from "./threatFlagEngine";
 import { sendGhlEmail } from "./_core/ghl";
 import { loadStateJurisdictionSection, loadJurisdictionGlossary } from "./jurisdictionDocs";
+import { massNotificationRouter } from "./massNotificationRouter";
 // ─── Facility Router ──────────────────────────────────────────────────────────
 // Initialise VAPID keys at server startup (no-op if keys not configured)
 initVapid();;
@@ -3967,6 +3968,7 @@ export const appRouter = router({
   ras: rasRouter,
   staffCheckin: staffCheckinRouter,
   trainingModule: trainingModuleRouter,
+  massNotification: massNotificationRouter,
   // API Key management (create/list/revoke) — accessible to org admins and platform admins
   apiKeys: router({
     create: orgAdminProcedure
