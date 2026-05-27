@@ -68,65 +68,84 @@ export default function PersonnelTracking() {
     }
   }, [currentPosition]);
 
-    // Start geolocation immediately (independent of orgId) so the browser prompts for permission
+    // Geolocation state: track if we've tried
+    const watchRef = useRef<number | null>(null);
+    const [geoAttempted, setGeoAttempted] = useState(false);
+
+    const sendLocationToServer = useCallback((lat: number, lng: number) => {
+      if (!orgId) return;
+      updateLocation.mutate({ orgId, latitude: lat, longitude: lng, status: "Active" });
+    }, [orgId, updateLocation]);
+
+    const onPositionSuccess = useCallback((position: GeolocationPosition) => {
+      const { latitude: lat, longitude: lng, accuracy: posAccuracy } = position.coords;
+      setCurrentPosition({ lat, lng });
+      setAccuracy(posAccuracy);
+      setLocationTimestamp(new Date());
+      setGeoError(null);
+      setGeoAttempted(true);
+      sendLocationToServer(lat, lng);
+    }, [sendLocationToServer]);
+
+    const onPositionError = useCallback((error: GeolocationPositionError) => {
+      const msgs: Record<number, string> = {
+        1: "Location permission was denied. Please allow location access in your browser settings and refresh the page.",
+        2: "Position unavailable. GPS signal may be weak — try moving to an open area.",
+        3: "Location request timed out. Click 'Update My Location' to try again.",
+      };
+      setGeoError(msgs[error.code] || error.message || "Unable to determine your location.");
+      setGeoAttempted(true);
+    }, []);
+
+    // Start watching location — re-run if orgId changes
     useEffect(() => {
       if (!navigator.geolocation) {
         setGeoError("Geolocation is not supported by your browser.");
         return;
       }
 
-      // First, get a single position to trigger the browser permission prompt immediately
+      // getCurrentPosition first to trigger permission prompt fast
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude: lat, longitude: lng, accuracy: posAccuracy } = position.coords;
-          setCurrentPosition({ lat, lng });
-          setAccuracy(posAccuracy);
-          setLocationTimestamp(new Date());
-          setGeoError(null);
-          // Send to server if orgId is available
-          if (orgId) {
-            updateLocation.mutate({ orgId, latitude: lat, longitude: lng, status: "Active" });
-          }
-        },
-        (error) => {
-          setGeoError(error.message || "Unable to determine your location.");
-        },
-        { enableHighAccuracy: true, timeout: 15000 },
+        onPositionSuccess,
+        onPositionError,
+        { enableHighAccuracy: true, timeout: 10000 },
       );
 
-      // Then continuously watch for position updates
+      // watchPosition for continuous tracking
       const watcherId = navigator.geolocation.watchPosition(
-        (position) => {
-          const { latitude: lat, longitude: lng, accuracy: posAccuracy } = position.coords;
-          setCurrentPosition({ lat, lng });
-          setAccuracy(posAccuracy);
-          setLocationTimestamp(new Date());
-          setGeoError(null);
-          if (orgId) {
-            updateLocation.mutate({ orgId, latitude: lat, longitude: lng, status: "Active" });
-          }
-        },
-        (error) => {
-          setGeoError(error.message || "Unable to determine your location.");
-        },
-        { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
+        onPositionSuccess,
+        onPositionError,
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 },
       );
+      watchRef.current = watcherId;
 
       return () => {
         navigator.geolocation.clearWatch(watcherId);
       };
-    }, []); // Only run once on mount
+    }, [onPositionSuccess, onPositionError]); // Re-run if user manually requests location
 
-    // Also send location to server when orgId becomes available (e.g. after login redirect)
+    // Retry when orgId becomes available and we haven't found location yet
     useEffect(() => {
-      if (!orgId || !currentPosition) return;
-      updateLocation.mutate({
-        orgId,
-        latitude: currentPosition.lat,
-        longitude: currentPosition.lng,
-        status: "Active",
-      });
+      if (!orgId || currentPosition) return;
+      // Try again if we have an error and org just loaded
+      if (geoError && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          onPositionSuccess,
+          onPositionError,
+          { enableHighAccuracy: true, timeout: 10000 },
+        );
+      }
     }, [orgId]);
+
+    const handleRetryGeolocation = useCallback(() => {
+      if (!navigator.geolocation) return;
+      setGeoError(null);
+      navigator.geolocation.getCurrentPosition(
+        onPositionSuccess,
+        onPositionError,
+        { enableHighAccuracy: true, timeout: 15000 },
+      );
+    }, [onPositionSuccess, onPositionError]);
 
   // Update the accuracy circle and current-user marker on the map
   useEffect(() => {
