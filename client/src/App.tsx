@@ -61,6 +61,7 @@ import MassNotification from "@/pages/MassNotification";
 import MicroDrillAdmin from "@/pages/MicroDrillAdmin";
 import MicroDrillRunner from "@/pages/MicroDrillRunner";
 import MicroDrillTracking from "@/pages/MicroDrillTracking";
+import FacilityMapBuilder from "@/pages/FacilityMapBuilder";
 
 function Router() {
   return (
@@ -121,6 +122,7 @@ function Router() {
       <Route path="/mass-notification" component={MassNotification} />
       <Route path="/micro-drills" component={MicroDrillAdmin} />
       <Route path="/micro-drills/run/:assignmentId" component={MicroDrillRunner} />
+      <Route path="/facility-mapping" component={FacilityMapBuilder} />
       <Route path="/micro-drills/tracking" component={MicroDrillTracking} />
       <Route path="/settings" component={Settings} />
       <Route path="/404" component={NotFound} />
