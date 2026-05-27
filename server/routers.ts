@@ -3452,14 +3452,16 @@ const staffCheckinRouter = router({
       orgId: z.number().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      return createStaffCheckin({
+      // Only include orgId/facilityId if they have a truthy value
+      const data: any = {
         staffName: input.staffName,
         status: input.status,
         location: input.location ?? null,
-        facilityId: input.facilityId ?? null,
-        orgId: input.orgId ?? null,
         recordedByUserId: ctx.user.id,
-      });
+      };
+      if (input.facilityId) data.facilityId = input.facilityId;
+      if (input.orgId) data.orgId = input.orgId;
+      return createStaffCheckin(data);
     }),
   delete: paidProcedure
     .input(z.object({ id: z.number() }))
