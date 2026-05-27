@@ -9,23 +9,31 @@ import {
 } from "lucide-react";
 import { getRiskBadgeClass, getRiskColor } from "@/lib/riskUtils";
 
-// ─── Risk level → color mapping for scans ──────────────────────
-const SCAN_RISK_STYLE: Record<string, { badge: string; text: string }> = {
+// ─── Risk level → color mapping for scans (full container) ──────
+const SCAN_RISK_STYLE: Record<string, { badge: string; text: string; container: string; labelText: string }> = {
   "Critical Risk": {
     badge: "bg-[#8B0000] text-white",
     text: "text-white",
+    container: "bg-[#8B0000]",
+    labelText: "text-white",
   },
   "High Risk": {
     badge: "bg-[#FF8C00] text-white",
     text: "text-white",
+    container: "bg-[#FF8C00]",
+    labelText: "text-white",
   },
   "Moderate Risk": {
     badge: "bg-[#D97706] text-white",
     text: "text-white",
+    container: "bg-[#D97706]",
+    labelText: "text-white",
   },
   "Low Risk": {
     badge: "bg-emerald-500 text-white",
     text: "text-white",
+    container: "bg-emerald-500",
+    labelText: "text-white",
   },
 };
 
@@ -226,25 +234,24 @@ export default function Dashboard() {
                         <Link
                           key={scan.id}
                           href="/scan-history"
-                          className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-border"
+                          className={`flex items-center justify-between p-3 rounded-lg transition-colors border ${style.container} ${style.labelText}`}
                         >
                             <div className="flex items-center gap-3">
-                              <div className={`w-2 h-2 rounded-full ${scan.defensibilityStatus === 'Critical Risk' ? 'bg-[#8B0000]' : scan.defensibilityStatus === 'High Risk' ? 'bg-[#FF8C00]' : scan.defensibilityStatus === 'Moderate Risk' ? 'bg-[#D97706]' : 'bg-emerald-500'}`} />
                               <div>
-                                <p className="text-sm font-medium text-foreground">
+                                <p className={`text-sm font-medium ${style.labelText} opacity-90`}>
                                   {scan.jurisdiction && scan.industry ? `${scan.jurisdiction} - ${scan.industry}` : 'Liability Scan'}
                                 </p>
-                                <p className="text-xs text-muted-foreground">{dateStr}</p>
+                                <p className={`text-xs ${style.labelText} opacity-70`}>{dateStr}</p>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
                               {scan.defensibilityStatus && (
-                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${style.badge}`}>
+                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium bg-white/20 ${style.labelText}`}>
                                   {scan.defensibilityStatus}
                                 </span>
                               )}
                               {scan.scorePercent != null && (
-                                <span className={`text-xs font-medium ${style.text}`}>
+                                <span className={`text-xs font-semibold ${style.labelText} opacity-90`}>
                                   {scan.scorePercent}%
                                 </span>
                               )}
