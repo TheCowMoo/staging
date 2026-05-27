@@ -54,19 +54,22 @@ export default function PersonnelTracking() {
   }, [currentPosition, selectedMember]);
 
     const recenterMap = useCallback(() => {
-    if (mapRef.current && currentPosition) {
-      mapRef.current.setZoom(16);
-      mapRef.current.panTo(currentPosition);
+    // Use the map's built-in "My Location" feature if available
+    const map = mapRef.current;
+    if (!map) return;
+    
+    if (currentPosition) {
+      map.setZoom(16);
+      map.panTo(currentPosition);
+    } else if (typeof map.setMyLocationEnabled === 'function') {
+      // Trigger the map's built-in geolocation
+      try { map.setMyLocationEnabled(true); } catch {}
     }
   }, [currentPosition]);
 
   const onMapReady = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
-    if (currentPosition) {
-      map.setCenter(currentPosition);
-      map.setZoom(16);
-    }
-  }, [currentPosition]);
+  }, []);
 
     // Geolocation state: track if we've tried
     const watchRef = useRef<number | null>(null);
@@ -248,8 +251,19 @@ export default function PersonnelTracking() {
         </div>
 
         {geoError ? (
-                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            <strong className="font-semibold">Location access needed.</strong> {geoError}
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 flex items-center justify-between gap-3">
+            <div>
+              <strong className="font-semibold">Location access needed.</strong> {geoError}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRetryGeolocation}
+              className="shrink-0 gap-1.5"
+            >
+              <Crosshair className="h-3.5 w-3.5" />
+              Update My Location
+            </Button>
           </div>
         ) : null}
 
@@ -264,12 +278,19 @@ export default function PersonnelTracking() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={recenterMap}
-                disabled={!currentPosition}
+                onClick={() => {
+                  // Always try to recenter — use browser geolocation if no position yet
+                  if (currentPosition && mapRef.current) {
+                    mapRef.current.setZoom(16);
+                    mapRef.current.panTo(currentPosition);
+                  } else {
+                    handleRetryGeolocation();
+                  }
+                }}
                 className="flex items-center gap-1.5 text-xs"
               >
                 <Crosshair className="h-3.5 w-3.5" />
-                Recenter
+                {currentPosition ? "Recenter" : "Find Me"}
               </Button>
               <div className="flex flex-col gap-2 text-right">
                                 <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Org</span>
