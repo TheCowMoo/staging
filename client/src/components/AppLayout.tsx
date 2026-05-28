@@ -302,7 +302,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   ];
 
   const Sidebar = ({ mobile = false }: { mobile?: boolean }) => (
-    <aside className={`${mobile ? "flex flex-col h-full" : "hidden lg:flex flex-col h-screen sticky top-0"} w-64 sidebar-metallic`}>
+    <aside className={`${mobile ? "flex flex-col h-full" : "hidden lg:flex flex-col h-screen sticky top-0"} w-64 sidebar-metallic`} style={{ zIndex: 100 }}>
       <div className="flex items-center justify-center px-3 py-3 border-b border-sidebar-border">
           <img src={LOGO_URL} alt="Five Stones Technology" className="h-48 w-full object-contain" />
         {mobile && (
@@ -420,7 +420,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       )}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0" style={{ pointerEvents: "auto" }}>
         <header className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-card sticky top-0 z-40">
           <button onClick={() => setSidebarOpen(true)} className="text-muted-foreground hover:text-foreground">
             <Menu size={20} />

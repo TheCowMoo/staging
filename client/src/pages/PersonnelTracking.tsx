@@ -317,7 +317,7 @@ export default function PersonnelTracking() {
               </div>
             </div>
             </div>
-            <div className="rounded-2xl overflow-hidden border border-border bg-muted relative" style={{ zIndex: 1, touchAction: "pan-x pan-y" }}>
+            <div className="rounded-2xl overflow-hidden border border-border bg-muted relative" style={{ zIndex: 0 }}>
               <MapView initialCenter={initialCenter} initialZoom={12} onMapReady={onMapReady} />
             </div>
                         <div className="mt-4 grid gap-3 sm:grid-cols-3">
