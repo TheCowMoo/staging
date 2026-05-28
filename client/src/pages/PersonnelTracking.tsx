@@ -78,8 +78,12 @@ export default function PersonnelTracking() {
 
     const onPositionSuccess = useCallback((position: GeolocationPosition) => {
       const { latitude: lat, longitude: lng, accuracy: posAccuracy } = position.coords;
-      setCurrentPosition({ lat, lng });
-      setAccuracy(posAccuracy);
+      // Only update if position changed significantly (>10m) to avoid constant re-renders
+      setCurrentPosition(prev => {
+        if (prev && Math.abs(prev.lat - lat) < 0.0001 && Math.abs(prev.lng - lng) < 0.0001) return prev;
+        return { lat, lng };
+      });
+      setAccuracy(prev => prev === posAccuracy ? prev : posAccuracy);
       setLocationTimestamp(new Date());
       setGeoError(null);
       setGeoAttempted(true);
@@ -313,7 +317,7 @@ export default function PersonnelTracking() {
               </div>
             </div>
             </div>
-            <div className="rounded-2xl overflow-hidden border border-border bg-muted relative" style={{ zIndex: 1 }}>
+            <div className="rounded-2xl overflow-hidden border border-border bg-muted relative" style={{ zIndex: 1, touchAction: "pan-x pan-y" }}>
               <MapView initialCenter={initialCenter} initialZoom={12} onMapReady={onMapReady} />
             </div>
                         <div className="mt-4 grid gap-3 sm:grid-cols-3">

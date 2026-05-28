@@ -160,17 +160,19 @@ export default function Dashboard() {
                   <div className="space-y-2">
                     {data.recentAudits.map((audit) => {
                       const facility = data.facilities?.find((f) => f.id === audit.facilityId);
+                      const isComplete = audit.status === "completed";
+                      const containerBg = isComplete ? "bg-emerald-500" : "bg-[#3A5F7D]";
+                      const labelText = "text-white";
                       return (
                         <Link
                           key={audit.id}
-                          href={audit.status === "completed" ? `/audit/${audit.id}/report` : `/audit/${audit.id}`}
-                          className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors border border-transparent hover:border-border"
+                          href={isComplete ? `/audit/${audit.id}/report` : `/audit/${audit.id}`}
+                          className={`flex items-center justify-between p-3 rounded-lg transition-colors border ${containerBg} ${labelText}`}
                         >
                             <div className="flex items-center gap-3">
-                              <div className={`w-2 h-2 rounded-full ${audit.status === "completed" ? "bg-emerald-500" : "bg-[#3A5F7D]"}`} />
                               <div>
-                                <p className="text-sm font-medium text-foreground">{facility?.name ?? `Facility #${audit.facilityId}`}</p>
-                                <p className="text-xs text-muted-foreground">{new Date(audit.auditDate).toLocaleDateString()}</p>
+                                <p className={`text-sm font-medium ${labelText} opacity-90`}>{facility?.name ?? `Facility #${audit.facilityId}`}</p>
+                                <p className={`text-xs ${labelText} opacity-70`}>{new Date(audit.auditDate).toLocaleDateString()}</p>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -179,8 +181,8 @@ export default function Dashboard() {
                                   {audit.overallRiskLevel}
                                 </span>
                               )}
-                              <span className={`status-pill ${audit.status === "completed" ? "bg-emerald-500 text-white" : "status-pill-inprogress"}`}>
-                                {audit.status === "completed" ? "Complete" : "In Progress"}
+                              <span className={`text-xs font-semibold ${labelText} opacity-90`}>
+                                {isComplete ? "Complete" : "In Progress"}
                               </span>
                             </div>
                         </Link>

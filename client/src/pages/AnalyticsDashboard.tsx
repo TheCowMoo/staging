@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -84,6 +85,7 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function AnalyticsDashboard() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [selectedFacilityId, setSelectedFacilityId] = useState<number | "all">("all");
 
   // ── Data Queries ──────────────────────────────────────────────────────────
   const { data: allFeedback = [], isLoading: fbLoading } = trpc.feedback.listAll.useQuery();
@@ -93,6 +95,21 @@ export default function AnalyticsDashboard() {
   const { data: allIncidents = [] } = trpc.incident.list.useQuery({}, { enabled: activeTab === "incidents" || activeTab === "overview" });
   const { data: allScans = [] } = trpc.liabilityScan.list.useQuery(undefined, { enabled: activeTab === "scans" || activeTab === "overview" });
   const { data: drillSessions = [] } = trpc.drill.listSessions.useQuery({}, { enabled: activeTab === "drills" || activeTab === "overview" });
+  const { data: facilities = [] } = trpc.facility.list.useQuery();
+  const { data: myMemberships = [] } = trpc.org.myMemberships.useQuery();
+
+  // ── Facility filter helpers ──────────────────────────────────────────────
+  const filteredIncidents = useMemo(() => {
+    if (selectedFacilityId === "all") return allIncidents;
+    const selectedFacility = facilities.find(f => f.id === selectedFacilityId);
+    if (!selectedFacility) return allIncidents;
+    return allIncidents.filter((inc: any) => inc.facilityName === selectedFacility.name);
+  }, [allIncidents, selectedFacilityId, facilities]);
+
+  const filteredDrills = useMemo(() => {
+    if (selectedFacilityId === "all") return drillSessions;
+    return drillSessions.filter((d: any) => d.facilityId === selectedFacilityId);
+  }, [drillSessions, selectedFacilityId]);
 
   // ── Computed Metrics ──────────────────────────────────────────────────────
   const totalFeedback = allFeedback.length;
@@ -132,11 +149,11 @@ export default function AnalyticsDashboard() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 8);
 
-  // ── Incident Analysis ─────────────────────────────────────────────────────
+  // ── Incident Analysis (uses filteredIncidents) ──────────────────────────
   const incidentByType: Record<string, number> = {};
   const incidentBySeverity: Record<string, number> = {};
   const incidentByStatus: Record<string, number> = {};
-  allIncidents.forEach((inc: any) => {
+  filteredIncidents.forEach((inc: any) => {
     incidentByType[inc.incidentType] = (incidentByType[inc.incidentType] || 0) + 1;
     incidentBySeverity[inc.severity] = (incidentBySeverity[inc.severity] || 0) + 1;
     incidentByStatus[inc.status] = (incidentByStatus[inc.status] || 0) + 1;
@@ -292,6 +309,25 @@ export default function AnalyticsDashboard() {
           <StatCard icon={<AlertTriangle size={16} />} label="Incidents" value={allIncidents.length} />
           <StatCard icon={<ShieldAlert size={16} />} label="Liability Scans" value={allScans.length} />
           <StatCard icon={<Flag size={16} />} label="Question Flags" value={allFlags.length} />
+        </div>
+
+        {/* Facility Filter Selector */}
+        <div className="flex items-center gap-2">
+          <Building2 size={16} className="text-muted-foreground" />
+          <Select
+            value={selectedFacilityId === "all" ? "all" : String(selectedFacilityId)}
+            onValueChange={(v) => setSelectedFacilityId(v === "all" ? "all" : parseInt(v))}
+          >
+            <SelectTrigger className="w-64">
+              <SelectValue placeholder="All facilities" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Facilities</SelectItem>
+              {facilities.map((f) => (
+                <SelectItem key={f.id} value={String(f.id)}>{f.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Tabs */}
