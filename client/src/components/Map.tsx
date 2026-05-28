@@ -165,10 +165,10 @@ export function MapView({
     map.current = new window.google.maps.Map(mapContainer.current, {
       zoom: initialZoom,
       center: initialCenter,
-      mapTypeControl: true,
-      fullscreenControl: true,
+      mapTypeControl: false,
+      fullscreenControl: false,
       zoomControl: true,
-      streetViewControl: true,
+      streetViewControl: false,
       mapId: "DEMO_MAP_ID",
     });
     if (onMapReady) {

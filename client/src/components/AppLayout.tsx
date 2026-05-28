@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { PrivacyPolicyModal } from "@/components/PrivacyPolicyModal";
+import { NotificationBell } from "@/components/NotificationBell";
 import { toast } from "sonner";
 
 const LOGO_URL = "https://pursuitpathways.com/content/logo%20five%20stones.png";
@@ -234,7 +235,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       icon: <MapPin size={18} />,
       defaultOpen: true,
       items: [
-        { href: "/facilities/onboarding", label: "Facility Setup Wizard",  icon: <Wand2 size={15} />,         locked: isPaid ? undefined : "paid" },
+        { href: "/facilities/new", label: "Facility Setup Wizard",  icon: <Wand2 size={15} />,         locked: isPaid ? undefined : "paid" },
         { href: "/facilities",            label: "Facilities",             icon: <Building2 size={15} />,     locked: isPaid ? undefined : "paid" },
         { href: "/facility-mapping",      label: "Facility Mapping",       icon: <MapPin size={15} />,        locked: isPaid ? undefined : "paid" },
         { href: "/audits",                label: "Audit History",          icon: <ClipboardList size={15} />, locked: isPaid ? undefined : "paid" },
@@ -425,9 +426,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Menu size={20} />
           </button>
           <img src={LOGO_URL} alt="Five Stones Technology" className="h-24 w-auto max-w-[320px] object-contain" />
-          <Link href="/ras" className="ml-auto inline-flex items-center justify-center rounded-lg border border-border bg-card p-2 text-foreground shadow-sm transition hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring">
-            <Bell size={18} />
-          </Link>
+          <div className="ml-auto">
+            <NotificationBell />
+          </div>
         </header>
         {/* Impersonation Banner — shown on every page when Ultra Admin is acting as another user */}
         {!!(user as any)?._isImpersonated && (
@@ -474,10 +475,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <ChevronLeft className="w-4 h-4" />
             Back
           </Button>
-          <Link href="/ras" className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground shadow-sm transition hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring">
-            <Bell className="w-4 h-4" />
-            Notifications
-          </Link>
+          <NotificationBell />
         </div>
       </div>
       {children}

@@ -63,6 +63,7 @@ import MicroDrillRunner from "@/pages/MicroDrillRunner";
 import MicroDrillTracking from "@/pages/MicroDrillTracking";
 import FacilityMapBuilder from "@/pages/FacilityMapBuilder";
 import ExtendedDrillRunner from "@/pages/ExtendedDrillRunner";
+import NotificationsPage from "@/pages/NotificationsPage";
 
 function Router() {
   return (
@@ -71,7 +72,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/facilities" component={Facilities} />
-      <Route path="/facilities/new" component={NewFacility} />
+      <Route path="/facilities/new" component={FacilityOnboarding} />
       <Route path="/facilities/:id" component={FacilityDetail} />
       <Route path="/audits" component={AuditHistory} />
       <Route path="/audit/:id" component={AuditWalkthrough} />
@@ -95,6 +96,7 @@ function Router() {
       <Route path="/user-management">{() => { window.location.replace("/admin/users"); return null; }}</Route>
       <Route path="/admin/flagged-visitors" component={FlaggedVisitors} />
       <Route path="/facilities/onboarding" component={FacilityOnboarding} />
+      <Route path="/facilities/onboarding-legacy" component={NewFacility} />
       <Route path="/legal/privacy" component={PrivacyPolicy} />
       <Route path="/osha" component={OshaReference} />
       <Route path="/standards" component={Standards} />
@@ -127,6 +129,7 @@ function Router() {
       <Route path="/extended-drills" component={ExtendedDrillRunner} />
       <Route path="/extended-drills/:drillId" component={ExtendedDrillRunner} />
       <Route path="/micro-drills/tracking" component={MicroDrillTracking} />
+      <Route path="/notifications" component={NotificationsPage} />
       <Route path="/settings" component={Settings} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

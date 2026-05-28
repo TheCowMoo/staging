@@ -853,6 +853,24 @@ export default function IncidentDashboard() {
                     {updateStatus.isPending ? "Saving..." : "Save Update"}
                   </Button>
 
+                  {isAdmin && (
+                    <div className="pt-2">
+                      <Button
+                        variant="outline"
+                        className="w-full gap-1.5 text-red-600 border-red-200 hover:bg-red-50"
+                        onClick={() => {
+                          if (window.confirm("Delete this incident report? This cannot be undone.")) {
+                            deleteReport.mutate({ id: selectedReport.id });
+                          }
+                        }}
+                        disabled={deleteReport.isPending}
+                      >
+                        <Trash2 size={14} />
+                        {deleteReport.isPending ? "Deleting..." : "Delete Report"}
+                      </Button>
+                    </div>
+                  )}
+
                 </div>
               </div>
             </div>

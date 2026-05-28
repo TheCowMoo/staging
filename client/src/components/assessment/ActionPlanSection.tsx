@@ -35,9 +35,10 @@ interface ActionCardProps {
 }
 
 function ActionCard({ action, index, checked, onToggle }: ActionCardProps) {
-  const dashIdx = action.indexOf(" — ");
-  const title = dashIdx > -1 ? action.slice(0, dashIdx) : action;
-  const body = dashIdx > -1 ? action.slice(dashIdx + 3) : "";
+  const actionStr = typeof action === "string" ? action : String(action ?? "");
+  const dashIdx = actionStr.indexOf(" — ");
+  const title = dashIdx > -1 ? actionStr.slice(0, dashIdx) : actionStr;
+  const body = dashIdx > -1 ? actionStr.slice(dashIdx + 3) : "";
   const impactLabel = index < 2 ? "Impact: High" : "Impact: Medium";
   const impactCls = index < 2
     ? "bg-red-100 text-red-700 border border-red-200"

@@ -197,7 +197,6 @@ export default function PersonnelTracking() {
 
     markersRef.current.forEach((marker) => marker.setMap(null));
     markersRef.current = [];
-    currentUserMarkerRef.current = null;
 
     personnel.forEach((member) => {
       if (member.locationLatitude == null || member.locationLongitude == null) return;
@@ -314,7 +313,7 @@ export default function PersonnelTracking() {
               </div>
             </div>
             </div>
-            <div className="rounded-2xl overflow-hidden border border-border bg-muted">
+            <div className="rounded-2xl overflow-hidden border border-border bg-muted relative" style={{ zIndex: 1 }}>
               <MapView initialCenter={initialCenter} initialZoom={12} onMapReady={onMapReady} />
             </div>
                         <div className="mt-4 grid gap-3 sm:grid-cols-3">

@@ -1089,3 +1089,19 @@ export const microDrillAssignments = mysqlTable("micro_drill_assignments", {
 });
 export type MicroDrillAssignment = typeof microDrillAssignments.$inferSelect;
 export type InsertMicroDrillAssignment = typeof microDrillAssignments.$inferInsert;
+
+// ─── Notifications ──────────────────────────────────────────────────────────────
+export const notifications = mysqlTable("notifications", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
+  orgId: int("org_id"),
+  type: varchar("type", { length: 64 }).notNull(), // e.g. "new_incident", "incident_message", "staff_checkin", "flagged_visitor", "ras_alert"
+  title: varchar("title", { length: 255 }).notNull(),
+  body: text("body"),
+  link: varchar("link", { length: 512 }), // URL to navigate to when clicked
+  metadata: json("metadata"), // flexible payload
+  read: boolean("read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = typeof notifications.$inferInsert;
