@@ -289,6 +289,8 @@ export default function IncidentDashboard() {
   const [tokenInput, setTokenInput] = useState("");
   const [tokenSearch, setTokenSearch] = useState("");
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
 
   const { data: tokenReport, error: tokenError, isFetching: tokenFetching } = trpc.incident.adminLookup.useQuery(
     { token: tokenSearch },
@@ -302,6 +304,15 @@ export default function IncidentDashboard() {
       toast.success("Report status updated");
       refetch();
       setSelectedReport(null);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const deleteReport = trpc.incident.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Incident report deleted");
+      setSelectedReport(null);
+      refetch();
     },
     onError: (e) => toast.error(e.message),
   });

@@ -107,7 +107,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
-          <img src={LOGO_URL} alt="Five Stones Technology" className="h-24 w-auto max-w-[280px] object-contain animate-pulse" />
+          <img src={LOGO_URL} alt="Five Stones Technology" className="h-40 w-auto max-w-[400px] object-contain animate-pulse" />
           <p className="text-muted-foreground text-sm">Loading...</p>
         </div>
       </div>
@@ -118,7 +118,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center max-w-sm mx-auto px-6">
-          <img src={LOGO_URL} alt="Five Stones Technology" className="h-28 w-auto max-w-[320px] object-contain mx-auto mb-6" />
+          <img src={LOGO_URL} alt="Five Stones Technology" className="h-40 w-auto max-w-[450px] object-contain mx-auto mb-6" />
           <p className="text-muted-foreground mb-2">Sign in to access your workplace safety assessments.</p>
           <Button asChild size="lg" className="w-full">
             <a href={getLoginUrl()}>Sign In to Continue</a>
@@ -251,6 +251,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       ],
     },
     {
+      id: "visitorManagement",
+      label: "Visitor Management",
+      icon: <Users size={18} />,
+      items: [
+        { href: "/visitors", label: "Visitor Log", icon: <Users size={15} />, locked: isPaid ? undefined : "paid" },
+        { href: "/admin/flagged-visitors", label: "Flagged Visitors", icon: <Flag size={15} />, locked: isPaid ? undefined : "paid" },
+      ],
+    },
+    {
       id: "reporting",
       label: "Reporting",
       icon: <FileText size={18} />,
@@ -293,8 +302,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const Sidebar = ({ mobile = false }: { mobile?: boolean }) => (
     <aside className={`${mobile ? "flex flex-col h-full" : "hidden lg:flex flex-col h-screen sticky top-0"} w-64 sidebar-metallic`}>
-      <div className="flex items-center justify-center px-5 py-5 border-b border-sidebar-border">
-          <img src={LOGO_URL} alt="Five Stones Technology" className="h-32 w-full object-contain" />
+      <div className="flex items-center justify-center px-3 py-3 border-b border-sidebar-border">
+          <img src={LOGO_URL} alt="Five Stones Technology" className="h-48 w-full object-contain" />
         {mobile && (
           <button onClick={() => setSidebarOpen(false)} className="ml-auto text-sidebar-foreground hover:text-white">
             <X size={18} />
@@ -415,7 +424,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <button onClick={() => setSidebarOpen(true)} className="text-muted-foreground hover:text-foreground">
             <Menu size={20} />
           </button>
-          <img src={LOGO_URL} alt="Five Stones Technology" className="h-16 w-auto max-w-[220px] object-contain" />
+          <img src={LOGO_URL} alt="Five Stones Technology" className="h-24 w-auto max-w-[320px] object-contain" />
           <Link href="/ras" className="ml-auto inline-flex items-center justify-center rounded-lg border border-border bg-card p-2 text-foreground shadow-sm transition hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring">
             <Bell size={18} />
           </Link>

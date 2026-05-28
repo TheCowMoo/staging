@@ -12,7 +12,7 @@ import {
   createAuditPhoto, getPhotosByAudit, deletePhoto,
   createTesterFeedback, getAllTesterFeedback, getFeedbackByAudit,
   createQuestionFlag, getAllQuestionFlags, getQuestionFlagsByAudit,
-  createIncidentReport, getIncidentReports, getIncidentReportByToken, getIncidentReportById, updateIncidentReportStatus, updateIncidentThreatFlags, deleteAllIncidentReports,
+  createIncidentReport, getIncidentReports, getIncidentReportByToken, getIncidentReportById, updateIncidentReportStatus, updateIncidentThreatFlags, deleteAllIncidentReports, deleteIncidentReport,
   findSimilarIncidents, findIncidentsByPerson, markAsRepeatIncident,
   getFacilityAttachments, getFacilityAttachmentById, updateAttachmentAnalysis, deleteFacilityAttachment,
   getCorrectiveActionChecks, toggleCorrectiveActionCheck,
@@ -1417,6 +1417,15 @@ const incidentRouter = router({
     }))
     .mutation(async ({ input }) => {
       await markAsRepeatIncident(input.id, input.repeatGroupId);
+      return { success: true };
+    }),
+
+  // Delete an incident report (admin only)
+  delete: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const deleted = await deleteIncidentReport(input.id);
+      if (!deleted) throw new TRPCError({ code: "NOT_FOUND", message: "Incident report not found" });
       return { success: true };
     }),
 });

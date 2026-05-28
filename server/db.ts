@@ -438,6 +438,13 @@ export async function deleteAllIncidentReports() {
   await db.delete(incidentReports);
 }
 
+export async function deleteIncidentReport(id: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const result = await db.delete(incidentReports).where(eq(incidentReports.id, id));
+  return (result as any)?.[0]?.affectedRows > 0;
+}
+
 // ─── Facility Attachments ─────────────────────────────────────────────────────
 export async function createFacilityAttachment(data: InsertFacilityAttachment) {
   const db = await getDb();
