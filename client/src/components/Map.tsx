@@ -181,6 +181,6 @@ export function MapView({
   }, [init]);
 
   return (
-    <div ref={mapContainer} className={cn("w-full h-[500px]", className)} />
+    <div ref={mapContainer} className={cn("w-full h-[500px]", className)} style={{ isolation: "isolate", position: "relative", zIndex: 0, contain: "layout style" }} />
   );
 }
