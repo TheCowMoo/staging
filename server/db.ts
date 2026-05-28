@@ -940,6 +940,14 @@ export async function getLiabilityScansForUser(userId: number): Promise<(typeof 
     .orderBy(desc(liabilityScans.createdAt));
 }
 
+export async function deleteLiabilityScan(scanId: number, userId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const result = await db.delete(liabilityScans)
+    .where(and(eq(liabilityScans.id, scanId), eq(liabilityScans.userId, userId)));
+  return result[0]?.affectedRows > 0;
+}
+
 // ─── Scan Share Tokens ────────────────────────────────────────────────────────
 export async function insertScanShareToken(data: InsertScanShareToken): Promise<void> {
   const db = await getDb();

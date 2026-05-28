@@ -22,7 +22,7 @@ export const incidentCommunicationRouter = router({
         senderName: input.senderName ?? "Admin",
         message: input.message,
         isFromAdmin: true,
-      });
+      } as any);
       return { success: true };
     }),
 

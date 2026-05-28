@@ -45,7 +45,7 @@ import { trainingModuleRouter } from "./trainingModuleRouter";
 import { initVapid } from "./push";
 import { clearPdfCache } from "./eapPdf";
 import {
-  insertLiabilityScan, getLiabilityScanById, getLiabilityScansForUser,
+  insertLiabilityScan, getLiabilityScanById, getLiabilityScansForUser, deleteLiabilityScan,
   insertScanShareToken, getScanShareToken, updateLiabilityScanTierScores,
 } from "./db";
 import { randomBytes, createHash } from "crypto";
@@ -2327,6 +2327,15 @@ const liabilityScanRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     return getLiabilityScansForUser(ctx.user.id);
   }),
+
+  // Delete a scan (must belong to the requesting user)
+  delete: protectedProcedure
+    .input(z.object({ scanId: z.number().int() }))
+    .mutation(async ({ ctx, input }) => {
+      const deleted = await deleteLiabilityScan(input.scanId, ctx.user.id);
+      if (!deleted) throw new TRPCError({ code: "NOT_FOUND", message: "Scan not found or not authorized" });
+      return { success: true };
+    }),
 
   // Create a tokenized share link for a scan (expires in 30 days)
   createShareToken: protectedProcedure

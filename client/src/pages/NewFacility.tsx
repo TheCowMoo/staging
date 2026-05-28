@@ -95,7 +95,7 @@ export default function NewFacility() {
               <Building2 size={20} className="text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-foreground">New Facility</h1>
+              <h1 className="text-xl font-bold text-foreground">Facility Setup Wizard</h1>
               <p className="text-sm text-muted-foreground">Create a facility profile to begin an assessment</p>
             </div>
           </div>

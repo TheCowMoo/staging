@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import {
@@ -9,6 +10,7 @@ import {
   ChevronRight,
   History,
   AlertTriangle,
+  Trash2,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -61,6 +63,15 @@ export default function ScanHistory() {
     () => (scans ? [...scans].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : []),
     [scans]
   );
+
+  const utils = trpc.useUtils();
+  const deleteScan = trpc.liabilityScan.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Scan deleted");
+      utils.liabilityScan.list.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   function handleOpen(scan: (typeof sorted)[number]) {
     // Re-run the engine from stored answers so LiabilityScan.tsx gets a live result
@@ -231,9 +242,23 @@ export default function ScanHistory() {
                   </div>
 
                   {/* Right: action */}
-                  <div className="flex items-center gap-1 text-xs font-medium text-primary flex-shrink-0 mt-1">
-                    View Results
-                    <ChevronRight size={14} />
+                  <div className="flex items-center gap-2 flex-shrink-0 mt-1">
+                    <div className="flex items-center gap-1 text-xs font-medium text-primary">
+                      View Results
+                      <ChevronRight size={14} />
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm("Delete this scan?")) {
+                          deleteScan.mutate({ scanId: scan.id });
+                        }
+                      }}
+                      className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                      title="Delete scan"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </div>
               </CardContent>
