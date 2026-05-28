@@ -54,16 +54,12 @@ export default function PersonnelTracking() {
   }, [currentPosition, selectedMember]);
 
     const recenterMap = useCallback(() => {
-    // Use the map's built-in "My Location" feature if available
     const map = mapRef.current;
     if (!map) return;
     
     if (currentPosition) {
       map.setZoom(16);
       map.panTo(currentPosition);
-    } else if (typeof map.setMyLocationEnabled === 'function') {
-      // Trigger the map's built-in geolocation
-      try { map.setMyLocationEnabled(true); } catch {}
     }
   }, [currentPosition]);
 
@@ -155,9 +151,13 @@ export default function PersonnelTracking() {
     const map = mapRef.current;
     if (!map || !currentPosition || !window.google) return;
 
-    // Remove old accuracy circle
+    // Remove old accuracy circle and current user marker
     if (accuracyCircleRef.current) {
       accuracyCircleRef.current.setMap(null);
+    }
+    if (currentUserMarkerRef.current) {
+      currentUserMarkerRef.current.setMap(null);
+      currentUserMarkerRef.current = null;
     }
 
     // Draw accuracy radius circle
@@ -173,6 +173,22 @@ export default function PersonnelTracking() {
         strokeWeight: 1,
       });
     }
+
+    // Add a blue dot marker for the current user (My Location blue dot alternative)
+    currentUserMarkerRef.current = new window.google.maps.Marker({
+      map,
+      position: currentPosition,
+      title: "You are here",
+      icon: {
+        path: window.google.maps.SymbolPath.CIRCLE,
+        scale: 10,
+        fillColor: "#3b82f6",
+        fillOpacity: 1,
+        strokeWeight: 3,
+        strokeColor: "#ffffff",
+      },
+      zIndex: 999,
+    });
   }, [currentPosition, accuracy]);
 
     useEffect(() => {

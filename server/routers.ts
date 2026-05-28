@@ -12,7 +12,7 @@ import {
   createAuditPhoto, getPhotosByAudit, deletePhoto,
   createTesterFeedback, getAllTesterFeedback, getFeedbackByAudit,
   createQuestionFlag, getAllQuestionFlags, getQuestionFlagsByAudit,
-  createIncidentReport, getIncidentReports, getIncidentReportByToken, getIncidentReportById, updateIncidentReportStatus, updateIncidentThreatFlags,
+  createIncidentReport, getIncidentReports, getIncidentReportByToken, getIncidentReportById, updateIncidentReportStatus, updateIncidentThreatFlags, deleteAllIncidentReports,
   findSimilarIncidents, findIncidentsByPerson, markAsRepeatIncident,
   getFacilityAttachments, getFacilityAttachmentById, updateAttachmentAnalysis, deleteFacilityAttachment,
   getCorrectiveActionChecks, toggleCorrectiveActionCheck,
@@ -72,7 +72,7 @@ import { massNotificationRouter } from "./massNotificationRouter";
 import { microDrillRouter } from "./microDrillRouter";
 import { facilityMapRouter } from "./facilityMapRouter";
 import { incidentCommunicationRouter } from "./incidentCommunicationRouter";
-// ─── Facility Router ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Facility Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Initialise VAPID keys at server startup (no-op if keys not configured)
 initVapid();;
 
@@ -190,7 +190,7 @@ const facilityRouter = router({
     }),
 });
 
-// ─── Audit Router ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Audit Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const auditRouter = router({
   listByFacility: paidProcedure
     .input(z.object({ facilityId: z.number() }))
@@ -253,7 +253,7 @@ const auditRouter = router({
         // Positive polarity responses
         "Secure / Yes", "Partial", "Minor Concern", "Moderate Concern", "Serious Vulnerability",
         // Negative polarity responses
-        "No — Not Present", "Unlikely / Minimal", "Partially Present", "Yes — Present",
+        "No â€” Not Present", "Unlikely / Minimal", "Partially Present", "Yes â€” Present",
         // Shared
         "Unknown", "Not Applicable", "Unavoidable",
         // Decision-tree aliases
@@ -318,7 +318,7 @@ const auditRouter = router({
         action: "audit_completed",
         entityType: "audit",
         entityId: String(input.auditId),
-        description: `Completed audit — overall risk: ${overallRiskLevel} (${overallScore?.toFixed(1)}%)`,
+        description: `Completed audit â€” overall risk: ${overallRiskLevel} (${overallScore?.toFixed(1)}%)`,
         metadata: { overallScore, overallRiskLevel },
       });
       return { success: true, overallScore, overallRiskLevel };
@@ -393,7 +393,7 @@ const auditRouter = router({
       return { success: true };
     }),
 });
-// ─── Threat Findings Routerr ───────────────────────────────────────────────────
+// â”€â”€â”€ Threat Findings Routerr â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const threatRouter = router({
   list: paidProcedure
     .input(z.object({ auditId: z.number() }))
@@ -434,7 +434,7 @@ const threatRouter = router({
     }),
 });
 
-// ─── Report Router ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Report Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const reportRouter = router({
   generate: paidProcedure
     .input(z.object({ auditId: z.number() }))
@@ -451,7 +451,7 @@ const reportRouter = router({
 
       const categoryScores = (audit.categoryScores as any) ?? {};
 
-      // Build corrective actions — exclude items marked as unavoidable structural constraints
+      // Build corrective actions â€” exclude items marked as unavoidable structural constraints
       const correctiveActions = responses
         .filter((r) => r.score !== null && (r.score ?? 0) >= 1 && !(r as any).isUnavoidable)
         .map((r) => ({
@@ -546,7 +546,7 @@ const reportRouter = router({
         `## Corrective Action Plan`,
         `| Priority | Category | Issue | Recommendation |`,
         `|---|---|---|---|`,
-        ...correctiveActions.map((a) => `| **${a.priority}** | ${a.category} | ${a.question} | ${a.response} — ${a.notes || "See recommendations."} |`),
+        ...correctiveActions.map((a) => `| **${a.priority}** | ${a.category} | ${a.question} | ${a.response} â€” ${a.notes || "See recommendations."} |`),
         `\n---\n`,
         `## Emergency Action Plan Framework`,
         `### Emergency Contact Procedures`,
@@ -565,7 +565,7 @@ const reportRouter = router({
         `- Move to interior rooms away from windows.`,
         `- Await further instruction from emergency coordinator or law enforcement.`,
         `\n---\n`,
-        `*Report generated by Five Stones Technology — Workplace Safety Assessment Platform*`,
+        `*Report generated by Five Stones Technology â€” Workplace Safety Assessment Platform*`,
         `*Aligned with OSHA Workplace Violence Prevention, CISA Risk Principles, and NFPA 3000*`,
       ];
 
@@ -584,7 +584,7 @@ const reportRouter = router({
       const categoryScores = (audit.categoryScores as Record<string, any>) ?? {};
       const highRiskCategories = Object.entries(categoryScores)
         .filter(([, d]: any) => ["Elevated", "High", "Critical"].includes(d.riskLevel))
-        .map(([name, d]: any) => `${name} (${d.riskLevel} — ${d.percentage}%)`);
+        .map(([name, d]: any) => `${name} (${d.riskLevel} â€” ${d.percentage}%)`);
       return {
         facilityName: facility.name,
         facilityType: facility.facilityType,
@@ -610,7 +610,7 @@ const reportRouter = router({
       // Build risk context for EAP
       const highRiskCategories = Object.entries(categoryScores)
         .filter(([, d]: any) => ["Elevated", "High", "Critical"].includes(d.riskLevel))
-        .map(([name, d]: any) => `${name} (${d.riskLevel} — ${d.percentage}%)`);
+        .map(([name, d]: any) => `${name} (${d.riskLevel} â€” ${d.percentage}%)`);
       const criticalFindings = responses
         .filter((r) => (r.score ?? 0) >= 2)
         .map((r) => r.questionText)
@@ -650,7 +650,7 @@ const reportRouter = router({
       // EAP coordinator contacts
       const eapContactsData = (audit.eapContacts as any) ?? {};
       const eapContactsSection = (eapContactsData.primaryName || eapContactsData.backupName || eapContactsData.afterHoursContact)
-        ? `\nEMERGENCY COORDINATOR CONTACTS:\n${eapContactsData.primaryName ? `Primary: ${eapContactsData.primaryName}${eapContactsData.primaryTitle ? " (" + eapContactsData.primaryTitle + ")" : ""}${eapContactsData.primaryPhone ? " — " + eapContactsData.primaryPhone : ""}` : ""}\n${eapContactsData.backupName ? `Backup: ${eapContactsData.backupName}${eapContactsData.backupTitle ? " (" + eapContactsData.backupTitle + ")" : ""}${eapContactsData.backupPhone ? " — " + eapContactsData.backupPhone : ""}` : ""}\n${eapContactsData.afterHoursContact ? `After-Hours: ${eapContactsData.afterHoursContact}` : ""}\n${eapContactsData.otherNotes ? `Notes: ${eapContactsData.otherNotes}` : ""}\n`
+        ? `\nEMERGENCY COORDINATOR CONTACTS:\n${eapContactsData.primaryName ? `Primary: ${eapContactsData.primaryName}${eapContactsData.primaryTitle ? " (" + eapContactsData.primaryTitle + ")" : ""}${eapContactsData.primaryPhone ? " â€” " + eapContactsData.primaryPhone : ""}` : ""}\n${eapContactsData.backupName ? `Backup: ${eapContactsData.backupName}${eapContactsData.backupTitle ? " (" + eapContactsData.backupTitle + ")" : ""}${eapContactsData.backupPhone ? " â€” " + eapContactsData.backupPhone : ""}` : ""}\n${eapContactsData.afterHoursContact ? `After-Hours: ${eapContactsData.afterHoursContact}` : ""}\n${eapContactsData.otherNotes ? `Notes: ${eapContactsData.otherNotes}` : ""}\n`
         : "";
 
       // Attachment AI analysis (cap at 3 to keep prompt size manageable)
@@ -678,7 +678,7 @@ const reportRouter = router({
       // Responses flagged "Add to EAP" by auditor
       const eapFlaggedResponses = responses
         .filter((r) => (r as any).addToEap && r.questionText)
-        .map((r) => `- [${r.categoryName}] ${r.questionText}: ${r.response ?? r.primaryResponse ?? "Unknown"}${r.notes ? " — Auditor note: " + r.notes : ""}${(r as any).recommendedActionNotes ? " — Recommended action: " + (r as any).recommendedActionNotes : ""}`)
+        .map((r) => `- [${r.categoryName}] ${r.questionText}: ${r.response ?? r.primaryResponse ?? "Unknown"}${r.notes ? " â€” Auditor note: " + r.notes : ""}${(r as any).recommendedActionNotes ? " â€” Recommended action: " + (r as any).recommendedActionNotes : ""}`)
         .slice(0, 15);
       const eapFlaggedSection = eapFlaggedResponses.length > 0
         ? `\nAUDITOR-FLAGGED ITEMS FOR EAP (these must be addressed in the relevant sections):\n${eapFlaggedResponses.join("\n")}\n`
@@ -687,7 +687,7 @@ const reportRouter = router({
       // All scored responses with auditor notes (score >= 1, with notes)
       const notedResponses = responses
         .filter((r) => (r.score ?? 0) >= 1 && (r.notes || (r as any).recommendedActionNotes))
-        .map((r) => `- [${r.categoryName}] ${r.questionText}${r.notes ? " — Note: " + r.notes : ""}${(r as any).recommendedActionNotes ? " — Action: " + (r as any).recommendedActionNotes : ""}`)
+        .map((r) => `- [${r.categoryName}] ${r.questionText}${r.notes ? " â€” Note: " + r.notes : ""}${(r as any).recommendedActionNotes ? " â€” Action: " + (r as any).recommendedActionNotes : ""}`)
         .slice(0, 12);
       const notedResponsesSection = notedResponses.length > 0
         ? `\nAUDITOR FIELD NOTES (incorporate into relevant sections):\n${notedResponses.join("\n")}\n`
@@ -695,7 +695,7 @@ const reportRouter = router({
 
       // Threat findings with descriptions
       const threatSummary = findings.slice(0, 10).map((f) => {
-        const desc = (f as any).description ? ` — ${(f as any).description}` : "";
+        const desc = (f as any).description ? ` â€” ${(f as any).description}` : "";
         return `- ${f.findingName} [${f.severityLevel}]${desc}`;
       }).join("\n") || "None recorded";
 
@@ -766,7 +766,7 @@ Effective Date: ${effectiveDateStr} | Review Date: ${reviewDateStr}`;
         try {
           parsed = JSON.parse(cleaned);
         } catch {
-          // LLM returned non-JSON — return empty array so spread doesn't throw
+          // LLM returned non-JSON â€” return empty array so spread doesn't throw
           console.error("[EAP callLLM] JSON.parse failed. Raw response:", cleaned.slice(0, 500));
           return [];
         }
@@ -777,58 +777,58 @@ Effective Date: ${effectiveDateStr} | Review Date: ${reviewDateStr}`;
           // Try to extract any array value from the top-level object
           const firstArray = Object.values(parsed).find((v) => Array.isArray(v));
           if (firstArray) return firstArray as any[];
-          // Single section object — wrap it
+          // Single section object â€” wrap it
           if (parsed.id && parsed.content) return [parsed];
         }
         console.error("[EAP callLLM] Unexpected response shape:", JSON.stringify(parsed).slice(0, 300));
         return [];
       }
 
-      // Build section prompts — run sequentially to avoid parallel timeout issues
+      // Build section prompts â€” run sequentially to avoid parallel timeout issues
       const sectionPromptBase = `${sharedContext}
 
-Return ONLY a raw JSON array — no markdown, no code fences, no explanation. Start your response with '[' and end with ']'.
-Each element must be an object with: id (string), title (string), content (string — 3-4 paragraphs of facility-specific prose), recommendations (array of {action, priority, basis} where priority is one of: Immediate, 30 Days, 60 Days, 90 Days, Long-Term).`;
+Return ONLY a raw JSON array â€” no markdown, no code fences, no explanation. Start your response with '[' and end with ']'.
+Each element must be an object with: id (string), title (string), content (string â€” 3-4 paragraphs of facility-specific prose), recommendations (array of {action, priority, basis} where priority is one of: Immediate, 30 Days, 60 Days, 90 Days, Long-Term).`;
 
       const isHealthcare = (facility.facilityType ?? "").toLowerCase().includes("health") || (facility.facilityType ?? "").toLowerCase().includes("medical") || (facility.facilityType ?? "").toLowerCase().includes("hospital") || (facility.facilityType ?? "").toLowerCase().includes("clinic");
 
       const batch1Prompt = `${sectionPromptBase}
 
-Generate these 6 EAP sections. For ALL recommendations, cite the correct standard from the Basis Library — never use ACTD as a basis outside of Sections 8 and 9:
-1. id: "s1_purpose" — Purpose, Scope & Legal Authority: Define the plan's intent, who it covers (all staff, visitors, contractors), the regulatory basis (OSHA 29 CFR 1910.38, NFPA 3000 (PS) S6, FEMA NIMS/ICS), and the facility's commitment to safety. Basis for all recommendations: OSHA 29 CFR 1910.38.
-2. id: "s2_facility_profile" — Facility Profile & Threat Environment: Physical description, occupancy, operating hours, access points, known threat landscape specific to this facility type and location. Basis: NFPA 3000 (PS) S7.
-3. id: "s3_risk_assessment" — Risk Assessment Summary: Summarize the audit findings, risk levels by category, top vulnerabilities, and overall risk rating for this specific facility. Basis: NFPA 3000 (PS) S7.
-4. id: "s4_roles" — Roles, Responsibilities & ICS Structure: ICS roles assigned to this facility size (${facilitySize}). ALWAYS write Site Lead as "Site Lead (functions as Incident Commander per NIMS)". Include primary/backup assignments, chain of command, and specific duties. Basis: FEMA NIMS / ICS.
-5. id: "s5_communication" — Communication Protocols: Internal/external notification chains, mass notification systems, backup communication methods, and who notifies whom in what order. Basis: OSHA 29 CFR 1910.38 (Reporting Procedures), OSHA 29 CFR 1910.165.
-6. id: "s6_evacuation" — Evacuation Procedures: Primary/secondary evacuation routes specific to this facility, assembly points, accountability procedures, and special considerations. Basis: OSHA 29 CFR 1910.38 (Evacuation Procedures & Exit Routes).`;
+Generate these 6 EAP sections. For ALL recommendations, cite the correct standard from the Basis Library â€” never use ACTD as a basis outside of Sections 8 and 9:
+1. id: "s1_purpose" â€” Purpose, Scope & Legal Authority: Define the plan's intent, who it covers (all staff, visitors, contractors), the regulatory basis (OSHA 29 CFR 1910.38, NFPA 3000 (PS) S6, FEMA NIMS/ICS), and the facility's commitment to safety. Basis for all recommendations: OSHA 29 CFR 1910.38.
+2. id: "s2_facility_profile" â€” Facility Profile & Threat Environment: Physical description, occupancy, operating hours, access points, known threat landscape specific to this facility type and location. Basis: NFPA 3000 (PS) S7.
+3. id: "s3_risk_assessment" â€” Risk Assessment Summary: Summarize the audit findings, risk levels by category, top vulnerabilities, and overall risk rating for this specific facility. Basis: NFPA 3000 (PS) S7.
+4. id: "s4_roles" â€” Roles, Responsibilities & ICS Structure: ICS roles assigned to this facility size (${facilitySize}). ALWAYS write Site Lead as "Site Lead (functions as Incident Commander per NIMS)". Include primary/backup assignments, chain of command, and specific duties. Basis: FEMA NIMS / ICS.
+5. id: "s5_communication" â€” Communication Protocols: Internal/external notification chains, mass notification systems, backup communication methods, and who notifies whom in what order. Basis: OSHA 29 CFR 1910.38 (Reporting Procedures), OSHA 29 CFR 1910.165.
+6. id: "s6_evacuation" â€” Evacuation Procedures: Primary/secondary evacuation routes specific to this facility, assembly points, accountability procedures, and special considerations. Basis: OSHA 29 CFR 1910.38 (Evacuation Procedures & Exit Routes).`;
 
       const batch2Prompt = `${sectionPromptBase}
 
-Generate these 6 EAP sections. For ALL recommendations, cite the correct standard — ACTD may ONLY be cited in sections s8_actd and s9_active_threat:
-1. id: "s7_lockdown" — Lockdown & Lockout Procedures: Step-by-step lockdown/lockout protocols specific to this facility's layout, door securing procedures, communication during lockdown, and when to use each protocol. Basis: OSHA 29 CFR 1910.38, OSHA 29 CFR 1910.165.
-2. id: "s8_actd" — ACTD Response Framework: Detailed Assess → Commit → Take Action (Lockout/Lockdown/Escape/Defend) → Debrief protocol tailored to this facility's specific layout and threat profile. Basis: ACTD Framework (aligned with CISA active threat preparedness principles). This is the ONLY section where ACTD is cited as a basis.
-3. id: "s9_active_threat" — Active Threat & Active Shooter Response: Specific protocols for active shooter/threat scenarios using the ACTD model — NEVER Run/Hide/Fight language. Tailor to this facility's access points and layout. Basis: ACTD Framework (aligned with CISA active threat preparedness principles), NFPA 3000 (PS) S19.
-4. id: "s10_medical" — Medical Emergency & Casualty Care: First aid response procedures, AED locations (if known), triage procedures, EMS coordination, and bleeding control (STOP THE BLEED protocol). For any AED recommendation, cite BOTH AHA/ILCOR 2020 Guidelines AND OSHA 3185. Basis: OSHA 29 CFR 1910.38 (Rescue & Medical Duties), AHA/ILCOR 2020 Guidelines, OSHA 3185.
-5. id: "s11_reunification" — Family Reunification & Accountability: Post-incident reunification site selection, accountability procedures, family notification process, and visitor release protocols. Basis: FEMA NIMS/ICS, NFPA 1600 (Family Reunification).
-6. id: "s12_media" — Media & Public Information Management: Designated spokesperson, approved messaging protocols, social media guidelines, and how to handle media inquiries during and after an incident. Basis: FEMA NIMS/ICS, NFPA 1600 (Crisis Communications).`;
+Generate these 6 EAP sections. For ALL recommendations, cite the correct standard â€” ACTD may ONLY be cited in sections s8_actd and s9_active_threat:
+1. id: "s7_lockdown" â€” Lockdown & Lockout Procedures: Step-by-step lockdown/lockout protocols specific to this facility's layout, door securing procedures, communication during lockdown, and when to use each protocol. Basis: OSHA 29 CFR 1910.38, OSHA 29 CFR 1910.165.
+2. id: "s8_actd" â€” ACTD Response Framework: Detailed Assess â†’ Commit â†’ Take Action (Lockout/Lockdown/Escape/Defend) â†’ Debrief protocol tailored to this facility's specific layout and threat profile. Basis: ACTD Framework (aligned with CISA active threat preparedness principles). This is the ONLY section where ACTD is cited as a basis.
+3. id: "s9_active_threat" â€” Active Threat & Active Shooter Response: Specific protocols for active shooter/threat scenarios using the ACTD model â€” NEVER Run/Hide/Fight language. Tailor to this facility's access points and layout. Basis: ACTD Framework (aligned with CISA active threat preparedness principles), NFPA 3000 (PS) S19.
+4. id: "s10_medical" â€” Medical Emergency & Casualty Care: First aid response procedures, AED locations (if known), triage procedures, EMS coordination, and bleeding control (STOP THE BLEED protocol). For any AED recommendation, cite BOTH AHA/ILCOR 2020 Guidelines AND OSHA 3185. Basis: OSHA 29 CFR 1910.38 (Rescue & Medical Duties), AHA/ILCOR 2020 Guidelines, OSHA 3185.
+5. id: "s11_reunification" â€” Family Reunification & Accountability: Post-incident reunification site selection, accountability procedures, family notification process, and visitor release protocols. Basis: FEMA NIMS/ICS, NFPA 1600 (Family Reunification).
+6. id: "s12_media" â€” Media & Public Information Management: Designated spokesperson, approved messaging protocols, social media guidelines, and how to handle media inquiries during and after an incident. Basis: FEMA NIMS/ICS, NFPA 1600 (Crisis Communications).`;
 
       const batch3Prompt = `${sectionPromptBase}
 
 Generate these 5 EAP sections. NEVER cite ACTD as a basis in any of these sections. Use only the standards listed:
-1. id: "s13_training" — Training, Drills & Exercise Program: Required drill frequency — micro drills ongoing, extended drills minimum annually (NFPA 3000 alignment). Exercise types (tabletop, functional, full-scale), after-action review process, and staff training requirements. Basis: NFPA 3000 (PS) S10-14, OSHA 29 CFR 1910.38. DO NOT cite ACTD here.
-2. id: "s14_continuity" — Business Continuity & Recovery: Critical function restoration, alternate site operations, data/records recovery, vendor/supplier continuity, and recovery priorities. Basis: NFPA 1600 (Business Continuity & Recovery). DO NOT cite ACTD here.
-3. id: "s15_special_populations" — Special Populations & Accessibility: Procedures for individuals with disabilities, non-English speakers, visitors, and contractors. MUST cite ADA Title III and Section 504 (Rehabilitation Act) for disability-related recommendations. Basis: ADA Title III, Section 504 (Rehabilitation Act), OSHA 29 CFR 1910.38. DO NOT cite ACTD here.
-4. id: "s16_maintenance" — Plan Maintenance & Review Schedule: Annual review cycle, trigger events for immediate revision (incidents, facility changes, personnel changes), version control, and distribution list. Basis: OSHA 29 CFR 1910.38, NFPA 1600 (Plan Maintenance & Review). DO NOT cite ACTD here.
-5. id: "s17_appendices" — Appendices & Supporting Documents: Contact directories (emergency services, key staff, vendors), floor plan references, resource lists, mutual aid agreements, and supporting regulatory references. Basis: OSHA 29 CFR 1910.38 (Named Contact Person), FEMA NIMS/ICS. DO NOT cite ACTD here.`;
+1. id: "s13_training" â€” Training, Drills & Exercise Program: Required drill frequency â€” micro drills ongoing, extended drills minimum annually (NFPA 3000 alignment). Exercise types (tabletop, functional, full-scale), after-action review process, and staff training requirements. Basis: NFPA 3000 (PS) S10-14, OSHA 29 CFR 1910.38. DO NOT cite ACTD here.
+2. id: "s14_continuity" â€” Business Continuity & Recovery: Critical function restoration, alternate site operations, data/records recovery, vendor/supplier continuity, and recovery priorities. Basis: NFPA 1600 (Business Continuity & Recovery). DO NOT cite ACTD here.
+3. id: "s15_special_populations" â€” Special Populations & Accessibility: Procedures for individuals with disabilities, non-English speakers, visitors, and contractors. MUST cite ADA Title III and Section 504 (Rehabilitation Act) for disability-related recommendations. Basis: ADA Title III, Section 504 (Rehabilitation Act), OSHA 29 CFR 1910.38. DO NOT cite ACTD here.
+4. id: "s16_maintenance" â€” Plan Maintenance & Review Schedule: Annual review cycle, trigger events for immediate revision (incidents, facility changes, personnel changes), version control, and distribution list. Basis: OSHA 29 CFR 1910.38, NFPA 1600 (Plan Maintenance & Review). DO NOT cite ACTD here.
+5. id: "s17_appendices" â€” Appendices & Supporting Documents: Contact directories (emergency services, key staff, vendors), floor plan references, resource lists, mutual aid agreements, and supporting regulatory references. Basis: OSHA 29 CFR 1910.38 (Named Contact Person), FEMA NIMS/ICS. DO NOT cite ACTD here.`;
 
       // Batch 4: New required sections (TAT, Employee Alarm System, OSHA Compliance Mapping, conditional HIPAA)
       const batch4Prompt = `${sectionPromptBase}
 
 Generate ${isHealthcare ? "4" : "3"} EAP sections. NEVER cite ACTD as a basis in any of these sections:
-1. id: "s18_tat" — Threat Assessment Team (TAT) & Pre-Incident Intervention: Multidisciplinary team structure (HR, security, management, legal), behavioral threat reporting process, escalation workflow from concern to intervention, and intervention protocols. Basis: NFPA 3000 (PS) S6 (Multidisciplinary Planning Requirements), NFPA 3000 (PS) S7 (Risk Assessment).
-2. id: "s19_alarm_system" — Employee Alarm & Notification System: Real-time alert capabilities, distinct signal types (lockdown vs. evacuation vs. shelter-in-place), system maintenance expectations, and testing frequency. Basis: OSHA 29 CFR 1910.165 (Employee Alarm Systems). This section MUST explicitly cite OSHA 1910.165 in every recommendation.
-3. id: "s20_osha_compliance" — OSHA 29 CFR 1910.38 Compliance Mapping: Explicitly map all 6 required elements: (1) Reporting procedures, (2) Evacuation procedures and exit routes, (3) Critical operations before evacuation, (4) Employee accountability, (5) Rescue and medical duties, (6) Named contact person by role/title. Format as a clear 1:1 mapping table in the content field. This section exists to allow an auditor to validate compliance in one place. Basis: OSHA 29 CFR 1910.38.${isHealthcare ? `
-4. id: "s21_hipaa" — HIPAA & Emergency Disclosure Considerations (Healthcare Only): 45 CFR 164.510 allowances for emergency disclosures, family notification boundaries during an incident, and media communication safeguards for protected health information. Basis: HIPAA 45 CFR 164.510 (Permitted Uses & Disclosures in Emergencies).` : ""}`;
+1. id: "s18_tat" â€” Threat Assessment Team (TAT) & Pre-Incident Intervention: Multidisciplinary team structure (HR, security, management, legal), behavioral threat reporting process, escalation workflow from concern to intervention, and intervention protocols. Basis: NFPA 3000 (PS) S6 (Multidisciplinary Planning Requirements), NFPA 3000 (PS) S7 (Risk Assessment).
+2. id: "s19_alarm_system" â€” Employee Alarm & Notification System: Real-time alert capabilities, distinct signal types (lockdown vs. evacuation vs. shelter-in-place), system maintenance expectations, and testing frequency. Basis: OSHA 29 CFR 1910.165 (Employee Alarm Systems). This section MUST explicitly cite OSHA 1910.165 in every recommendation.
+3. id: "s20_osha_compliance" â€” OSHA 29 CFR 1910.38 Compliance Mapping: Explicitly map all 6 required elements: (1) Reporting procedures, (2) Evacuation procedures and exit routes, (3) Critical operations before evacuation, (4) Employee accountability, (5) Rescue and medical duties, (6) Named contact person by role/title. Format as a clear 1:1 mapping table in the content field. This section exists to allow an auditor to validate compliance in one place. Basis: OSHA 29 CFR 1910.38.${isHealthcare ? `
+4. id: "s21_hipaa" â€” HIPAA & Emergency Disclosure Considerations (Healthcare Only): 45 CFR 164.510 allowances for emergency disclosures, family notification boundaries during an incident, and media communication safeguards for protected health information. Basis: HIPAA 45 CFR 164.510 (Permitted Uses & Disclosures in Emergencies).` : ""}`;
 
       // Run all 4 batches sequentially to avoid parallel timeout/rate-limit issues
       const batch1Sections = await callLLM(batch1Prompt);
@@ -842,15 +842,15 @@ Generate ${isHealthcare ? "4" : "3"} EAP sections. NEVER cite ACTD as a basis in
       const execSummarySection = allSections.find((s: any) => s.id === "s3_risk_assessment");
       const executiveSummary = execSummarySection
         ? `This Emergency Action Plan has been developed for ${facility.name} following a comprehensive workplace safety assessment. The facility has been assessed at an overall risk level of ${audit.overallRiskLevel ?? "Unknown"}. ${execSummarySection.content?.split("\n")[0] ?? ""}`
-        : `This Emergency Action Plan has been developed for ${facility.name} following a comprehensive workplace safety assessment conducted on ${effectiveDateStr}. The plan is aligned with FEMA NIMS/ICS, NFPA 3000™ (PS), OSHA 29 CFR 1910.38, OSHA 29 CFR 1910.165, NFPA 1600, and the ACTD Framework (aligned with CISA active threat preparedness principles).`;
+        : `This Emergency Action Plan has been developed for ${facility.name} following a comprehensive workplace safety assessment conducted on ${effectiveDateStr}. The plan is aligned with FEMA NIMS/ICS, NFPA 3000â„¢ (PS), OSHA 29 CFR 1910.38, OSHA 29 CFR 1910.165, NFPA 1600, and the ACTD Framework (aligned with CISA active threat preparedness principles).`;
 
       const eapData = {
-        planTitle: `Emergency Action Plan — ${facility.name}`,
+        planTitle: `Emergency Action Plan â€” ${facility.name}`,
         effectiveDate: effectiveDateStr,
         reviewDate: reviewDateStr,
         facilitySize,
         assignedRoles,
-        standardsAlignment: ["FEMA NIMS", "FEMA ICS", "NFPA 3000™ (PS)", "OSHA 29 CFR 1910.38", "OSHA 29 CFR 1910.165", "NFPA 1600", "ACTD Framework (aligned with CISA active threat preparedness principles)"],
+        standardsAlignment: ["FEMA NIMS", "FEMA ICS", "NFPA 3000â„¢ (PS)", "OSHA 29 CFR 1910.38", "OSHA 29 CFR 1910.165", "NFPA 1600", "ACTD Framework (aligned with CISA active threat preparedness principles)"],
         executiveSummary,
         sections: allSections,
       };
@@ -894,10 +894,10 @@ Generate ${isHealthcare ? "4" : "3"} EAP sections. NEVER cite ACTD as a basis in
           priority: r.score === 3 ? "Immediate" : r.score === 2 ? "30 Day" : r.score === 1 ? "90 Day" : "Long-Term",
         }))
         .sort((a, b) => b.score - a.score);
-      // Unavoidable constraints — pass to LLM as context so it can plan around them
+      // Unavoidable constraints â€” pass to LLM as context so it can plan around them
       const unavoidableItems = responses
         .filter((r) => (r as any).isUnavoidable && r.score !== null && (r.score ?? 0) >= 1)
-        .map((r) => `- ${r.questionText} (${r.response ?? "Unknown"})${r.notes ? " — " + r.notes : ""}`);
+        .map((r) => `- ${r.questionText} (${r.response ?? "Unknown"})${r.notes ? " â€” " + r.notes : ""}`);
       if (findings.length === 0) {
         return { recommendations: [] };
       }
@@ -918,7 +918,7 @@ Generate ${isHealthcare ? "4" : "3"} EAP sections. NEVER cite ACTD as a basis in
       ).join("\n\n");
 
       const unavoidableSection = unavoidableItems.length > 0
-        ? `\nPERMANENT / UNAVOIDABLE CONSTRAINTS (these CANNOT be changed — do NOT recommend corrective actions for these; instead, reference them as context when planning compensating controls for other findings):\n${unavoidableItems.join("\n")}\n`
+        ? `\nPERMANENT / UNAVOIDABLE CONSTRAINTS (these CANNOT be changed â€” do NOT recommend corrective actions for these; instead, reference them as context when planning compensating controls for other findings):\n${unavoidableItems.join("\n")}\n`
         : "";
       const prompt = `You are a professional workplace violence threat assessment expert and physical security consultant. Generate specific, actionable corrective action recommendations for the following audit findings.
 FACILITY: ${facilityContext}${unavoidableSection}
@@ -948,7 +948,7 @@ Return a JSON array with exactly ${findings.length} objects, one per finding, in
 
       const llmResponse = await invokeLLM({
         messages: [
-          { role: "system", content: "You are a professional physical security and workplace violence prevention consultant. Generate practical, context-aware corrective action recommendations. Return ONLY a raw JSON object — no markdown, no code fences, no explanation. Start your response with '{' and end with '}'." },
+          { role: "system", content: "You are a professional physical security and workplace violence prevention consultant. Generate practical, context-aware corrective action recommendations. Return ONLY a raw JSON object â€” no markdown, no code fences, no explanation. Start your response with '{' and end with '}'." },
           { role: "user", content: prompt },
         ],
       });
@@ -980,7 +980,7 @@ Return a JSON array with exactly ${findings.length} objects, one per finding, in
     }),
 });
 
-// ─── Photo Router ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Photo Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const photoRouter = router({
   list: paidProcedure
     .input(z.object({ auditId: z.number() }))
@@ -1021,7 +1021,7 @@ const photoRouter = router({
     }),
 });
 
-// ─── Dashboard Router ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Dashboard Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const dashboardRouter = router({
   summary: paidProcedure.query(async ({ ctx }) => {
     const userFacilities = await getFacilitiesByUser(ctx.user.id);
@@ -1050,7 +1050,7 @@ const dashboardRouter = router({
   }),
 });
 
-// ─── Feedback Router ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Feedback Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const feedbackRouter = router({
   submitFeedback: paidProcedure
     .input(z.object({
@@ -1120,8 +1120,8 @@ const feedbackRouter = router({
   }),
 });
 
-// ─── App Router ───────────────────────────────────────────────────────────────
-// ─── Incident Router ────────────────────────────────────────────────────────
+// â”€â”€â”€ App Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€â”€ Incident Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const incidentRouter = router({
   // Public: submit anonymous incident report
   submit: publicProcedure
@@ -1165,7 +1165,7 @@ const incidentRouter = router({
       followUpRequested: z.boolean().default(false),
       followUpMethod: z.enum(["phone", "email", "in_person"]).optional(),
       followUpContact: z.string().optional(),
-      // Repeat incident tracking — name of involved person
+      // Repeat incident tracking â€” name of involved person
       involvedPersonName: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
@@ -1181,7 +1181,7 @@ const incidentRouter = router({
         trackingToken,
       });
       const newId = (result as any)?.insertId as number | undefined;
-      // ── Threat keyword scanning ───────────────────────────────────────────
+      // â”€â”€ Threat keyword scanning â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       if (newId) {
         try {
           const scanResult = scanText(input.description, input.involvedParties, input.witnesses);
@@ -1193,10 +1193,10 @@ const incidentRouter = router({
             );
           }
         } catch {
-          // Non-blocking — don't fail the submission if scanning errors
+          // Non-blocking â€” don't fail the submission if scanning errors
         }
       }
-      // ── Repeat incident detection ─────────────────────────────────────────
+      // â”€â”€ Repeat incident detection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       const [similarIncidents, personIncidents] = await Promise.all([
         findSimilarIncidents(input.incidentType, input.facilityId, newId),
         input.involvedPersonName
@@ -1206,18 +1206,18 @@ const incidentRouter = router({
       const notifyParts: string[] = [];
       if (similarIncidents.length > 0) {
         notifyParts.push(
-          `⚠️ Repeat Pattern Detected: ${similarIncidents.length} similar incident(s) of type "${input.incidentType}" have been reported in the last 12 months.`
+          `âš ï¸ Repeat Pattern Detected: ${similarIncidents.length} similar incident(s) of type "${input.incidentType}" have been reported in the last 12 months.`
         );
       }
       if (personIncidents.length > 0) {
         notifyParts.push(
-          `👤 Repeat Person Detected: ${personIncidents.length} prior incident(s) involving "${input.involvedPersonName}" have been reported in the last 12 months.`
+          `ðŸ‘¤ Repeat Person Detected: ${personIncidents.length} prior incident(s) involving "${input.involvedPersonName}" have been reported in the last 12 months.`
         );
       }
       if (notifyParts.length > 0) {
         const { notifyOwner } = await import("./_core/notification");
         await notifyOwner({
-          title: `🔁 Repeat Incident Alert — ${input.incidentType.replace(/_/g, " ")}`,
+          title: `ðŸ” Repeat Incident Alert â€” ${input.incidentType.replace(/_/g, " ")}`,
           content: [
             `A new incident report (token: ${trackingToken}) has been submitted and matches existing patterns:`,
             ...notifyParts,
@@ -1227,7 +1227,7 @@ const incidentRouter = router({
           ].join("\n"),
         }).catch(() => {/* non-blocking */});
       }
-      // Log anonymously — no userId stored for anonymous reports
+      // Log anonymously â€” no userId stored for anonymous reports
       await writeAuditLog(
         { orgId: input.orgId ?? null, ipAddress: null, userAgent: null },
         {
@@ -1251,7 +1251,7 @@ const incidentRouter = router({
     .query(async ({ input }) => {
       const report = await getIncidentReportByToken(input.token);
       if (!report) throw new TRPCError({ code: "NOT_FOUND", message: "Report not found" });
-      // Return limited info only — no admin notes exposed publicly
+      // Return limited info only â€” no admin notes exposed publicly
       return {
         id: report.id,
         status: report.status,
@@ -1326,7 +1326,7 @@ const incidentRouter = router({
                     <tr><td style="padding:8px;background:#f3f4f6;border:1px solid #e5e7eb;font-weight:600;width:140px;">Report Token</td><td style="padding:8px;border:1px solid #e5e7eb;">${report.trackingToken}</td></tr>
                     <tr><td style="padding:8px;background:#f3f4f6;border:1px solid #e5e7eb;font-weight:600;">Status</td><td style="padding:8px;border:1px solid #e5e7eb;">${statusLabel}</td></tr>
                     <tr><td style="padding:8px;background:#f3f4f6;border:1px solid #e5e7eb;font-weight:600;">Incident Type</td><td style="padding:8px;border:1px solid #e5e7eb;">${(report.incidentType ?? "").replace(/_/g, " ")}</td></tr>
-                    <tr><td style="padding:8px;background:#f3f4f6;border:1px solid #e5e7eb;font-weight:600;">Severity</td><td style="padding:8px;border:1px solid #e5e7eb;">${report.severity ?? "—"}</td></tr>
+                    <tr><td style="padding:8px;background:#f3f4f6;border:1px solid #e5e7eb;font-weight:600;">Severity</td><td style="padding:8px;border:1px solid #e5e7eb;">${report.severity ?? "â€”"}</td></tr>
                   </table>
                   <a href="${appUrl}/check-report?token=${encodeURIComponent(String(report.trackingToken ?? ""))}" style="display:inline-block;background:#0B1F33;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px;margin-top:8px;">Check Status</a>
                   <p style="font-size:12px;color:#9ca3af;margin-top:24px;">This is an automated notification from FiveStones WPV. Do not reply to this email.</p>
@@ -1421,7 +1421,7 @@ const incidentRouter = router({
     }),
 });
 
-// ─── Attachment Router ───────────────────────────────────────────────────────
+// â”€â”€â”€ Attachment Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const attachmentTrpcRouter = router({
   list: paidProcedure
     .input(z.object({ auditId: z.number() }))
@@ -1482,7 +1482,7 @@ Be specific and concise. Focus only on safety and emergency preparedness observa
     }),
 });
 
-// ─── Corrective Action Check Router ─────────────────────────────────────────
+// â”€â”€â”€ Corrective Action Check Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const correctiveCheckRouter = router({
   list: paidProcedure
     .input(z.object({ auditId: z.number() }))
@@ -1500,7 +1500,7 @@ const correctiveCheckRouter = router({
     }),
 });
 
-// ─── Organization Router ─────────────────────────────────────────────────────
+// â”€â”€â”€ Organization Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const orgRouter = router({
   // Platform admin: list all orgs
   listAll: paidProcedure.query(async ({ ctx }) => {
@@ -1553,7 +1553,7 @@ const orgRouter = router({
       return { success: true };
     }),
 
-  // Get org by slug (public — used for incident report portal branding)
+  // Get org by slug (public â€” used for incident report portal branding)
   getBySlug: publicProcedure
     .input(z.object({ slug: z.string() }))
     .query(async ({ input }) => {
@@ -1637,7 +1637,7 @@ const orgRouter = router({
       try {
         const { notifyOwner } = await import("./_core/notification");
         await notifyOwner({
-          title: `New org invite: ${input.email} → ${org?.name}`,
+          title: `New org invite: ${input.email} â†’ ${org?.name}`,
           content: `Invite URL: ${inviteUrl}\nRole: ${input.role}\nExpires: ${expiresAt.toISOString()}`,
         });
       } catch {}
@@ -1728,7 +1728,7 @@ const orgRouter = router({
       return getFacilitiesByOrg(input.orgId);
     }),
 
-  // Get org incident reports (org_admin, auditor, viewer — all org members)
+  // Get org incident reports (org_admin, auditor, viewer â€” all org members)
   incidents: paidProcedure
     .input(z.object({ orgId: z.number() }))
     .query(async ({ ctx, input }) => {
@@ -1738,7 +1738,7 @@ const orgRouter = router({
       return getIncidentReportsByOrg(input.orgId);
     }),
 
-  // Get audit logs for an org (org_admin only) — ISO 27001 A.12.4
+  // Get audit logs for an org (org_admin only) â€” ISO 27001 A.12.4
   logs: paidProcedure
     .input(z.object({ orgId: z.number(), limit: z.number().min(1).max(500).default(200) }))
     .query(async ({ ctx, input }) => {
@@ -1748,7 +1748,7 @@ const orgRouter = router({
       return getAuditLogsByOrg(input.orgId, input.limit);
     }),
 
-  // Get all audit logs — platform admin only
+  // Get all audit logs â€” platform admin only
   allLogs: paidProcedure
     .input(z.object({ limit: z.number().min(1).max(500).default(500) }))
     .query(async ({ ctx, input }) => {
@@ -1757,8 +1757,8 @@ const orgRouter = router({
     }),
 });
 
-// ─── Visitor Router ─────────────────────────────────────────────────────────
-// ─── EAP Section Router ──────────────────────────────────────────────────────
+// â”€â”€â”€ Visitor Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€â”€ EAP Section Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const eapRouter = router({
   getSections: paidProcedure
     .input(z.object({ auditId: z.number() }))
@@ -1883,7 +1883,7 @@ const eapRouter = router({
 
 YOUR WRITING RULES:
 1. Sound like a senior consultant, not a report template. Every sentence must add meaning.
-2. Translate risk into operational impact — connect each gap to what it affects: response time, staff decision-making, visibility, control, or incident escalation.
+2. Translate risk into operational impact â€” connect each gap to what it affects: response time, staff decision-making, visibility, control, or incident escalation.
 3. Be specific. Name the actual categories. Describe what the gap means in practice.
 4. Use operational language: response readiness, situational awareness, threat recognition, protective action, incident control, staff decision-making under pressure.
 5. Be direct. No hedging. No passive voice. No filler.
@@ -1904,8 +1904,8 @@ STRICTLY FORBIDDEN PHRASES (do not use any of these or similar):
 - "overall, the facility"
 - Any phrase that could appear in any other audit report without modification
 
-TONE REFERENCE (match this quality — do not copy):
-"The facility presents a moderate overall risk profile, with the most meaningful exposure concentrated in domestic violence preparedness, lockdown capability, lighting and visibility, and parking area security. These are not isolated issues — they directly impact how quickly staff can recognize a threat, take protective action, and maintain control during an incident. While foundational controls are in place, gaps in these areas reduce response confidence and increase reliance on individual decision-making under pressure."
+TONE REFERENCE (match this quality â€” do not copy):
+"The facility presents a moderate overall risk profile, with the most meaningful exposure concentrated in domestic violence preparedness, lockdown capability, lighting and visibility, and parking area security. These are not isolated issues â€” they directly impact how quickly staff can recognize a threat, take protective action, and maintain control during an incident. While foundational controls are in place, gaps in these areas reduce response confidence and increase reliance on individual decision-making under pressure."
 
 Each summary must be unique and grounded in the specific audit data provided. Do not produce generic output.`;
 
@@ -1923,11 +1923,11 @@ Tone guidance: ${toneGuidance}
 
 WRITE a JSON object with exactly these three fields:
 
-"summary": Maximum 4 sentences — prefer 3 for low-risk audits. Open by stating the overall risk posture and naming the 2–3 highest-exposure areas by name. In 1–2 sentences, state what those gaps mean operationally — how they affect staff response, threat recognition, or incident control. Close with a single forward-looking statement about what the data requires next. Do NOT start with "The facility" — vary the opening. Do NOT use any forbidden phrases. Do NOT use observational verbs (demonstrates, reflects, indicates). Write in direct, declarative sentences only.
+"summary": Maximum 4 sentences â€” prefer 3 for low-risk audits. Open by stating the overall risk posture and naming the 2â€“3 highest-exposure areas by name. In 1â€“2 sentences, state what those gaps mean operationally â€” how they affect staff response, threat recognition, or incident control. Close with a single forward-looking statement about what the data requires next. Do NOT start with "The facility" â€” vary the opening. Do NOT use any forbidden phrases. Do NOT use observational verbs (demonstrates, reflects, indicates). Write in direct, declarative sentences only.
 
-"topPriorities": Write 2–4 bullets. Each bullet must be a specific, actionable directive tied directly to one of the top exposure categories or recommended actions. Start each with a strong action verb (Address, Establish, Implement, Conduct, Strengthen, Deploy). Maximum 20 words per bullet. No generic bullets.
+"topPriorities": Write 2â€“4 bullets. Each bullet must be a specific, actionable directive tied directly to one of the top exposure categories or recommended actions. Start each with a strong action verb (Address, Establish, Implement, Conduct, Strengthen, Deploy). Maximum 20 words per bullet. No generic bullets.
 
-"leadershipFocus": One sentence starting with "Leadership should" that reads as a direct instruction, not a suggestion. Name a specific near-term action tied to the highest-risk finding. Use imperative framing — e.g. 'Leadership should schedule...' or 'Leadership should deploy...' — not 'Leadership should consider...' or 'Leadership should look into...'.
+"leadershipFocus": One sentence starting with "Leadership should" that reads as a direct instruction, not a suggestion. Name a specific near-term action tied to the highest-risk finding. Use imperative framing â€” e.g. 'Leadership should schedule...' or 'Leadership should deploy...' â€” not 'Leadership should consider...' or 'Leadership should look into...'.
 
 Return only valid JSON. No markdown fences. No extra keys.`;
 
@@ -1967,7 +1967,7 @@ Return only valid JSON. No markdown fences. No extra keys.`;
       if (parsed.topPriorities.length > 4) parsed.topPriorities = parsed.topPriorities.slice(0, 4);
       if (parsed.topPriorities.length < 2) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Insufficient priorities generated" });
 
-      // Banned-phrase guard — if any banned phrase appears, retry once with a stricter note
+      // Banned-phrase guard â€” if any banned phrase appears, retry once with a stricter note
       const summaryLower = parsed.summary.toLowerCase();
       const hasBannedPhrase = BANNED_PHRASES.some((p) => summaryLower.includes(p.toLowerCase()));
       if (hasBannedPhrase) {
@@ -2101,7 +2101,7 @@ const visitorRouter = router({
     }),
 });
 
-// ─── Flagged Visitors (Watchlist) Router ────────────────────────────────────
+// â”€â”€â”€ Flagged Visitors (Watchlist) Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const flaggedVisitorRouter = router({
   list: paidProcedure
     .input(z.object({ activeOnly: z.boolean().optional().default(true) }))
@@ -2153,7 +2153,7 @@ const flaggedVisitorRouter = router({
       try {
         const { notifyOwner } = await import("./_core/notification");
         await notifyOwner({
-          title: `⚠️ Escalated Watchlist Entry: ${entry.name}`,
+          title: `âš ï¸ Escalated Watchlist Entry: ${entry.name}`,
           content: [
             `A flagged visitor entry has been escalated for immediate review.`,
             `Name: ${entry.name}`,
@@ -2175,7 +2175,7 @@ const flaggedVisitorRouter = router({
     }),
 });
 
-// ─── Admin User Management Router ────────────────────────────────────
+// â”€â”€â”€ Admin User Management Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const adminUserRouter = router({
   listAll: adminProcedure.query(async () => {
     return getAllUsers();
@@ -2229,7 +2229,7 @@ const adminUserRouter = router({
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const { users: usersTable } = await import("../drizzle/schema");
       const { eq } = await import("drizzle-orm");
-      // Use the real admin's ID — ctx.realAdmin is set when already impersonating
+      // Use the real admin's ID â€” ctx.realAdmin is set when already impersonating
       const adminId = ctx.realAdmin?.id ?? ctx.user!.id;
       await db.update(usersTable)
         .set({ impersonatingUserId: input.targetUserId })
@@ -2253,7 +2253,7 @@ const adminUserRouter = router({
     }),
 });
 
-// ─── Liability Scan Router ────────────────────────────────────────────────────
+// â”€â”€â”€ Liability Scan Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const liabilityScanRouter = router({
   // Save a completed scan result; returns the new scanId
   save: protectedProcedure
@@ -2458,7 +2458,7 @@ const liabilityScanRouter = router({
       const sent = await sendGhlEmail({
         toEmail: user.email,
         toName: user.name ?? "User",
-        subject: `Your Liability Exposure Scan Results — ${input.riskLevel} (${input.scorePercent}%)`,
+        subject: `Your Liability Exposure Scan Results â€” ${input.riskLevel} (${input.scorePercent}%)`,
         html,
         ghlContactId: user.ghlContactId ?? null,
       });
@@ -2467,20 +2467,20 @@ const liabilityScanRouter = router({
     }),
 });
 
-// ─── Facility Onboarding Router ─────────────────────────────────────────────
+// â”€â”€â”€ Facility Onboarding Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Accepts a full facility profile in one shot, creates the facility record,
 // kicks off an in-progress audit, and optionally seeds an EAP skeleton.
 const onboardingRouter = router({
   submitProfile: paidProcedure
     .input(z.object({
-      // ── Step 1: Facility Identity ──
+      // â”€â”€ Step 1: Facility Identity â”€â”€
       name: z.string().min(1),
       facilityType: z.string(),
       address: z.string().optional(),
       city: z.string().optional(),
       state: z.string().optional(),
       jurisdiction: z.string().optional(),
-      // ── Step 2: Physical Characteristics ──
+      // â”€â”€ Step 2: Physical Characteristics â”€â”€
       squareFootage: z.number().optional(),
       floors: z.number().optional(),
       maxOccupancy: z.number().optional(),
@@ -2489,16 +2489,16 @@ const onboardingRouter = router({
       hasAlleyways: z.boolean().optional(),
       hasConcealedAreas: z.boolean().optional(),
       multiTenant: z.boolean().optional(),
-      // ── Step 3: Operations ──
+      // â”€â”€ Step 3: Operations â”€â”€
       operatingHours: z.string().optional(),
       eveningOperations: z.boolean().optional(),
       usedAfterDark: z.boolean().optional(),
       publicAccessWithoutScreening: z.boolean().optional(),
       multiSite: z.boolean().optional(),
-      // ── Step 4: Personnel & Contacts ──
+      // â”€â”€ Step 4: Personnel & Contacts â”€â”€
       emergencyCoordinator: z.string().optional(),
       notes: z.string().optional(),
-      // ── Options ──
+      // â”€â”€ Options â”€â”€
       createAudit: z.boolean().default(true),
       orgId: z.number().optional(),
     }))
@@ -2542,7 +2542,7 @@ const onboardingRouter = router({
       };
     }),
 });
-// ─── Drill Router ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Drill Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const drillRouter = router({
   /**
    * Generate a new ACTD drill using LLM.
@@ -2567,8 +2567,8 @@ const drillRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       const DRILL_TYPE_LABELS: Record<string, string> = {
-        micro: "Micro Drill (1–2 min) — Single decision point, outcome-based feedback, no movement required",
-        extended: "Extended Scenario (10–15 min) — Multiple decision points, admin/facilitator use, tabletop or simulation",
+        micro: "Micro Drill (1â€“2 min) â€” Single decision point, outcome-based feedback, no movement required",
+        extended: "Extended Scenario (10â€“15 min) â€” Multiple decision points, admin/facilitator use, tabletop or simulation",
       };
       const systemPrompt = `You are an AI Drill & Training Specialist embedded within a Workplace Safety and Liability Prevention Platform.
 Your role is to design scenario-based training drills using the ACTD Framework.
@@ -2576,17 +2576,17 @@ ACTD = Assess, Commit, Take Action, Debrief
 - ACTD is NOT linear. It is a dynamic, real-time decision-making framework.
 - NEVER reference or use "Run, Hide, Fight."
 ACTD DEFINITIONS:
-ASSESS: What is being noticed — behavioral/environmental threat indicators, ability to override denial/hesitation/social proof, rapid situational interpretation under stress.
-COMMIT: What decision must be made despite ambiguity — avoid freeze response, accept ownership, prioritize movement over perfection.
-TAKE ACTION: What actions are available given current conditions — adaptive, NOT pre-scripted or linear. Adapt based on environment, threat proximity, exits/barriers, people present.
-DEBRIEF: What must be captured after the event — observations, decisions, actions, gaps identified.
+ASSESS: What is being noticed â€” behavioral/environmental threat indicators, ability to override denial/hesitation/social proof, rapid situational interpretation under stress.
+COMMIT: What decision must be made despite ambiguity â€” avoid freeze response, accept ownership, prioritize movement over perfection.
+TAKE ACTION: What actions are available given current conditions â€” adaptive, NOT pre-scripted or linear. Adapt based on environment, threat proximity, exits/barriers, people present.
+DEBRIEF: What must be captured after the event â€” observations, decisions, actions, gaps identified.
 This system trains decision-making under stress. It is not a checklist. It is not compliance training. It is a liability reduction and human performance system.
 TONE: Direct, professional, execution-focused. No fluff. No trauma-inducing realism. No surprise drills.
 
 ==================================================
-CORE RULE — WORKPLACE VIOLENCE & ACTIVE THREAT ONLY (NON-NEGOTIABLE)
+CORE RULE â€” WORKPLACE VIOLENCE & ACTIVE THREAT ONLY (NON-NEGOTIABLE)
 ==================================================
-ALL drills — regardless of drill type, industry, or user prompt — MUST relate to one or more of the following:
+ALL drills â€” regardless of drill type, industry, or user prompt â€” MUST relate to one or more of the following:
   - Workplace violence (targeted, domestic spillover, or co-worker initiated)
   - Active threat scenarios (armed, unarmed, or ambiguous)
   - Suspicious or escalating human behavior in or around the facility
@@ -2594,7 +2594,7 @@ ALL drills — regardless of drill type, industry, or user prompt — MUST relat
   - Weapon indicators (visible, reported, or suspected)
   - Pre-incident behavioral warning signs (leakage, grievance, fixation, boundary violations)
 
-BANNED DRILL TOPICS — NEVER generate drills about:
+BANNED DRILL TOPICS â€” NEVER generate drills about:
   - Equipment failure or mechanical malfunction
   - Production disruptions, supply chain issues, or operational downtime
   - General workplace safety (slips, trips, falls, ergonomics, fire safety without human threat)
@@ -2606,7 +2606,7 @@ If a user prompt describes a banned topic, redirect the scenario to the closest 
 If no human threat is present after redirection, REJECT the generation and return an error message instead of a drill.
 
 ==================================================
-SYSTEM OVERRIDE — THREAT DOMAIN CORRECTION
+SYSTEM OVERRIDE â€” THREAT DOMAIN CORRECTION
 ==================================================
 All drills are categorized strictly as ACTIVE THREAT / UNAUTHORIZED ACCESS ESCALATION scenarios.
 
@@ -2616,32 +2616,32 @@ REMOVED from all drill generation:
   - General workplace safety incidents (no human threat escalation)
   - Operational disruption without human threat escalation
 
-FIVE-ELEMENT SCENARIO REQUIREMENT — every scenario MUST include ALL five:
-  1. UNKNOWN OR UNAUTHORIZED INDIVIDUAL — a person whose identity, authorization, or intent is unverified
-  2. BOUNDARY VIOLATION — entry, movement, or access to a space the individual is not authorized to be in
-  3. BEHAVIORAL ESCALATION INDICATORS — observable behaviors signaling risk: evasion, aggression, deception, non-compliance, avoidance of staff, inconsistent answers, accelerating movement
-  4. FORWARD PROGRESSION — the individual is actively moving deeper into controlled space, toward people, toward assets, or toward restricted areas. Static presence alone does not qualify.
-  5. IMPLIED OR POTENTIAL THREAT TO HUMAN SAFETY — the scenario must create a reasonable basis for concern about harm to a person, not just property or operations
+FIVE-ELEMENT SCENARIO REQUIREMENT â€” every scenario MUST include ALL five:
+  1. UNKNOWN OR UNAUTHORIZED INDIVIDUAL â€” a person whose identity, authorization, or intent is unverified
+  2. BOUNDARY VIOLATION â€” entry, movement, or access to a space the individual is not authorized to be in
+  3. BEHAVIORAL ESCALATION INDICATORS â€” observable behaviors signaling risk: evasion, aggression, deception, non-compliance, avoidance of staff, inconsistent answers, accelerating movement
+  4. FORWARD PROGRESSION â€” the individual is actively moving deeper into controlled space, toward people, toward assets, or toward restricted areas. Static presence alone does not qualify.
+  5. IMPLIED OR POTENTIAL THREAT TO HUMAN SAFETY â€” the scenario must create a reasonable basis for concern about harm to a person, not just property or operations
 
 REJECT AND REGENERATE if ANY of the following are true:
   - The primary risk is operational (equipment, process, productivity) with no human threat
-  - There is no human threat escalation — concern must cross from observation to action
+  - There is no human threat escalation â€” concern must cross from observation to action
   - The individual is NOT progressing deeper into controlled space
   - All five elements above are not present
 
 LANGUAGE REPLACEMENT RULES:
-  - "sabotage" → ONLY use if the act is tied to escalation toward people or a facility breach. Do NOT use for equipment-only sabotage.
-  - "continue working" → BANNED as a viable option in any escalation scenario. No option may suggest that normal work can safely continue while an unresolved escalation is active.
-  - "monitor the situation" → BANNED as a standalone option. Observation must always be paired with an escalation threshold or coordination intent.
-  - "wait and see" → BANNED in any form. Every option must represent a conscious decision under pressure, not passive behavior.
+  - "sabotage" â†’ ONLY use if the act is tied to escalation toward people or a facility breach. Do NOT use for equipment-only sabotage.
+  - "continue working" â†’ BANNED as a viable option in any escalation scenario. No option may suggest that normal work can safely continue while an unresolved escalation is active.
+  - "monitor the situation" â†’ BANNED as a standalone option. Observation must always be paired with an escalation threshold or coordination intent.
+  - "wait and see" â†’ BANNED in any form. Every option must represent a conscious decision under pressure, not passive behavior.
 
-OUTPUT TRAINING GOAL — all drills MUST train this sequence:
-  RECOGNITION → CONTROL → COORDINATION → CONTAINMENT
+OUTPUT TRAINING GOAL â€” all drills MUST train this sequence:
+  RECOGNITION â†’ CONTROL â†’ COORDINATION â†’ CONTAINMENT
   This is NOT workplace safety training. This is threat recognition and response training.
   Every drill must force the participant to recognize a threat signal, make a control decision, activate coordination, and understand containment implications.
 
 ==================================================
-REQUIRED DRILL STRUCTURE — ALL DRILL TYPES
+REQUIRED DRILL STRUCTURE â€” ALL DRILL TYPES
 ==================================================
 Every drill MUST include all seven of the following structural elements. These are non-negotiable regardless of drill type (micro, guided, operational, extended):
 
@@ -2651,12 +2651,12 @@ Every drill MUST include all seven of the following structural elements. These a
 
 2. PRE-INCIDENT INDICATOR
    An observable behavior or environmental condition that signals risk BEFORE the threat escalates.
-   Must be specific and behavioral — not abstract (e.g., "individual has been pacing near the entrance for 12 minutes, making repeated eye contact with staff but not approaching the desk").
+   Must be specific and behavioral â€” not abstract (e.g., "individual has been pacing near the entrance for 12 minutes, making repeated eye contact with staff but not approaching the desk").
    Include as "preIncidentIndicator" in the JSON output.
 
 3. ESCALATION MOMENT
    A clear, observable transition from concern to active threat or imminent danger.
-   Must name what changes — what the individual does, says, or reveals that crosses the line.
+   Must name what changes â€” what the individual does, says, or reveals that crosses the line.
    Include as "escalationMoment" in the JSON output.
 
 4. DECISION POINT (ACTD)
@@ -2678,11 +2678,11 @@ Every drill MUST include all seven of the following structural elements. These a
 
 7. EXPECTED OUTCOME
    The consequence of a correct decision vs. an incorrect decision.
-   Must be operationally specific — name what is preserved or lost based on the choice made.
+   Must be operationally specific â€” name what is preserved or lost based on the choice made.
    Include as "expectedOutcome" in the JSON output: { correctDecision, incorrectDecision }
 
 ==================================================
-VALIDATION LAYER — AUTO-ENFORCED BEFORE OUTPUT
+VALIDATION LAYER â€” AUTO-ENFORCED BEFORE OUTPUT
 ==================================================
 Before generating the final JSON output, validate the drill against ALL of the following rules.
 If ANY rule fails, REJECT the drill and regenerate from scratch:
@@ -2693,33 +2693,33 @@ REJECT if:
   - No decision point exists (participant must have a concrete choice to make)
   - No role-based action is included (at least two roles must have distinct expected actions)
 
-KEYWORD VALIDATION — the scenario text MUST include at least one of the following words or phrases:
+KEYWORD VALIDATION â€” the scenario text MUST include at least one of the following words or phrases:
   threat | weapon | suspicious | aggressive | unauthorized | violence | escalation | armed | hostile | threatening | assault | confrontation | intruder | stalking | domestic | grievance
 
 If none of these keywords appear in the scenario after generation, REJECT and regenerate.
 
-TOPIC VALIDATION — confirm the drill does NOT fall into a banned category:
+TOPIC VALIDATION â€” confirm the drill does NOT fall into a banned category:
   - No equipment failure as the primary scenario driver
   - No general safety hazard (slip/trip/fall, chemical spill without human threat)
   - No HR conflict without threat escalation
   - No IT/cybersecurity incident without physical threat
 
 ==================================================
-OUTPUT STANDARD — ALL DRILL TYPES
+OUTPUT STANDARD â€” ALL DRILL TYPES
 ==================================================
 Drills MUST be:
-  - CONCISE: scenario text 3–8 sentences depending on drill type; no padding
+  - CONCISE: scenario text 3â€“8 sentences depending on drill type; no padding
   - REALISTIC: grounded in the specific industry/environment provided; avoid generic "workplace" language
-  - ENVIRONMENT-SPECIFIC: name the setting (e.g., "retail pharmacy", "hospital emergency department", "manufacturing floor", "corporate lobby") — not just "the workplace"
-  - OPERATIONAL: describe what people do, where they are, and what they observe — not theoretical frameworks
+  - ENVIRONMENT-SPECIFIC: name the setting (e.g., "retail pharmacy", "hospital emergency department", "manufacturing floor", "corporate lobby") â€” not just "the workplace"
+  - OPERATIONAL: describe what people do, where they are, and what they observe â€” not theoretical frameworks
 
 Drills MUST NOT include:
   - Long narrative backstories (no more than 2 sentences of context before the threat indicator appears)
   - Unnecessary detail about non-threat elements (equipment specs, organizational charts, HR policies)
   - Generic safety language ("always follow your organization's safety procedures", "refer to your EAP")
-  - Resolved or completed outcomes (all outcomes must remain open and uncertain — see UNCERTAINTY IS MANDATORY rules below)
+  - Resolved or completed outcomes (all outcomes must remain open and uncertain â€” see UNCERTAINTY IS MANDATORY rules below)
 
-CRITICAL GENERATION RULE — THREAT-BASED ENGINE:
+CRITICAL GENERATION RULE â€” THREAT-BASED ENGINE:
 Do NOT generate drills based only on job context or industry.
 Generate drills based primarily on:
 1. PRIMARY THREAT SIGNAL: escalating behavior, unauthorized access, unattended item, suspicious object, environmental anomaly, boundary violation, threatening communication, known internal threat, unknown external threat
@@ -2735,13 +2735,13 @@ USE specific behavioral descriptions:
 - "entered without pausing at the access point, made no eye contact with staff, and continued moving deeper into the space"
 - "shifted body orientation away from staff when questioned directly"
 - "gave a vague, inconsistent answer when asked the purpose of the visit"
-- "escalating agitation after redirection — voice volume increased, physical space narrowed"
+- "escalating agitation after redirection â€” voice volume increased, physical space narrowed"
 - "environmental anomaly inconsistent with normal conditions at this time of day"
 ACTD must read like real-time situational awareness thinking, not policy language.
 
 DECISION QUALITY STANDARD (ALL CHOICE-BASED DRILLS):
 - At least 2 options must feel plausible under stress
-- Weaker options must fail for realistic, human reasons — not because they are obviously wrong
+- Weaker options must fail for realistic, human reasons â€” not because they are obviously wrong
 - Outcomes must differ meaningfully based on risk trajectory
 - NEVER label options as "Correct", "Wrong", or "Best"
 - Use risk tiers: "Low Risk" | "Moderate Risk" | "Elevated Risk" | "Introduces Additional Risk"
@@ -2755,9 +2755,9 @@ All decision options MUST be REALISTIC, DEFENSIBLE, and DOCTRINE-ALIGNED.
 EACH OPTION MUST:
   - Represent a plausible real-world action that a trained person in this role would actually take
   - Align with one of the following three action categories:
-      • CONTROL ATTEMPT: direct action to stop, redirect, or contain the individual
-      • COORDINATION ACTIVATION: alerting, notifying, or activating the response chain
-      • OBSERVATION WITH INTENT TO ESCALATE: structured monitoring with a defined escalation threshold (NOT passive watching)
+      â€¢ CONTROL ATTEMPT: direct action to stop, redirect, or contain the individual
+      â€¢ COORDINATION ACTIVATION: alerting, notifying, or activating the response chain
+      â€¢ OBSERVATION WITH INTENT TO ESCALATE: structured monitoring with a defined escalation threshold (NOT passive watching)
 
 REMOVE ANY OPTION THAT:
   - Ignores the situation (no action taken, no awareness maintained)
@@ -2766,17 +2766,17 @@ REMOVE ANY OPTION THAT:
   - Delays response without a defined justification, threshold, or coordination intent
   - Frames the situation as something that can be safely left unaddressed
 
-REQUIRED OPTION STRUCTURE — every set of three options MUST include:
+REQUIRED OPTION STRUCTURE â€” every set of three options MUST include:
   1. LOW EXPOSURE / HIGH COORDINATION option: activates the response chain early, maintains safe distance, preserves documentation window; slower to achieve direct control but reduces personal risk and organizational liability
   2. MODERATE CONTROL option: balances direct action with coordination; moderate personal exposure; attempts to manage the individual while keeping backup informed
   3. HIGH EXPOSURE / DIRECT CONTROL option (if appropriate to the scenario and role): immediate physical or verbal intervention; fastest path to control but highest personal exposure and escalation risk; appropriate only when delay would result in imminent harm
 
 ALL OPTIONS MUST REFLECT:
-  → A conscious decision under pressure
-  → NOT passive behavior
-  → NOT a choice to ignore or normalize the threat
+  â†’ A conscious decision under pressure
+  â†’ NOT passive behavior
+  â†’ NOT a choice to ignore or normalize the threat
 
-VALIDATION CHECK — before finalizing any set of three options, confirm:
+VALIDATION CHECK â€” before finalizing any set of three options, confirm:
   - None of the three options allows the participant to do nothing
   - None of the three options allows the participant to continue normal work
   - Each option represents a meaningfully different strategy (not just different wording of the same approach)
@@ -2824,16 +2824,16 @@ The label must reflect: (a) personal/exposure implication, (b) org/system implic
 
 DOCTRINE-SHAPED OUTCOME RULES:
 Every outcome must reflect doctrine consequences. Use the evaluation to shape outcomes:
-- exposure_effect positive → reduces immediate personal or group risk
-- exposure_effect negative → increases direct exposure or leaves others exposed
-- control_effect positive → restores or preserves control of environment
-- control_effect negative → allows deeper access, concealment, or loss of visibility
-- escalation_effect positive → reduces likelihood of provoking escalation
-- escalation_effect negative → increases agitation, unpredictability, or confrontation risk
-- coordination_effect positive → activates support/resources early
-- coordination_effect negative → isolates the responder or delays chain of response
-- documentation_effect positive → improves ability to record and defend actions later
-- documentation_effect negative → creates confusion or loss of key details
+- exposure_effect positive â†’ reduces immediate personal or group risk
+- exposure_effect negative â†’ increases direct exposure or leaves others exposed
+- control_effect positive â†’ restores or preserves control of environment
+- control_effect negative â†’ allows deeper access, concealment, or loss of visibility
+- escalation_effect positive â†’ reduces likelihood of provoking escalation
+- escalation_effect negative â†’ increases agitation, unpredictability, or confrontation risk
+- coordination_effect positive â†’ activates support/resources early
+- coordination_effect negative â†’ isolates the responder or delays chain of response
+- documentation_effect positive â†’ improves ability to record and defend actions later
+- documentation_effect negative â†’ creates confusion or loss of key details
 Outcomes must NOT be generic. They must clearly reflect what the choice changes.
 
 DOCTRINE-REFERENCED EXPERT REASONING RULES:
@@ -2857,50 +2857,50 @@ ACTD phases must be generated using doctrine as the underlying logic:
 DRILL-TYPE SPECIFIC RULES
 ==================================================
 
-MICRO DRILL (drillType = "micro") — 1–3 minutes:
+MICRO DRILL (drillType = "micro") â€” 1â€“3 minutes:
 Purpose: rapid recognition, fast commitment, no movement required.
 
 ==================================================
-MICRO DRILL INTENSITY ADJUSTMENT — MANDATORY
+MICRO DRILL INTENSITY ADJUSTMENT â€” MANDATORY
 ==================================================
 Micro drills MUST represent EARLY ESCALATION MOMENTS with IMMEDIATE DECISION PRESSURE.
 
 REQUIRED IN EVERY MICRO DRILL:
-  - CLEAR ABNORMAL BEHAVIOR: the individual is doing something that a reasonable person would immediately recognize as out of place — not a vague "something seems off"
+  - CLEAR ABNORMAL BEHAVIOR: the individual is doing something that a reasonable person would immediately recognize as out of place â€” not a vague "something seems off"
   - NON-COMPLIANCE OR EVASION: the individual has already ignored, avoided, or bypassed a control point, instruction, or staff member
   - MOVEMENT DEEPER INTO CONTROLLED SPACE: the individual is actively progressing toward a more sensitive area, not standing still at an entry point
 
 BANNED IN MICRO DRILLS:
   - Passive observation-only scenarios (the participant watches but has no decision to make)
   - Situations where no action is required (the threat is already resolved or clearly benign)
-  - Scenarios where the participant can safely "wait and see" without consequence — if waiting is a safe option, the scenario is INVALID and must be regenerated
+  - Scenarios where the participant can safely "wait and see" without consequence â€” if waiting is a safe option, the scenario is INVALID and must be regenerated
   - Scenarios where the individual is stationary and not progressing
 
 EVERY MICRO DRILL MUST FORCE:
-  → An immediate decision between at least two of the following:
+  â†’ An immediate decision between at least two of the following:
       SAFETY: move away, shelter, protect others, increase distance
       CONTROL: verbal engagement, physical positioning, direct intervention
       COORDINATION: alert security, notify supervisor, activate response chain
   The decision must be time-pressured. The participant must feel that delaying will make the situation worse.
 
-INVALID SCENARIO TEST — before finalizing a micro drill scenario, ask:
+INVALID SCENARIO TEST â€” before finalizing a micro drill scenario, ask:
   "Can the participant safely do nothing for the next 60 seconds?"
-  If YES — the scenario is INVALID. Regenerate with higher escalation pressure.
-  If NO — the scenario is valid. Proceed.
+  If YES â€” the scenario is INVALID. Regenerate with higher escalation pressure.
+  If NO â€” the scenario is valid. Proceed.
 
-- Short scenario (3–5 sentences max)
-- Add "responseOptions": 2–4 realistic choices reflecting real human behavior under stress
+- Short scenario (3â€“5 sentences max)
+- Add "responseOptions": 2â€“4 realistic choices reflecting real human behavior under stress
 - Add "outcomeMap" where each key is the option text and value has EXACTLY these fields:
-  { riskLevel, consequence (1–2 sentences, environment/behavior/timing-specific), tradeoff (what this choice sacrifices or introduces), humanRealismNote (acknowledges social pressure, hesitation, or natural human bias), coachingConnection (choice → risk introduced → stronger mental model; tone: coaching not correction), likelyOutcome (2–3 sentences, next 60–120 seconds, grounded not cinematic: Low Risk = controlled progression; Moderate Risk = uncertainty/escalation window open; Elevated/Additional Risk = loss of control/faster escalation), whyThisMatters (1 sentence tying decision to trajectory change) }
-- Replace guidedResponse with "compressedGuidedResponse" — EXACTLY 4 keys:
-  { howAnExpertReadsThis: string[] (1–2 bullets), criticalDecision: string (1 sentence), mostLikelyMistake: string (1 sentence), bestNextMove: string (1 sentence) }
+  { riskLevel, consequence (1â€“2 sentences, environment/behavior/timing-specific), tradeoff (what this choice sacrifices or introduces), humanRealismNote (acknowledges social pressure, hesitation, or natural human bias), coachingConnection (choice â†’ risk introduced â†’ stronger mental model; tone: coaching not correction), likelyOutcome (2â€“3 sentences, next 60â€“120 seconds, grounded not cinematic: Low Risk = controlled progression; Moderate Risk = uncertainty/escalation window open; Elevated/Additional Risk = loss of control/faster escalation), whyThisMatters (1 sentence tying decision to trajectory change) }
+- Replace guidedResponse with "compressedGuidedResponse" â€” EXACTLY 4 keys:
+  { howAnExpertReadsThis: string[] (1â€“2 bullets), criticalDecision: string (1 sentence), mostLikelyMistake: string (1 sentence), bestNextMove: string (1 sentence) }
 - Add "microDebriefQuestion": string (1 short reflective question)
 - ACTD: Assess + Commit emphasis only; Take Action = best available move; Debrief = brief and reflective
 - Do NOT generate long ACTD text blocks
 - Set guidedResponse to null for micro drills
 
 ==================================================
-NON-PRESCRIPTIVE OUTPUT REQUIREMENT — ALL DRILL TYPES
+NON-PRESCRIPTIVE OUTPUT REQUIREMENT â€” ALL DRILL TYPES
 ==================================================
 All drill output MUST be non-prescriptive. This is a legal safety requirement.
 
@@ -2912,41 +2912,41 @@ REMOVE any language that:
 
 REPLACE with:
   - Response tradeoffs: what each option gains and what risk it introduces
-  - Potential outcomes: what may happen as a result of each path — uncertain, evolving, not resolved
+  - Potential outcomes: what may happen as a result of each path â€” uncertain, evolving, not resolved
   - Decision impact framing: how each decision type affects the situation trajectory
 
-DECISION IMPACT FIELD ("decisionImpact") — REQUIRED IN ALL DRILLS:
+DECISION IMPACT FIELD ("decisionImpact") â€” REQUIRED IN ALL DRILLS:
   Include a "decisionImpact" object with three keys:
   - "highCoordinationPath": what changes when a low-exposure, high-coordination decision is made
   - "moderateControlPath": what changes when a moderate control action is taken
   - "highExposurePath": what changes when a high-exposure direct action is taken
-  Each value: 1–2 sentences. Describe the situation trajectory — NOT whether it was correct.
+  Each value: 1â€“2 sentences. Describe the situation trajectory â€” NOT whether it was correct.
   BANNED: "This was the correct choice", "This was the wrong choice", "This is the best option"
-  REQUIRED: evolving, uncertain language — "the response chain is now active but...", "the individual redirects but..."
+  REQUIRED: evolving, uncertain language â€” "the response chain is now active but...", "the individual redirects but..."
 
-SHORT DEBRIEF FIELD ("shortDebrief") — REQUIRED IN ALL DRILLS:
-  Include a "shortDebrief" array of 2–3 strings.
+SHORT DEBRIEF FIELD ("shortDebrief") â€” REQUIRED IN ALL DRILLS:
+  Include a "shortDebrief" array of 2â€“3 strings.
   Each string is a debrief question focused on awareness, recognition, and response readiness.
   BANNED: questions that imply a single correct answer ("What should you have done?")
   REQUIRED: open-ended, reflective questions ("What behavioral cue first signaled concern?", "At what point did the situation cross from observation to action?", "What coordination step would have changed the outcome trajectory?")
 
-GUIDED DRILL (drillType = "guided") — 3–7 minutes:
+GUIDED DRILL (drillType = "guided") â€” 3â€“7 minutes:
 Purpose: Forced decision-based interaction. Participants must make active choices before seeing outcomes. No passive reading.
-- Richer scenario (5–8 sentences) that sets up a realistic, ambiguous situation
+- Richer scenario (5â€“8 sentences) that sets up a realistic, ambiguous situation
 - Add "guidedCheckpoints": array of EXACTLY 2 checkpoint objects. This is the core interaction engine.
 
   CHECKPOINT 1 (phase: "initial"):
   - Presents the opening situation requiring an immediate decision
-  - Add "priorityFraming": string — a single sentence starting with "Your priority:" that names the participant's primary objective at this moment.
+  - Add "priorityFraming": string â€” a single sentence starting with "Your priority:" that names the participant's primary objective at this moment.
       Must be one of: containment, delay, visibility, coordination, or a combination.
       Examples: "Your priority: establish visibility and alert the response chain before the situation moves."
                "Your priority: delay escalation and preserve your position until backup arrives."
                "Your priority: coordinate an immediate response without direct confrontation."
   - Must have exactly 3 options. REAL-WORLD VIABILITY STANDARDS: every option must pass all four tests:
-      1. POLICY ALIGNMENT — reflects realistic workplace protocols (corporate, healthcare, or public safety). No actions that violate standard guidelines.
-      2. ROLE APPROPRIATENESS — matches the authority and training level of the role described. An employee does not physically restrain; security does not abandon post without protocol.
-      3. ESCALATION AWARENESS — each action must consider how the individual may react: comply, evade, hesitate, or escalate.
-      4. NO THEATRICAL ACTIONS — no yelling unnecessarily, dramatic confrontation, or exaggerated behaviors. Actions must be practical, controlled, and defensible in a real training program.
+      1. POLICY ALIGNMENT â€” reflects realistic workplace protocols (corporate, healthcare, or public safety). No actions that violate standard guidelines.
+      2. ROLE APPROPRIATENESS â€” matches the authority and training level of the role described. An employee does not physically restrain; security does not abandon post without protocol.
+      3. ESCALATION AWARENESS â€” each action must consider how the individual may react: comply, evade, hesitate, or escalate.
+      4. NO THEATRICAL ACTIONS â€” no yelling unnecessarily, dramatic confrontation, or exaggerated behaviors. Actions must be practical, controlled, and defensible in a real training program.
       CONTEXT-SENSITIVE ACTIONS: If generating an option that involves activating a facility alert system (e.g., "Code Red", "emergency alert"), it MUST include conditional framing:
         - Label must include "(if appropriate to your facility)"
         - Description must include "If your organization has a defined alert protocol, activate it according to policy..."
@@ -2961,21 +2961,21 @@ Purpose: Forced decision-based interaction. Participants must make active choice
         3. INTENT or DECISION TRIGGER (the purpose, condition, or threshold that drives the action)
       RULES:
         - Every description must represent a complete, plausible action that could appear in a real training program.
-        - BANNED — weak or incomplete descriptions:
+        - BANNED â€” weak or incomplete descriptions:
             "Observe only"
             "Follow without purpose"
             "Wait without escalation criteria"
             "Monitor the situation"
             "Watch and see what happens"
             Any description that lacks a clear intent or leaves the user without a decision framework.
-        - REQUIRED — descriptions must be operationally grounded:
+        - REQUIRED â€” descriptions must be operationally grounded:
             Specify what the user does physically or verbally.
             Specify how they maintain awareness, distance, or communication.
             Specify the condition or threshold that would trigger the next action.
         - OPTION DISTINCTIVENESS: the three descriptions must represent clearly different approaches:
             Option A (DIRECT CONTROL): emphasize immediate positioning, verbal engagement, or physical intervention.
             Option B (COORDINATION-FIRST): emphasize alerting, notifying, or activating the response chain while maintaining a safe position.
-            Option C (STRUCTURED OBSERVATION — DELAYED ESCALATION): maintain safe distance and visual contact while continuing to monitor the individual's movements and behavior. The weakness of this option is DELAYED ACTION on escalation that is already warranted — NOT a conditional trigger based on future behavior. The individual has already breached access control or ignored instructions; escalation is appropriate at this stage. Option C acknowledges this but delays acting on it. The description must make clear that the delay is the suboptimal element, not that escalation depends on what happens next.
+            Option C (STRUCTURED OBSERVATION â€” DELAYED ESCALATION): maintain safe distance and visual contact while continuing to monitor the individual's movements and behavior. The weakness of this option is DELAYED ACTION on escalation that is already warranted â€” NOT a conditional trigger based on future behavior. The individual has already breached access control or ignored instructions; escalation is appropriate at this stage. Option C acknowledges this but delays acting on it. The description must make clear that the delay is the suboptimal element, not that escalation depends on what happens next.
             REQUIRED structure for Option C description:
               (1) The observational action being taken (maintain distance, monitor movements, sustain visual contact)
               (2) The continued engagement or awareness method
@@ -2988,21 +2988,21 @@ Purpose: Forced decision-based interaction. Participants must make active choice
             EXAMPLE CORRECT:
               "Maintain observation from a safe distance while continuing to monitor the individual's movements and maintaining awareness of their direction, delaying immediate alert activation despite clear indicators that escalation is warranted."
               "Follow at a safe distance while observing behavior and maintaining situational awareness, delaying activation of the response chain despite the individual's continued non-compliance."
-      EXAMPLE BEFORE (BANNED — incomplete):
+      EXAMPLE BEFORE (BANNED â€” incomplete):
         "Follow him from a distance and observe."
-      EXAMPLE AFTER (REQUIRED — complete, intent-driven):
+      EXAMPLE AFTER (REQUIRED â€” complete, intent-driven):
         "Follow at a safe distance while maintaining visual contact and preparing to escalate to security if the individual continues deeper into restricted areas."
     - riskLabel: STANDARDIZED four-segment format. Must follow this EXACT structure:
       FORMAT: [Exposure], [Control/Coordination], [Organizational Impact], [Behavior Risk]
       RULES:
         - Use commas ONLY to separate segments (no semicolons, no dashes)
-        - Each segment must be 3–6 words maximum
+        - Each segment must be 3â€“6 words maximum
         - Use ONLY approved terms from the lists below
         - No full sentences, no narrative prose, no qualifiers beyond the approved terms
         - NEVER use bare labels like "Low Risk", "Moderate Risk", "Elevated Risk", "Introduces Additional Risk"
         - HIDDEN from participant until after selection
-      APPROVED TERMS — use ONLY these EXACT phrases, word-for-word. Do NOT invent new phrasing or paraphrase.
-      EXACT CASING REQUIRED — copy each term exactly as written below. Do NOT lowercase any segment.
+      APPROVED TERMS â€” use ONLY these EXACT phrases, word-for-word. Do NOT invent new phrasing or paraphrase.
+      EXACT CASING REQUIRED â€” copy each term exactly as written below. Do NOT lowercase any segment.
         Exposure segment (choose exactly one):
           "Low personal exposure" | "Moderate personal exposure" | "High personal exposure" | "Critical personal exposure"
         Coordination/Control segment (choose exactly one):
@@ -3018,22 +3018,22 @@ Purpose: Forced decision-based interaction. Participants must make active choice
         "Critical personal exposure, Loss of control, High disruption, High escalation risk"
         "Low personal exposure, Coordination active, Low disruption, Subject likely to comply"
       INVALID EXAMPLES (never generate these):
-        "Low personal exposure; coordination active; subject likely to redirect or hesitate." ← semicolons banned
-        "High personal exposure, backup bypassed; subject reaction unpredictable." ← invented phrasing banned
-        "Reduces exposure, preserves spatial control; response chain activated" ← narrative prose banned
-        "Low Risk" or "Moderate Risk" ← bare tier labels banned
-        "Minimal disruption" ← not in approved list
-        "Unpredictable subject response" ← not in approved list
-        "high escalation risk" ← wrong casing (must be "High escalation risk")
-        "subject likely to evade" ← wrong casing (must be "Subject likely to evade")
+        "Low personal exposure; coordination active; subject likely to redirect or hesitate." â† semicolons banned
+        "High personal exposure, backup bypassed; subject reaction unpredictable." â† invented phrasing banned
+        "Reduces exposure, preserves spatial control; response chain activated" â† narrative prose banned
+        "Low Risk" or "Moderate Risk" â† bare tier labels banned
+        "Minimal disruption" â† not in approved list
+        "Unpredictable subject response" â† not in approved list
+        "high escalation risk" â† wrong casing (must be "High escalation risk")
+        "subject likely to evade" â† wrong casing (must be "Subject likely to evade")
       If the Code Red option is generated, its riskLabel MUST use "High disruption" or "Operational disruption" as the Organizational Impact segment.
-    - outcome: 1–2 sentences. MUST include ALL THREE elements:
-        1. How the INDIVIDUAL REACTS — subject must be active, not static. Use: accelerates, hesitates, redirects, evades, escalates, tests boundaries, appears to comply.
+    - outcome: 1â€“2 sentences. MUST include ALL THREE elements:
+        1. How the INDIVIDUAL REACTS â€” subject must be active, not static. Use: accelerates, hesitates, redirects, evades, escalates, tests boundaries, appears to comply.
            RULE: Never write a passive subject. The individual must do something in response to the participant's action.
         2. What CHANGES in the environment or situation (position, access, bystander exposure, response timing)
-        3. What REMAINS UNRESOLVED — every outcome, including strong actions, MUST end in an open state. No outcome may imply full resolution, guaranteed interception, or confirmed compliance.
+        3. What REMAINS UNRESOLVED â€” every outcome, including strong actions, MUST end in an open state. No outcome may imply full resolution, guaranteed interception, or confirmed compliance.
 
-      UNCERTAINTY IS MANDATORY — apply to ALL outcomes:
+      UNCERTAINTY IS MANDATORY â€” apply to ALL outcomes:
         BANNED PHRASES (never use these or close paraphrases):
           "Security intercepts the individual"
           "The individual complies"
@@ -3043,7 +3043,7 @@ Purpose: Forced decision-based interaction. Participants must make active choice
           "The threat is neutralized"
           "Control is established"
           Any phrasing that implies a resolved, completed, or guaranteed outcome.
-        REQUIRED LANGUAGE PATTERNS — use evolving, in-progress constructions:
+        REQUIRED LANGUAGE PATTERNS â€” use evolving, in-progress constructions:
           "Security is moving to intercept, but..."
           "The individual appears to hesitate, though..."
           "The situation remains dynamic..."
@@ -3053,25 +3053,25 @@ Purpose: Forced decision-based interaction. Participants must make active choice
           "The individual redirects but has not stopped..."
 
       OUTCOME TIER RULES:
-        STRONG action → subject hesitates or redirects; response chain is activated and moving; containment is possible but not confirmed. A timing gap or positional uncertainty must remain.
-        PLAUSIBLE but suboptimal → subject tests the boundary or continues moving; uncertainty window widens; org response timeline is delayed but not lost.
-        POOR action → subject escalates or evades; a specific organizational consequence is named (access breach, bypassed notification, documentation window lost); situation is deteriorating.
+        STRONG action â†’ subject hesitates or redirects; response chain is activated and moving; containment is possible but not confirmed. A timing gap or positional uncertainty must remain.
+        PLAUSIBLE but suboptimal â†’ subject tests the boundary or continues moving; uncertainty window widens; org response timeline is delayed but not lost.
+        POOR action â†’ subject escalates or evades; a specific organizational consequence is named (access breach, bypassed notification, documentation window lost); situation is deteriorating.
       Outcomes must NOT be neutral or similar across all three options.
 
-      EXAMPLE BEFORE (BANNED — resolved language):
+      EXAMPLE BEFORE (BANNED â€” resolved language):
         "Security is now tracking him and will intercept shortly."
-      EXAMPLE AFTER (REQUIRED — uncertain, evolving language):
+      EXAMPLE AFTER (REQUIRED â€” uncertain, evolving language):
         "Security is moving to intercept, but the individual continues deeper into the space. The window for controlled intervention is narrowing."
     - tradeoff: 1 sentence. Format: "Gained [X]; introduced [Y]."
-    - reasoning: 2–3 sentences. STRICT STRUCTURE — follow this EXACTLY:
+    - reasoning: 2â€“3 sentences. STRICT STRUCTURE â€” follow this EXACTLY:
 
-        SENTENCE 1 — PRIORITY ALIGNMENT (REQUIRED, appears ONCE and ONLY ONCE):
+        SENTENCE 1 â€” PRIORITY ALIGNMENT (REQUIRED, appears ONCE and ONLY ONCE):
           Begin with EXACTLY one of these three openers, word-for-word. Do not paraphrase.
             "This option supports the priority by [specific mechanism]."
             "This option partially supports the priority by [X], but sacrifices [Y]."
             "This option conflicts with the priority because [specific reason]."
 
-        SENTENCE 2 and beyond — MECHANISM AND OUTCOME ONLY:
+        SENTENCE 2 and beyond â€” MECHANISM AND OUTCOME ONLY:
           Explain HOW the action works and WHAT it leads to.
           These sentences MUST NOT reference priority alignment in any form.
           BANNED PHRASES IN SENTENCE 2+:
@@ -3088,21 +3088,21 @@ Purpose: Forced decision-based interaction. Participants must make active choice
             Any restatement or paraphrase of the Sentence 1 alignment.
 
         TONE RULES (apply to all sentences):
-          NEVER use "ideal", "perfect", or "the correct" — use "effective in this context", "strong option given current conditions", "appropriate given the information available".
+          NEVER use "ideal", "perfect", or "the correct" â€” use "effective in this context", "strong option given current conditions", "appropriate given the information available".
           Frame poor choices as understandable but consequential: "This is a natural instinct, but it introduces [specific risk]."
 
         EXAMPLE CORRECT:
           "This option supports the priority by activating coordination early. It reduces personal exposure and enables a structured response from security. However, it allows the individual to gain additional ground before interception."
 
-        EXAMPLE INCORRECT — NEVER generate this:
+        EXAMPLE INCORRECT â€” NEVER generate this:
           "This option supports the priority by activating coordination early. It aligns with the priority because it keeps the responder at a safe distance. This reinforces the priority of minimizing exposure."
-          (Reason: Sentence 2 and 3 restate priority alignment — this is a hard fail.)
+          (Reason: Sentence 2 and 3 restate priority alignment â€” this is a hard fail.)
   - prompt: the decision question
 
   CHECKPOINT 2 (phase: "escalation"):
-  - Add "priorityFraming": string — same format as checkpoint 1, but reflecting the escalated situation.
-  - Add "escalationVariants": object with exactly 3 keys. Each variant MUST use subject-driven language — name what the individual is doing, not just the abstract state.
-    HARD RULE — BANNED OPENING PHRASES (never use any of these, in any form):
+  - Add "priorityFraming": string â€” same format as checkpoint 1, but reflecting the escalated situation.
+  - Add "escalationVariants": object with exactly 3 keys. Each variant MUST use subject-driven language â€” name what the individual is doing, not just the abstract state.
+    HARD RULE â€” BANNED OPENING PHRASES (never use any of these, in any form):
       "The situation has progressed"
       "The situation has progressed significantly"
       "The situation has developed"
@@ -3120,36 +3120,36 @@ Purpose: Forced decision-based interaction. Participants must make active choice
       "Regardless of your previous choice"
       "Regardless of your previous action"
       If any variant, escalationContext, or checkpoint prompt opens with any of the above phrases or a close paraphrase, the output is INVALID. Rewrite from scratch.
-    REQUIRED FLOW — every checkpoint and escalation variant MUST follow this exact structure:
-      1. Situation Update: state-based, causal — what is observable right now (no transition narration)
+    REQUIRED FLOW â€” every checkpoint and escalation variant MUST follow this exact structure:
+      1. Situation Update: state-based, causal â€” what is observable right now (no transition narration)
       2. Priority: "Your priority: [directive]"
       3. Decision question: follows directly from the Situation Update with no transitional narration
       Example:
         Situation Update: The individual has moved toward the secondary corridor and is now out of your direct line of sight.
         Your priority: Maintain visibility and delay further movement.
         The individual is now attempting to open a door. What is your next move?
-    REQUIRED: Every variant MUST open with a concrete, observable fact — what a person in the room would see or hear at that exact moment. No abstract state descriptions. No transition language. Start with the subject or the environment, not with a summary of what happened.
-      "alertInitiated": 2–3 sentences. Open directly with what security or the response chain is doing. Then describe what the individual is doing in response. Then name the remaining gap.
+    REQUIRED: Every variant MUST open with a concrete, observable fact â€” what a person in the room would see or hear at that exact moment. No abstract state descriptions. No transition language. Start with the subject or the environment, not with a summary of what happened.
+      "alertInitiated": 2â€“3 sentences. Open directly with what security or the response chain is doing. Then describe what the individual is doing in response. Then name the remaining gap.
         Example: "Security has been notified and is en route. The individual has noticed the change in activity and is moving toward a secondary area. The window to establish containment before arrival is closing."
-      "directIntervention": 2–3 sentences. Open directly with the consequence of the participant's action. Then describe how the individual reacted. Then name the current state.
+      "directIntervention": 2â€“3 sentences. Open directly with the consequence of the participant's action. Then describe how the individual reacted. Then name the current state.
         Example: "After your direct intervention, the individual resisted and moved deeper into the office. You are now in close proximity with no backup confirmed. The situation requires an immediate reassessment."
-      "noAction": 2–3 sentences. Open directly with what has happened without an alert. Then describe what the individual is doing now. Then name what has been lost.
+      "noAction": 2â€“3 sentences. Open directly with what has happened without an alert. Then describe what the individual is doing now. Then name what has been lost.
         Example: "No formal alert has been initiated. The individual has continued deeper into the workspace and is now near a restricted area. The response chain has not been activated and the situation is developing faster than expected."
     Each variant MUST adjust: individual's current position, level of control established, whether coordination is active.
     RULE: NEVER use "Regardless of your previous choice" or "Regardless of your previous action" anywhere in this drill. This is a hard ban.
     RULE: Escalation text must NEVER be identical across variants. Each must reflect a distinct situational state.
-  - escalationContext: 2–3 sentences — the default escalation setup (used when variant cannot be determined). Must reference prior decision context using subject-driven language.
+  - escalationContext: 2â€“3 sentences â€” the default escalation setup (used when variant cannot be determined). Must reference prior decision context using subject-driven language.
   - Must reflect INCREASED pressure, ambiguity, or a new complication
   - Must have exactly 3 options with the same structure as checkpoint 1 (including viability standards and priorityFraming)
   - prompt: the new decision question reflecting the escalated situation
 
   GLOBAL RULES FOR GUIDED DRILLS:
   - Do NOT reveal riskLabel before selection
-  - All outcomes must be realistic and grounded — no dramatic language, no theatrical actions
+  - All outcomes must be realistic and grounded â€” no dramatic language, no theatrical actions
   - OPTION DIFFERENTIATION IS REQUIRED: each checkpoint must have exactly 3 options representing distinct strategies:
-      A. DIRECT CONTROL — immediate intervention or physical positioning; high personal exposure; fast but risky
-      B. COORDINATION-FIRST — alert + observe; lower personal exposure; slower containment; depends on backup arriving
-      C. STRUCTURED OBSERVATION — DELAYED ESCALATION — maintain safe distance and visual contact while monitoring the individual's movements; the individual has already breached access control or ignored instructions, so escalation is already warranted at this stage; the weakness of this option is that it delays acting on that escalation, not that it waits for a future trigger; suboptimal because it allows the individual to gain ground while the response chain remains inactive; plausible because it avoids premature confrontation and preserves situational awareness.
+      A. DIRECT CONTROL â€” immediate intervention or physical positioning; high personal exposure; fast but risky
+      B. COORDINATION-FIRST â€” alert + observe; lower personal exposure; slower containment; depends on backup arriving
+      C. STRUCTURED OBSERVATION â€” DELAYED ESCALATION â€” maintain safe distance and visual contact while monitoring the individual's movements; the individual has already breached access control or ignored instructions, so escalation is already warranted at this stage; the weakness of this option is that it delays acting on that escalation, not that it waits for a future trigger; suboptimal because it allows the individual to gain ground while the response chain remains inactive; plausible because it avoids premature confrontation and preserves situational awareness.
          HARD RULE: Do NOT frame Option C escalation as conditional on future behavior. The delay IS the weakness. Escalation is already appropriate; Option C simply does not act on it immediately.
          BANNED for Option C: framing escalation as "if they enter a restricted area" or "if non-compliance continues"; asking a colleague for advice; casual consultation; informal hesitation; passive watching without operational framing.
     Options must NOT overlap in intent or outcome. If two options represent the same strategy, rewrite one.
@@ -3169,34 +3169,34 @@ Purpose: Forced decision-based interaction. Participants must make active choice
   - The escalation checkpoint must feel like a genuine progression connected to checkpoint 1
   - Consequence differentiation is REQUIRED: strong/weak/poor actions must produce clearly different outcomes
   - Strong action outcomes must still contain friction, timing gaps, and incomplete resolution.
-    OUTCOME TENSION RULE: avoid "Security is able to intercept" — this implies a resolved state.
+    OUTCOME TENSION RULE: avoid "Security is able to intercept" â€” this implies a resolved state.
     Use instead: "Security is positioning to intercept", "Security is closing in", "Security is en route but has not yet arrived".
     Always maintain: tension, incomplete control, timing gap.
   - Poor action outcomes must name a specific organizational, access, or documentation consequence.
     DOCUMENTATION WINDOW PHRASING: replace "documentation window at risk" with "loss of clear incident documentation due to lack of early reporting".
     Use specific consequence language: "no formal notification has been made", "the incident response protocol has been bypassed", "the documentation window has closed before security arrives".
-  - Every outcome must include an active subject reaction — no static or passive subject behavior
-  - No option may be framed as purely "safe" — every choice introduces some form of personal, organizational, or situational risk
+  - Every outcome must include an active subject reaction â€” no static or passive subject behavior
+  - No option may be framed as purely "safe" â€” every choice introduces some form of personal, organizational, or situational risk
 
-- Add "roleSpecificCues": array of objects { role: string, cue: string } — role-specific decision triggers
+- Add "roleSpecificCues": array of objects { role: string, cue: string } â€” role-specific decision triggers
 - Add "documentationSection": { whatToCapture: string[], timeframe: string }
-- guidedResponse: tightened 5-section expert thinking panel — total reading time ~60–90 seconds. Each section: 1 bullet max, 1–2 sentences max. No padding. High-signal only.
+- guidedResponse: tightened 5-section expert thinking panel â€” total reading time ~60â€“90 seconds. Each section: 1 bullet max, 1â€“2 sentences max. No padding. High-signal only.
   { howAnExpertAssesses: string[] (1 bullet), decisionMakingLens: string[] (1 bullet), actionConsiderations: string[] (1 bullet), commonHumanErrors: string[] (1 bullet), performanceStandard: string (1 sentence) }
 - ACTD: all four phases, moderate depth
 - Set responseOptions, outcomeMap, compressedGuidedResponse, microDebriefQuestion, responsePaths, decisionCheckpoints to null
 
-EXTENDED SCENARIO (drillType = "extended") — 15+ minutes:
+EXTENDED SCENARIO (drillType = "extended") â€” 15+ minutes:
 Purpose: tabletop, walkthrough, or simulation; progressive escalation; role-based coordination.
 - Add "exerciseType": "tabletop" | "walkthrough" | "simulation"
 - Add "facilitatorSetup": { roomSetup: string, materialsNeeded: string[], preExerciseBriefing: string }
-- Add "injects": array of objects { injectNumber: number, timeMarker: string, event: string, expectedDecision: string, facilitatorNote: string } — minimum 3 injects with progressive escalation
+- Add "injects": array of objects { injectNumber: number, timeMarker: string, event: string, expectedDecision: string, facilitatorNote: string } â€” minimum 3 injects with progressive escalation
 - Add "participantRoles": array of objects { role: string, briefing: string, keyDecision: string }
-- Add "criticalDecisions": string[] — the 3–5 most important decision points in the scenario
+- Add "criticalDecisions": string[] â€” the 3â€“5 most important decision points in the scenario
 - Add "communicationsFlow": { internalNotification: string, externalNotification: string, publicCommunication: string }
 - Add "afterActionTemplate": { strengthsPrompt: string, gapsPrompt: string, improvementActions: string, followUpDeadline: string }
 - guidedResponse: full expert thinking panel with facilitator-level depth
 - ACTD: all four phases, full depth, progressive
-- Must be clearly distinguished from operational drills — tabletop/simulation format, not live execution
+- Must be clearly distinguished from operational drills â€” tabletop/simulation format, not live execution
 - Set responseOptions, outcomeMap, compressedGuidedResponse, microDebriefQuestion to null
 
 ==================================================
@@ -3270,11 +3270,11 @@ JSON SCHEMA (return ONLY valid JSON matching this schema)
   "afterActionTemplate": { "strengthsPrompt": string, "gapsPrompt": string, "improvementActions": string, "followUpDeadline": string } | null
 }`;
 
-      const coreRuleReminder = `SYSTEM OVERRIDE — THREAT DOMAIN ENFORCEMENT: This drill MUST be categorized as an ACTIVE THREAT / UNAUTHORIZED ACCESS ESCALATION scenario. BANNED: theft-only scenarios, equipment misuse as primary threat, general workplace safety incidents, operational disruption without human threat escalation. FIVE-ELEMENT REQUIREMENT — the scenario MUST include ALL FIVE: (1) unknown or unauthorized individual, (2) boundary violation, (3) behavioral escalation indicators (evasion, aggression, deception, non-compliance), (4) forward progression deeper into controlled space, (5) implied or potential threat to human safety. REJECT AND REGENERATE if any element is missing. LANGUAGE BANS: do NOT use "continue working" as a viable option; do NOT use "monitor the situation" as a standalone option; do NOT use "wait and see" in any form. DECISION VALIDATION: every option must represent a conscious decision under pressure — control attempt, coordination activation, or structured observation with escalation intent. No option may ignore the situation, assume benign intent without verification, or allow normal work to continue. MICRO DRILL INTENSITY (if drillType = micro): the scenario MUST include clear abnormal behavior + non-compliance or evasion + movement deeper into controlled space. INVALID if the participant can safely do nothing for 60 seconds. OUTPUT TRAINING GOAL: Recognition → Control → Coordination → Containment. KEYWORD VALIDATION: scenario text MUST include at least one of: threat, weapon, suspicious, aggressive, unauthorized, violence, escalation, armed, hostile, threatening, assault, confrontation, intruder, stalking, domestic, grievance.`;
+      const coreRuleReminder = `SYSTEM OVERRIDE â€” THREAT DOMAIN ENFORCEMENT: This drill MUST be categorized as an ACTIVE THREAT / UNAUTHORIZED ACCESS ESCALATION scenario. BANNED: theft-only scenarios, equipment misuse as primary threat, general workplace safety incidents, operational disruption without human threat escalation. FIVE-ELEMENT REQUIREMENT â€” the scenario MUST include ALL FIVE: (1) unknown or unauthorized individual, (2) boundary violation, (3) behavioral escalation indicators (evasion, aggression, deception, non-compliance), (4) forward progression deeper into controlled space, (5) implied or potential threat to human safety. REJECT AND REGENERATE if any element is missing. LANGUAGE BANS: do NOT use "continue working" as a viable option; do NOT use "monitor the situation" as a standalone option; do NOT use "wait and see" in any form. DECISION VALIDATION: every option must represent a conscious decision under pressure â€” control attempt, coordination activation, or structured observation with escalation intent. No option may ignore the situation, assume benign intent without verification, or allow normal work to continue. MICRO DRILL INTENSITY (if drillType = micro): the scenario MUST include clear abnormal behavior + non-compliance or evasion + movement deeper into controlled space. INVALID if the participant can safely do nothing for 60 seconds. OUTPUT TRAINING GOAL: Recognition â†’ Control â†’ Coordination â†’ Containment. KEYWORD VALIDATION: scenario text MUST include at least one of: threat, weapon, suspicious, aggressive, unauthorized, violence, escalation, armed, hostile, threatening, assault, confrontation, intruder, stalking, domestic, grievance.`;
 
       const userMessage = input.generationMode === "user" && input.userPrompt
         ? `${coreRuleReminder}\n\nGenerate a ${DRILL_TYPE_LABELS[input.drillType]} for the following scenario:\n\n${input.userPrompt}\n\nIndustry: ${input.industry ?? "General"}\nJurisdiction: ${input.jurisdiction ?? "United States"}`
-        : `${coreRuleReminder}\n\nGenerate a ${DRILL_TYPE_LABELS[input.drillType]} for a ${input.industry ?? "general workplace"} facility.\n\nFacility context:\n${input.facilityContext ?? "No specific facility data provided — generate a baseline drill and note assumptions."}\n\nJurisdiction: ${input.jurisdiction ?? "United States"}`;
+        : `${coreRuleReminder}\n\nGenerate a ${DRILL_TYPE_LABELS[input.drillType]} for a ${input.industry ?? "general workplace"} facility.\n\nFacility context:\n${input.facilityContext ?? "No specific facility data provided â€” generate a baseline drill and note assumptions."}\n\nJurisdiction: ${input.jurisdiction ?? "United States"}`;
 
       const response = await invokeLLM({
         messages: [
@@ -3477,7 +3477,7 @@ const staffCheckinRouter = router({
     }),
 });
 
-// ─── BTAM Router ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ BTAM Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const btamRouter = router({
   // List all cases for the user's org
   listCases: paidProcedure.query(async ({ ctx }) => {
@@ -3672,7 +3672,7 @@ const btamRouter = router({
       if (!c) return null;
       return { caseId: c.id, caseNumber: c.caseNumber, status: c.status, concernLevel: c.concernLevel };
     }),
-  // Analyze free text for threat keywords — returns flags without persisting
+  // Analyze free text for threat keywords â€” returns flags without persisting
   analyzeText: paidProcedure
     .input(z.object({ text: z.string() }))
     .mutation(async ({ input }) => {
@@ -3827,7 +3827,7 @@ const btamRouter = router({
 });
 
 
-// ─── Settings Router ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Settings Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const settingsRouter = router({
   // Update the current user's display name
   updateName: protectedProcedure
@@ -3941,7 +3941,7 @@ export const appRouter = router({
         _realAdminRole: realAdmin?.role ?? null,
       };
     }),
-    // Returns the current user's org plan ('free' | 'paid') — used by client for UI gating
+    // Returns the current user's org plan ('free' | 'paid') â€” used by client for UI gating
     myPlan: publicProcedure.query((opts) => opts.ctx.orgPlan ?? "free"),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
@@ -3977,7 +3977,7 @@ export const appRouter = router({
   staffCheckin: staffCheckinRouter,
   trainingModule: trainingModuleRouter,
   massNotification: massNotificationRouter,
-  // API Key management (create/list/revoke) — accessible to org admins and platform admins
+  // API Key management (create/list/revoke) â€” accessible to org admins and platform admins
   apiKeys: router({
     create: orgAdminProcedure
       .input(z.object({ label: z.string().optional(), orgId: z.number().optional(), expiresInDays: z.number().optional() }))

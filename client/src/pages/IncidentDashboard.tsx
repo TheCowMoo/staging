@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useAuth } from "@/_core/hooks/useAuth";
 import {
   AlertTriangle, Shield, Clock, CheckCircle2, ArrowRight,
-  Search, Eye, X, Filter, Download, Building2, Hash, Link2, ExternalLink, ShieldAlert
+  Search, Eye, X, Filter, Download, Building2, Hash, Link2, ExternalLink, ShieldAlert, Trash2
 } from "lucide-react";
 import { WARNING_SIGN_LABELS } from "../../../shared/threatKeywords";
 
@@ -288,6 +288,7 @@ export default function IncidentDashboard() {
   const [referredTo, setReferredTo] = useState<number | null>(null);
   const [tokenInput, setTokenInput] = useState("");
   const [tokenSearch, setTokenSearch] = useState("");
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
 
   const { data: tokenReport, error: tokenError, isFetching: tokenFetching } = trpc.incident.adminLookup.useQuery(
     { token: tokenSearch },
@@ -301,6 +302,15 @@ export default function IncidentDashboard() {
       toast.success("Report status updated");
       refetch();
       setSelectedReport(null);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const deleteAll = trpc.incident.deleteAll.useMutation({
+    onSuccess: () => {
+      toast.success("All incident reports cleared");
+      setClearConfirmOpen(false);
+      refetch();
     },
     onError: (e) => toast.error(e.message),
   });
@@ -410,12 +420,46 @@ export default function IncidentDashboard() {
               <Shield size={14} className="text-primary" />
               <span>All reports are anonymous</span>
             </div>
+            {isAdmin && reports.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                onClick={() => setClearConfirmOpen(true)}
+                disabled={deleteAll.isPending}
+              >
+                <Trash2 size={14} />
+                {deleteAll.isPending ? "Clearing..." : "Clear All"}
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={exportCSV} className="gap-1.5">
               <Download size={14} />
               Export CSV
             </Button>
           </div>
         </div>
+
+        {/* Clear All Confirmation Dialog */}
+        <Dialog open={clearConfirmOpen} onOpenChange={setClearConfirmOpen}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Clear All Incident Reports?</DialogTitle>
+              <DialogDescription>
+                This will permanently delete all {reports.length} incident report(s). This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setClearConfirmOpen(false)}>Cancel</Button>
+              <Button
+                variant="destructive"
+                onClick={() => deleteAll.mutate()}
+                disabled={deleteAll.isPending}
+              >
+                {deleteAll.isPending ? "Deleting..." : "Yes, Clear All"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Tracking Token Lookup */}
         <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-xl">

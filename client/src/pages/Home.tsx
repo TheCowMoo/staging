@@ -61,7 +61,7 @@ export default function Home() {
       <header className="border-b border-[#D0D5DD] bg-white/80 backdrop-blur sticky top-0 z-50">
         <div className="container flex items-center justify-between h-16">
           <div className="flex items-center gap-2.5">
-            <img src="https://pursuitpathways.com/content/logo%20five%20stones.png" alt="Five Stones Technology" className="h-14 w-auto max-w-[200px] object-contain brightness-0 invert-[.85] sepia-[.15] hue-rotate-[200deg] saturate-[.6]" />
+            <img src="https://pursuitpathways.com/content/logo%20five%20stones.png" alt="Five Stones Technology" className="h-14 w-auto max-w-[200px] object-contain" />
           </div>
           <div className="flex items-center gap-3">
             {!loading && (
@@ -220,7 +220,7 @@ export default function Home() {
       <footer className="py-8 border-t border-[#D0D5DD] bg-white">
         <div className="container flex flex-col md:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <img src="https://pursuitpathways.com/content/logo%20five%20stones.png" alt="Five Stones Technology" className="h-12 w-auto max-w-[180px] object-contain brightness-0 invert-[.85] sepia-[.15] hue-rotate-[200deg] saturate-[.6]" />
+            <img src="https://pursuitpathways.com/content/logo%20five%20stones.png" alt="Five Stones Technology" className="h-12 w-auto max-w-[180px] object-contain" />
           </div>
           <p className="text-xs text-[#5A6570] text-center">
             Aligned with OSHA Workplace Violence Prevention · CISA Risk Principles · NFPA 3000

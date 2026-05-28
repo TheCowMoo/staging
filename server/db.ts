@@ -432,6 +432,12 @@ export async function markAsRepeatIncident(
     .where(eq(incidentReports.id, id));
 }
 
+export async function deleteAllIncidentReports() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(incidentReports);
+}
+
 // ─── Facility Attachments ─────────────────────────────────────────────────────
 export async function createFacilityAttachment(data: InsertFacilityAttachment) {
   const db = await getDb();

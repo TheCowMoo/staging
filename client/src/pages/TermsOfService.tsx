@@ -15,7 +15,7 @@ export default function TermsOfService() {
           </Button>
           <p className="text-sm text-muted-foreground mb-1">Five Stones Technology</p>
           <h1 className="text-3xl font-bold tracking-tight">Terms of Service</h1>
-          <p className="text-sm text-muted-foreground mt-2">Legal defensibility platform &mdash; Last updated: March 25, 2026</p>
+          <p className="text-sm text-muted-foreground mt-2">Last updated: March 25, 2026</p>
         </div>
 
         <div className="space-y-8 text-foreground">
@@ -27,7 +27,7 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-xl font-semibold mb-3">1. Agreement Overview</h2>
             <p className="text-muted-foreground leading-relaxed">
-              These Terms of Service govern your access to and use of the Five Stones Technology Legal defensibility platform, including all associated software, features, reports, and documentation (the &ldquo;Platform&rdquo;), provided by <strong>Five Stones Technology</strong>.
+              These Terms of Service govern your access to and use of the Five Stones Technology platform, including all associated software, features, reports, and documentation (the &ldquo;Platform&rdquo;), provided by <strong>Five Stones Technology</strong>.
             </p>
             <p className="text-muted-foreground leading-relaxed mt-3">
               By creating an account, accepting an invitation to join an organization account, or otherwise accessing the Platform, you agree to be bound by these Terms. If you are accessing the Platform on behalf of an organization, you represent that you have the authority to bind that organization.

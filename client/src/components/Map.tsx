@@ -169,11 +169,8 @@ export function MapView({
       fullscreenControl: true,
       zoomControl: true,
       streetViewControl: true,
-      myLocationButton: true,
       mapId: "DEMO_MAP_ID",
     });
-    // Enable the My Location layer (pulsing blue dot)
-    map.current.setMyLocationEnabled(true);
     if (onMapReady) {
       onMapReady(map.current);
     }

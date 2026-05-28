@@ -119,7 +119,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center max-w-sm mx-auto px-6">
           <img src={LOGO_URL} alt="Five Stones Technology" className="h-20 w-auto max-w-[240px] object-contain mx-auto mb-6" />
-          <h1 className="text-2xl font-bold mb-2 text-foreground">Legal defensibility platform</h1>
+          <h1 className="text-2xl font-bold mb-2 text-foreground">Safety Platform</h1>
           <p className="text-muted-foreground mb-6">Sign in to access your workplace safety assessments.</p>
           <Button asChild size="lg" className="w-full">
             <a href={getLoginUrl()}>Sign In to Continue</a>
@@ -284,7 +284,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       icon: <GraduationCap size={18} />,
       items: [
         { href: "/training-modules", label: "Training Modules",                 icon: <BookMarked size={15} />,    locked: isPaid ? undefined : "paid" },
-        { href: "/extended-drills", label: "Extended Drills",             icon: <Shield size={15} />,       locked: isPaid ? undefined : "paid" },
         { href: "/drills", label: "Drill Planner",                    icon: <ClipboardList size={15} />, locked: isPaid ? undefined : "paid" },
         { href: "/drills/after-action", label: "Drill After-Action",              icon: <TrendingUp size={15} />,    locked: isPaid ? undefined : "paid" },
         { href: "/ras", label: "Drill Response Activation System", icon: <AlertCircle size={15} />,   locked: isPaid ? undefined : "paid" },
@@ -304,7 +303,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const Sidebar = ({ mobile = false }: { mobile?: boolean }) => (
     <aside className={`${mobile ? "flex flex-col h-full" : "hidden lg:flex flex-col h-screen sticky top-0"} w-64 sidebar-metallic`}>
       <div className="flex items-center justify-center px-5 py-5 border-b border-sidebar-border">
-        <img src={LOGO_URL} alt="Five Stones Technology" className="h-24 w-full object-contain brightness-0 invert" />
+          <img src={LOGO_URL} alt="Five Stones Technology" className="h-24 w-full object-contain" />
         {mobile && (
           <button onClick={() => setSidebarOpen(false)} className="ml-auto text-sidebar-foreground hover:text-white">
             <X size={18} />
@@ -312,7 +311,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         )}
       </div>
       <div className="px-5 py-2 border-b border-sidebar-border">
-        <p className="text-[10px] text-sidebar-foreground/60 font-medium">Legal defensibility platform</p>
+        <p className="text-[10px] text-sidebar-foreground/60 font-medium">Safety Platform</p>
       </div>
 
       {isViewer && (

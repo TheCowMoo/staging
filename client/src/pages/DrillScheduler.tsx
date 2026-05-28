@@ -1632,11 +1632,10 @@ export default function DrillScheduler() {
         </div>
 
         <Tabs defaultValue="micro-training">
-          <TabsList className="w-full grid grid-cols-4">
+          <TabsList className="w-full grid grid-cols-3">
             <TabsTrigger value="micro-training" className="px-1"><BookOpen className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Micro Training</span></TabsTrigger>
-            <TabsTrigger value="generate" className="px-1"><Sparkles className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Generate</span></TabsTrigger>
-            <TabsTrigger value="scan-data" className="px-1"><Shield className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Scan Data</span></TabsTrigger>
-            <TabsTrigger value="history" className="px-1"><ClipboardList className="h-3.5 w-3.5 shrink-0" /><span className="truncate">History</span></TabsTrigger>
+            <TabsTrigger value="extended-drills" className="px-1"><Shield className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Extended Drills</span></TabsTrigger>
+            <TabsTrigger value="generate" className="px-1"><Sparkles className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Custom Scenario</span><Badge className="ml-1 text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-primary/20 font-semibold">BETA</Badge></TabsTrigger>
           </TabsList>
 
           {/* ── Micro Training Drills tab ── */}
@@ -1878,26 +1877,17 @@ export default function DrillScheduler() {
                     <CardTitle className="text-base">Drill Configuration</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {/* Generation mode */}
+                    {/* Custom scenario description */}
                     <div className="space-y-1">
-                      <Label>Generation Mode</Label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {(["system", "user"] as const).map(m => (
-                          <button
-                            key={m}
-                            onClick={() => setMode(m)}
-                            className={[
-                              "px-3 py-2.5 rounded-lg border text-sm font-medium text-left transition-colors",
-                              mode === m ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:bg-accent",
-                            ].join(" ")}
-                          >
-                            {m === "system" ? "🏢 System-Generated" : "✏️ Custom Scenario"}
-                            <p className="text-xs font-normal mt-0.5 text-muted-foreground">
-                              {m === "system" ? "Based on facility profile & industry" : "You describe the scenario"}
-                            </p>
-                          </button>
-                        ))}
-                      </div>
+                      <Label>Scenario Description <span className="text-red-500">*</span></Label>
+                      <Textarea
+                        placeholder="Describe the scenario in your own words. Example: A visitor in the lobby becomes increasingly agitated and begins making verbal threats toward the receptionist."
+                        value={userPrompt}
+                        onChange={e => setUserPrompt(e.target.value)}
+                        rows={4}
+                        className="resize-none"
+                      />
+                      <p className="text-xs text-muted-foreground">Describe your scenario — the AI will structure it into a full ACTD drill.</p>
                     </div>
 
                     {/* Drill type */}
@@ -1973,25 +1963,10 @@ export default function DrillScheduler() {
                       </Select>
                     </div>
 
-                    {/* Custom scenario input */}
-                    {mode === "user" && (
-                      <div className="space-y-1">
-                        <Label>Scenario Description <span className="text-red-500">*</span></Label>
-                        <Textarea
-                          placeholder="Describe the scenario in your own words. Example: A visitor in the lobby becomes increasingly agitated and begins making verbal threats toward the receptionist."
-                          value={userPrompt}
-                          onChange={e => setUserPrompt(e.target.value)}
-                          rows={4}
-                          className="resize-none"
-                        />
-                        <p className="text-xs text-muted-foreground">Be specific — the AI will structure your scenario into a full ACTD drill.</p>
-                      </div>
-                    )}
-
                     <Button
                       className="w-full"
                       onClick={handleGenerate}
-                      disabled={generate.isPending || (mode === "user" && !userPrompt.trim())}
+                      disabled={generate.isPending || !userPrompt.trim()}
                     >
                       {generate.isPending
                         ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Generating…</>
