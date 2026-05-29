@@ -427,23 +427,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </button>
           <img src={LOGO_URL} alt="Five Stones Technology" className="h-24 w-auto max-w-[320px] object-contain" />
           <div className="ml-auto flex items-center gap-2">
-            <div className="relative group">
-              <button
-                className="inline-flex items-center justify-center rounded-lg border border-red-300 bg-red-500 px-2.5 py-2 text-white text-xs font-bold shadow-sm transition hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400"
-                title="Response Activation System"
-              >
-                RAS
-              </button>
-              <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-slate-800 border border-border rounded-lg shadow-lg z-50 hidden group-hover:block">
-                <a href="/ras" className="block px-3 py-2 text-xs font-semibold text-red-600 border-b border-border hover:bg-red-50 dark:hover:bg-red-950/30 rounded-t-lg">
-                  RAS Dashboard
-                </a>
-                <a href="/ras?action=lockdown" className="block px-3 py-2 text-xs text-foreground hover:bg-muted border-b border-border">🔒 Lockdown</a>
-                <a href="/ras?action=lockout" className="block px-3 py-2 text-xs text-foreground hover:bg-muted border-b border-border">🚪 Lockout</a>
-                <a href="/ras?action=fire" className="block px-3 py-2 text-xs text-foreground hover:bg-muted border-b border-border">🔥 Fire</a>
-                <a href="/ras?action=weather" className="block px-3 py-2 text-xs text-foreground hover:bg-muted rounded-b-lg">🌪️ Weather</a>
-              </div>
-            </div>
+            <Link
+              href="/ras/activate"
+              className="inline-flex items-center justify-center rounded-lg border border-red-300 bg-red-500 px-3 py-2 text-white text-xs font-bold shadow-sm transition hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 whitespace-nowrap"
+              title="Response Activation System"
+            >
+              Response Activation System
+            </Link>
             <NotificationBell />
           </div>
         </header>
@@ -493,23 +483,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             Back
           </Button>
           <div className="flex items-center gap-2">
-            <div className="relative group">
-              <button
-                className="inline-flex items-center justify-center rounded-lg border border-red-300 bg-red-500 px-2.5 py-2 text-white text-xs font-bold shadow-sm transition hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400"
-                title="Response Activation System"
-              >
-                RAS
-              </button>
-              <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-slate-800 border border-border rounded-lg shadow-lg z-50 hidden group-hover:block">
-                <a href="/ras" className="block px-3 py-2 text-xs font-semibold text-red-600 border-b border-border hover:bg-red-50 dark:hover:bg-red-950/30 rounded-t-lg">
-                  RAS Dashboard
-                </a>
-                <a href="/ras?action=lockdown" className="block px-3 py-2 text-xs text-foreground hover:bg-muted border-b border-border">🔒 Lockdown</a>
-                <a href="/ras?action=lockout" className="block px-3 py-2 text-xs text-foreground hover:bg-muted border-b border-border">🚪 Lockout</a>
-                <a href="/ras?action=fire" className="block px-3 py-2 text-xs text-foreground hover:bg-muted border-b border-border">🔥 Fire</a>
-                <a href="/ras?action=weather" className="block px-3 py-2 text-xs text-foreground hover:bg-muted rounded-b-lg">🌪️ Weather</a>
-              </div>
-            </div>
+            <Link
+              href="/ras/activate"
+              className="inline-flex items-center justify-center rounded-lg border border-red-300 bg-red-500 px-3 py-2 text-white text-xs font-bold shadow-sm transition hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 whitespace-nowrap"
+              title="Response Activation System"
+            >
+              Response Activation System
+            </Link>
             <NotificationBell />
           </div>
           </div>

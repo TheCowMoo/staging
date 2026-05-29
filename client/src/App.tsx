@@ -58,6 +58,7 @@ import SetPassword from "@/pages/SetPassword";
 import VerifyEmail from "@/pages/VerifyEmail";
 import Settings from "@/pages/Settings";
 import ApiKeys from "@/pages/ApiKeys";
+import RASActivation from "@/pages/RASActivation";
 import MassNotification from "@/pages/MassNotification";
 import MicroDrillAdmin from "@/pages/MicroDrillAdmin";
 import MicroDrillRunner from "@/pages/MicroDrillRunner";
@@ -112,6 +113,7 @@ function Router() {
       <Route path="/drills/:id/run" component={DrillRunner} />
       <Route path="/drills/:id/debrief" component={DrillAfterAction} />
       <Route path="/ras" component={EmergencyAlerts} />
+      <Route path="/ras/activate" component={RASActivation} />
       <Route path="/staff-checkin" component={StaffCheckin} />
       <Route path="/training-modules" component={TrainingModules} />
       <Route path="/personnel-tracking" component={PersonnelTracking} />
