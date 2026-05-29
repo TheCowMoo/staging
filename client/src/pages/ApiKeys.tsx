@@ -4,7 +4,7 @@
  * Allows org admins and platform admins to create, list, and revoke API keys.
  * Keys are shown only once at creation time.
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Copy, Key, Plus, Shield, Trash2, Check, AlertTriangle, Clock } from "lucide-react";
+import { Copy, Key, Plus, Shield, Trash2, Check, AlertTriangle, Clock, Building2 } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function ApiKeys() {
@@ -47,6 +47,8 @@ export default function ApiKeys() {
 
 function ApiKeysContent() {
   const { data: keys, refetch } = trpc.apiKeys.list.useQuery();
+  const { data: memberships } = trpc.org.myMemberships.useQuery();
+
   const createKey = trpc.apiKeys.create.useMutation({
     onSuccess: () => { refetch(); },
   });
@@ -95,6 +97,9 @@ function ApiKeysContent() {
     }
   };
 
+  // Get the first org ID for display purposes
+  const orgId = memberships?.[0]?.orgId;
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       {/* Header */}
@@ -114,7 +119,36 @@ function ApiKeysContent() {
         </Button>
       </div>
 
-      {/* Info card */}
+      {/* Desktop Alert Setup Guide */}
+      <Card className="mb-6 border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-800">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Key className="w-4 h-4" />
+            RAS Desktop Alert Setup
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          <p>Enter these values into the Desktop Alert's Settings dialog:</p>
+          <div className="grid grid-cols-[100px_1fr] gap-x-4 gap-y-1.5 text-sm mt-2">
+            <span className="font-medium text-muted-foreground">API URL:</span>
+            <code className="text-xs bg-blue-100 dark:bg-blue-900 px-2 py-0.5 rounded select-all break-all">
+              https://staging.fivestonestechnology.com
+            </code>
+            <span className="font-medium text-muted-foreground">Org ID:</span>
+            <code className="text-xs bg-blue-100 dark:bg-blue-900 px-2 py-0.5 rounded select-all font-mono">
+              {orgId ? (
+                <span className="text-foreground font-bold">{orgId}</span>
+              ) : (
+                <span className="text-amber-600 italic">No organization found — create a key first</span>
+              )}
+            </code>
+            <span className="font-medium text-muted-foreground">API Key:</span>
+            <span className="text-muted-foreground italic">Create one below, then copy it</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Warning card */}
       <Card className="mb-6 border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
         <CardContent className="pt-4 pb-3 px-4">
           <p className="text-sm flex items-start gap-2">
@@ -141,7 +175,7 @@ function ApiKeysContent() {
           ) : keys.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Key className="w-10 h-10 mx-auto mb-3 opacity-40" />
-              <p className="text-sm">No API keys. Create one to use with the RAS Desktop Alert.</p>
+              <p className="text-sm">No API keys. Click "Create Key" to generate one for the RAS Desktop Alert.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -244,6 +278,7 @@ function ApiKeysContent() {
                 <DialogTitle>Create API Key</DialogTitle>
                 <DialogDescription>
                   Give this key a label so you can identify it later. The key will be shown once.
+                  {orgId && <span className="block mt-1">This key will be associated with Org ID: <strong>{orgId}</strong></span>}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-2">

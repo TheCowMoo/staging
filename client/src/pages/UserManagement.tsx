@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
-  UserCog, ShieldCheck, Eye, Pencil, Crown, Shield, User, Users, Settings, ArrowLeft,
+  UserCog, ShieldCheck, Eye, Pencil, Crown, Shield, User, Users, Settings, ArrowLeft, Radio,
 } from "lucide-react";
 import { ROLE_META, type PlatformRole } from "@shared/permissions";
 
@@ -39,6 +39,13 @@ const ROLE_ICONS: Record<PlatformRole, React.ComponentType<{ size?: number }>> =
   user: User,
   viewer: Eye,
 };
+
+const RAS_ROLE_OPTIONS = [
+  { value: "",       label: "Not enrolled",    color: "bg-gray-100 text-gray-500" },
+  { value: "admin",     label: "Admin",     color: "bg-red-100 text-red-700" },
+  { value: "responder", label: "Responder", color: "bg-amber-100 text-amber-700" },
+  { value: "staff",     label: "Staff",     color: "bg-blue-100 text-blue-700" },
+];
 
 const PERMISSION_FLAG_LABELS: Record<string, string> = {
   canTriggerAlerts: "Can Trigger Alerts (RAS override)",
@@ -71,6 +78,7 @@ export default function UserManagement() {
   const isUltraAdminWithImpersonation = isUltraAdmin && !isImpersonating;
 
   const { data: allUsers, isLoading } = trpc.adminUser.listAll.useQuery();
+  const { data: rasUsers } = trpc.ras.listRasUsers.useQuery();
 
   const updateRole = trpc.adminUser.updateRole.useMutation({
     onSuccess: (_, vars) => {
@@ -79,6 +87,14 @@ export default function UserManagement() {
       utils.adminUser.listAll.invalidate();
     },
     onError: (err: any) => toast.error(err?.message || "Failed to update role"),
+  });
+
+  const setRasRole = trpc.ras.setRasRole.useMutation({
+    onSuccess: () => {
+      toast.success("RAS role updated");
+      utils.adminUser.listAll.invalidate();
+    },
+    onError: (err: any) => toast.error(err?.message || "Failed to set RAS role"),
   });
 
   const impersonateUser = trpc.adminUser.impersonateUser.useMutation({
@@ -109,6 +125,17 @@ export default function UserManagement() {
     return ROLE_META[role as PlatformRole]?.color ?? "bg-slate-100 text-slate-700";
   }
 
+  function getRasRoleBadge(rasRole: string | null) {
+    const opt = RAS_ROLE_OPTIONS.find((o) => o.value === (rasRole ?? ""));
+    if (!opt || !rasRole) return null;
+    return (
+      <Badge variant="outline" className={`text-[10px] h-5 px-1.5 border-current ${opt.color}`}>
+        <Radio size={9} className="mr-0.5" />
+        {opt.label}
+      </Badge>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
       {/* Back nav */}
@@ -131,7 +158,7 @@ export default function UserManagement() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">User Management</h1>
             <p className="text-sm text-muted-foreground">
-              Manage platform roles and permissions for all registered users
+              Manage platform roles, permissions, and RAS alert enrollment
             </p>
           </div>
         </div>
@@ -178,6 +205,20 @@ export default function UserManagement() {
         })}
       </div>
 
+      {/* RAS Info Card */}
+      <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-800">
+        <CardContent className="pt-4 pb-3 px-4 flex items-start gap-3">
+          <Radio className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <div className="text-sm text-blue-800 dark:text-blue-200">
+            <strong>RAS Roles &mdash; Response Activation System</strong>
+            <p className="mt-0.5 text-blue-700 dark:text-blue-300">
+              Assign RAS roles to enable users for emergency alerts. <strong>Admin</strong> can activate/resolve alerts.{" "}
+              <strong>Responder</strong> can acknowledge and respond. <strong>Staff</strong> receives alerts and acknowledges. Set to &ldquo;Not enrolled&rdquo; to remove RAS access.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Users Table */}
       <Card>
         <CardHeader>
@@ -194,7 +235,7 @@ export default function UserManagement() {
         <CardContent className="p-0">
           {isLoading ? (
             <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">
-              Loading users…
+              Loading users&hellip;
             </div>
           ) : !allUsers || allUsers.length === 0 ? (
             <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">
@@ -206,6 +247,7 @@ export default function UserManagement() {
                 <TableRow>
                   <TableHead>Name / Email</TableHead>
                   <TableHead>Current Role</TableHead>
+                  <TableHead>RAS Role</TableHead>
                   <TableHead>Last Signed In</TableHead>
                   <TableHead>Change Role</TableHead>
                   {isUltraAdmin && <TableHead>Actions</TableHead>}
@@ -232,6 +274,13 @@ export default function UserManagement() {
                           {getRoleIcon(u.role)}
                           {ROLE_META[u.role as PlatformRole]?.label ?? u.role}
                         </span>
+                      </TableCell>
+                      <TableCell>
+                        {u.rasRole ? (
+                          getRasRoleBadge(u.rasRole)
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic">—</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {u.lastSignedIn
@@ -308,6 +357,93 @@ export default function UserManagement() {
               </TableBody>
             </Table>
           )}
+        </CardContent>
+      </Card>
+
+      {/* RAS Enrollment Panel - Separate */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Radio size={18} />
+            RAS Alert Enrollment
+          </CardTitle>
+          <CardDescription>
+            Assign or remove RAS (Response Activation System) roles for users.
+            Only users with a RAS role receive emergency alerts via the Desktop Alert app.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>User</TableHead>
+                <TableHead>Current RAS Role</TableHead>
+                <TableHead>Push Subscriptions</TableHead>
+                <TableHead>Set RAS Role</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(rasUsers ?? allUsers ?? []).length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground text-sm">
+                    Loading&hellip;
+                  </TableCell>
+                </TableRow>
+              ) : (rasUsers ?? []).map((u: any) => (
+                <TableRow key={u.id}>
+                  <TableCell>
+                    <div className="font-medium text-sm">{u.name ?? "—"}</div>
+                    <div className="text-xs text-muted-foreground">{u.email ?? "—"}</div>
+                  </TableCell>
+                  <TableCell>
+                    {u.rasRole ? (
+                      (() => {
+                        const opt = RAS_ROLE_OPTIONS.find((o) => o.value === u.rasRole);
+                        return opt ? (
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${opt.color}`}>
+                            <Radio size={9} />
+                            {opt.label}
+                          </span>
+                        ) : u.rasRole;
+                      })()
+                    ) : (
+                      <span className="text-xs text-muted-foreground italic">Not enrolled</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {u.pushSubscriptionCount ?? 0} device(s)
+                  </TableCell>
+                  <TableCell>
+                    {u.id === user?.id ? (
+                      <span className="text-xs text-muted-foreground italic">Cannot change self</span>
+                    ) : (
+                      <Select
+                        value={u.rasRole ?? ""}
+                        onValueChange={(val) => {
+                          setRasRole.mutate({
+                            targetUserId: u.id,
+                            rasRole: val === "" ? null : (val as "admin" | "responder" | "staff"),
+                          });
+                        }}
+                        disabled={setRasRole.isPending}
+                      >
+                        <SelectTrigger className="w-44 h-8 text-xs">
+                          <SelectValue placeholder="Not enrolled" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {RAS_ROLE_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
