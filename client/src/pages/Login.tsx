@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Shield } from "lucide-react";
+import { Shield, Sparkles, Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -14,6 +14,7 @@ export default function Login() {
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Register state
   const [regName, setRegName] = useState("");
@@ -70,14 +71,17 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F4F6F8] px-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md animate-fade-in-up">
         {/* Logo / Brand */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 bg-[#0B1F33] rounded-2xl flex items-center justify-center mb-4 shadow-[0_12px_24px_-10px_rgba(11,31,51,0.35)]">
+          <div className="w-14 h-14 bg-[#0B1F33] rounded-2xl flex items-center justify-center mb-4 shadow-[0_12px_24px_-10px_rgba(11,31,51,0.35)] ring-1 ring-white/10">
             <Shield className="text-white w-7 h-7" />
           </div>
           <h1 className="text-2xl font-bold text-[#0B1F33] tracking-tight">Liability Defense System</h1>
-          <p className="text-sm text-[#5A6570] mt-1">Workplace Safety Assessment Platform</p>
+          <div className="flex items-center gap-1.5 mt-1 text-sm text-[#5A6570]">
+            <Sparkles size={12} className="text-[#C9A86A]" />
+            <span>Workplace Safety Assessment Platform</span>
+          </div>
         </div>
 
         <Tabs defaultValue="login" className="w-full">
@@ -88,7 +92,7 @@ export default function Login() {
 
           {/* Login Tab */}
           <TabsContent value="login">
-            <Card>
+            <Card className="animate-fade-in-up">
               <CardHeader>
                 <CardTitle>Sign In</CardTitle>
                 <CardDescription>Enter your email and password to access your account.</CardDescription>
@@ -105,29 +109,41 @@ export default function Login() {
                       onChange={(e) => setLoginEmail(e.target.value)}
                       required
                       autoComplete="email"
+                      className="transition-shadow focus:ring-2 focus:ring-[#C9A86A]/30"
                     />
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="login-password">Password</Label>
-                    <Input
-                      id="login-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      required
-                      autoComplete="current-password"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="login-password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        required
+                        autoComplete="current-password"
+                        className="pr-10 transition-shadow focus:ring-2 focus:ring-[#C9A86A]/30"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5A6570] hover:text-[#0B1F33] transition-colors"
+                        tabIndex={-1}
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col gap-3">
-                  <Button type="submit" className="w-full" disabled={loginLoading}>
+                  <Button type="submit" className="w-full transition-all" disabled={loginLoading}>
                     {loginLoading ? "Signing in…" : "Sign In"}
                   </Button>
                   <button
                     type="button"
                     onClick={() => setLocation("/forgot-password")}
-                    className="text-sm text-[#5A6570] hover:text-[#0B1F33] underline-offset-2 hover:underline"
+                    className="text-sm text-[#5A6570] hover:text-[#0B1F33] underline-offset-2 hover:underline transition-colors"
                   >
                     Forgot your password?
                   </button>
@@ -138,7 +154,7 @@ export default function Login() {
 
           {/* Register Tab */}
           <TabsContent value="register">
-            <Card>
+            <Card className="animate-fade-in-up">
               <CardHeader>
                 <CardTitle>Create Account</CardTitle>
                 <CardDescription>Set up your account to get started.</CardDescription>
@@ -155,6 +171,7 @@ export default function Login() {
                       onChange={(e) => setRegName(e.target.value)}
                       required
                       autoComplete="name"
+                      className="transition-shadow focus:ring-2 focus:ring-[#C9A86A]/30"
                     />
                   </div>
                   <div className="space-y-1">
@@ -167,24 +184,36 @@ export default function Login() {
                       onChange={(e) => setRegEmail(e.target.value)}
                       required
                       autoComplete="email"
+                      className="transition-shadow focus:ring-2 focus:ring-[#C9A86A]/30"
                     />
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="reg-password">Password</Label>
-                    <Input
-                      id="reg-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={regPassword}
-                      onChange={(e) => setRegPassword(e.target.value)}
-                      required
-                      minLength={8}
-                      autoComplete="new-password"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="reg-password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={regPassword}
+                        onChange={(e) => setRegPassword(e.target.value)}
+                        required
+                        minLength={8}
+                        autoComplete="new-password"
+                        className="pr-10 transition-shadow focus:ring-2 focus:ring-[#C9A86A]/30"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5A6570] hover:text-[#0B1F33] transition-colors"
+                        tabIndex={-1}
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" className="w-full" disabled={regLoading}>
+                  <Button type="submit" className="w-full transition-all" disabled={regLoading}>
                     {regLoading ? "Creating account…" : "Create Account"}
                   </Button>
                 </CardFooter>

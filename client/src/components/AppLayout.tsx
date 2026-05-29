@@ -92,7 +92,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     behavioralThreat: false,
     communication: false,
     trainingDrills: false,
-    mappingTracking: false,
   });
 
   const logout = trpc.auth.logout.useMutation({
@@ -109,7 +108,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <img src={LOGO_URL} alt="Five Stones Technology" className="h-40 w-auto max-w-[400px] object-contain animate-pulse" />
-          <p className="text-muted-foreground text-sm">Loading...</p>
+          <div className="h-4 w-24 skeleton-shimmer" />
         </div>
       </div>
     );
@@ -144,7 +143,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (item.locked === "coming-soon" && !isUltraAdmin) {
       return (
         <div
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/50 cursor-not-allowed select-none"
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/50 cursor-not-allowed select-none transition-colors"
           title="Coming soon"
           onClick={() => toast.info("This feature is coming soon. Stay tuned!")}
         >
@@ -159,7 +158,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (item.locked === "paid" && !isPaid) {
       return (
         <div
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/40 cursor-not-allowed select-none"
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/40 cursor-not-allowed select-none transition-colors"
           title="Upgrade to Pro to unlock"
           onClick={() =>
             toast.info("This feature requires a paid plan. Contact your administrator to upgrade.")
@@ -178,7 +177,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return (
       <Link
         href={item.href}
-        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
           isActive
             ? "bg-sidebar-accent border border-white/10 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
             : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-white"
@@ -201,29 +200,34 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div>
         <button
           onClick={() => toggleSection(section.id)}
-          className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+          className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
             hasActive
               ? "text-sidebar-primary bg-sidebar-accent/50"
               : "text-sidebar-foreground/80 hover:bg-sidebar-accent/40 hover:text-white"
           }`}
         >
-          <span className={`flex-shrink-0 ${hasActive ? "text-sidebar-primary" : "text-sidebar-foreground/60"}`}>
+          <span className={`flex-shrink-0 transition-colors duration-200 ${hasActive ? "text-sidebar-primary" : "text-sidebar-foreground/60"}`}>
             {section.icon}
           </span>
           <span className="flex-1 text-left">{section.label}</span>
-          {isOpen ? (
-            <ChevronUp size={14} className="text-sidebar-foreground/50 flex-shrink-0" />
-          ) : (
-            <ChevronDown size={14} className="text-sidebar-foreground/50 flex-shrink-0" />
-          )}
+          <ChevronDown
+            size={14}
+            className={`text-sidebar-foreground/50 flex-shrink-0 transition-transform duration-200 ${
+              isOpen ? "rotate-0" : "-rotate-90"
+            }`}
+          />
         </button>
-        {isOpen && (
-          <div className="ml-3 pl-3 border-l border-sidebar-border mt-0.5 mb-1 space-y-0.5">
+        <div
+          className={`ml-3 pl-3 border-l border-sidebar-border overflow-hidden transition-all duration-200 ${
+            isOpen ? "max-h-96 opacity-100 mt-0.5 mb-1" : "max-h-0 opacity-0"
+          }`}
+        >
+          <div className="space-y-0.5">
             {section.items.map((item) => (
               <NavLink key={item.href + item.label} item={item} />
             ))}
           </div>
-        )}
+        </div>
       </div>
     );
   };
@@ -240,15 +244,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         { href: "/facility-mapping",      label: "Facility Mapping",       icon: <MapPin size={15} />,        locked: isPaid ? undefined : "paid" },
         { href: "/audits",                label: "Audit History",          icon: <ClipboardList size={15} />, locked: isPaid ? undefined : "paid" },
         { href: "/eap",                   label: "Emergency Action Plans", icon: <Shield size={15} />,        locked: isPaid ? undefined : "paid" },
-      ],
-    },
-    {
-      id: "mappingTracking",
-      label: "Mapping And Tracking",
-      icon: <MapPin size={18} />,
-      items: [
-        { href: "/facility-mapping", label: "Facility Mapping", icon: <MapPin size={15} />, locked: isPaid ? undefined : "paid" },
-        { href: "/personnel-tracking", label: "Personnel Tracking", icon: <MapPin size={15} />, locked: isPaid ? undefined : "paid" },
       ],
     },
     {
@@ -285,11 +280,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       items: [
         { href: "/mass-notification", label: "Mass Notifications",         icon: <Megaphone size={15} />,   locked: isPaid ? undefined : "paid" },
         { href: "/staff-checkin", label: "Staff Check-In",             icon: <Users size={15} />,       locked: isPaid ? undefined : "paid" },
+        { href: "/personnel-tracking", label: "Personnel Tracking",       icon: <MapPin size={15} />,        locked: isPaid ? undefined : "paid" },
       ],
     },
     {
       id: "trainingDrills",
-      label: "Training and drills",
+      label: "Training & Drills",
       icon: <GraduationCap size={18} />,
       items: [
         { href: "/training-modules", label: "Training Modules",                 icon: <BookMarked size={15} />,    locked: isPaid ? undefined : "paid" },
@@ -302,15 +298,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const Sidebar = ({ mobile = false }: { mobile?: boolean }) => (
     <aside className={`${mobile ? "flex flex-col h-full" : "hidden lg:flex flex-col h-screen fixed top-0 left-0"} w-64 sidebar-metallic`} style={{ zIndex: 2000 }}>
+      {/* Logo area */}
       <div className="flex items-center justify-center px-3 py-3 border-b border-sidebar-border">
-          <img src={LOGO_URL} alt="Five Stones Technology" className="h-48 w-full object-contain" />
+        <div className="sidebar-logo-wrapper p-1.5 flex items-center justify-center w-full">
+          <img src={LOGO_URL} alt="Five Stones Technology" className="h-44 w-full object-contain" />
+        </div>
         {mobile && (
-          <button onClick={() => setSidebarOpen(false)} className="ml-auto text-sidebar-foreground hover:text-white">
+          <button onClick={() => setSidebarOpen(false)} className="ml-2 text-sidebar-foreground hover:text-white transition-colors p-1 -mr-1">
             <X size={18} />
           </button>
         )}
       </div>
 
+      {/* Viewer read-only banner */}
       {isViewer && (
         <div className="mx-3 mt-3 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center gap-2">
           <Eye size={14} className="text-amber-400 flex-shrink-0" />
@@ -320,6 +320,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
+      {/* Free plan banner */}
       {!isPaid && (
         <div className="mx-3 mt-3 px-3 py-2.5 rounded-lg bg-sidebar-accent/50 border border-sidebar-border flex flex-col gap-1">
           <div className="flex items-center gap-1.5">
@@ -332,6 +333,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
+      {/* Navigation */}
       <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-0.5">
         <NavLink item={{ href: "/liability-scan", label: "Readiness Scan",   icon: <ShieldAlert size={18} /> }} />
         <NavLink item={{ href: "/scan-history",    label: "Scan History",     icon: <History size={18} /> }} />
@@ -356,8 +358,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         )}
       </nav>
 
+      {/* User footer */}
       <div className="px-3 py-4 border-t border-sidebar-border">
-        <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-sidebar-accent/40">
+        <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-sidebar-accent/40 transition-colors hover:bg-sidebar-accent/60">
           <div className="w-8 h-8 rounded-full bg-sidebar-primary/20 flex items-center justify-center text-sidebar-primary text-xs font-bold flex-shrink-0">
             {initials}
           </div>
@@ -389,6 +392,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-background">
+      {/* Privacy policy modal */}
       {user && privacyPolicyAccepted === false && (
         <PrivacyPolicyModal
           open={privacyModalOpen}
@@ -411,7 +415,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           isPaid={isPaid}
         />
       )}
+
       <Sidebar />
+
+      {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/60" onClick={() => setSidebarOpen(false)} />
@@ -420,24 +427,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       )}
+
       <div className="flex-1 flex flex-col min-w-0 lg:ml-64" style={{ pointerEvents: "auto" }}>
+        {/* Mobile header bar */}
         <header className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-card sticky top-0 z-40">
-          <button onClick={() => setSidebarOpen(true)} className="text-muted-foreground hover:text-foreground">
+          <button onClick={() => setSidebarOpen(true)} className="text-muted-foreground hover:text-foreground transition-colors">
             <Menu size={20} />
           </button>
           <img src={LOGO_URL} alt="Five Stones Technology" className="h-24 w-auto max-w-[320px] object-contain" />
           <div className="ml-auto flex items-center gap-2">
-            <Link
-              href="/ras/activate"
-              className="inline-flex items-center justify-center rounded-lg border border-red-300 bg-red-500 px-3 py-2 text-white text-xs font-bold shadow-sm transition hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 whitespace-nowrap"
-              title="Response Activation System"
-            >
-              Response Activation System
-            </Link>
             <NotificationBell />
           </div>
         </header>
-        {/* Impersonation Banner — shown on every page when Ultra Admin is acting as another user */}
+
+        {/* Impersonation Banner */}
         {!!(user as any)?._isImpersonated && (
           <div className="bg-purple-600 text-white px-4 py-2 flex items-center justify-between gap-3 text-sm font-medium z-50 sticky top-0">
             <div className="flex items-center gap-2">
@@ -452,7 +455,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </span>
             </div>
             <button
-              className="text-white/80 hover:text-white underline text-xs"
+              className="text-white/80 hover:text-white underline text-xs transition-colors"
               onClick={async () => {
                 try {
                   await stopImpersonationMutation.mutateAsync();
@@ -464,38 +467,42 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         )}
+
+        {/* Main content */}
         <main className="flex-1 overflow-auto bg-background">
+          {/* Desktop breadcrumb bar */}
           <div className="border-b border-border bg-card px-6 py-4 sticky top-0 z-20">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              if (window.history.length > 1) {
-                window.history.back();
-              } else {
-                navigate("/dashboard");
-              }
-            }}
-            className="inline-flex items-center gap-2"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Back
-          </Button>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/ras/activate"
-              className="inline-flex items-center justify-center rounded-lg border border-red-300 bg-red-500 px-3 py-2 text-white text-xs font-bold shadow-sm transition hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 whitespace-nowrap"
-              title="Response Activation System"
-            >
-              Response Activation System
-            </Link>
-            <NotificationBell />
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (window.history.length > 1) {
+                      window.history.back();
+                    } else {
+                      navigate("/dashboard");
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Back
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <NotificationBell />
+              </div>
+            </div>
           </div>
+
+          {/* Page content with enter animation */}
+          <div className="page-enter">
+            {children}
           </div>
-        </div>
-        {children}
         </main>
+
+        {/* Footer */}
         <footer className="border-t border-border bg-card px-6 py-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
           <span>&copy; {new Date().getFullYear()} Five Stones Technology. All rights reserved.</span>
           <div className="flex items-center gap-4">

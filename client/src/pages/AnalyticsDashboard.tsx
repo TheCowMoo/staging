@@ -373,15 +373,15 @@ export default function AnalyticsDashboard() {
                     <AreaChart data={monthlyActivity} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                       <defs>
                         <linearGradient id="colorActivity" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                          <stop offset="5%" stopColor="#3A5F7D" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#3A5F7D" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                       <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                       <YAxis tick={{ fontSize: 11 }} />
                       <Tooltip />
-                      <Area type="monotone" dataKey="value" stroke="#3b82f6" fill="url(#colorActivity)" strokeWidth={2} />
+                      <Area type="monotone" dataKey="value" stroke="#3A5F7D" fill="url(#colorActivity)" strokeWidth={2} />
                     </AreaChart>
                   </ResponsiveContainer>
                 )}
@@ -749,7 +749,7 @@ export default function AnalyticsDashboard() {
                     <PieChart>
                       <Pie data={incidentTypeChart} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
                         {incidentTypeChart.map((entry, i) => (
-                          <Cell key={entry.name} fill={["#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#22c55e", "#ec4899"][i % 6]} />
+                          <Cell key={entry.name} fill={["#3A5F7D", "#C9A86A", "#FF8C00", "#8B0000", "#22c55e", "#6b7280"][i % 6]} />
                         ))}
                       </Pie>
                       <Tooltip />
@@ -841,7 +841,7 @@ export default function AnalyticsDashboard() {
                     <PieChart>
                       <Pie data={userRoleChart} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
                         {userRoleChart.map((entry, i) => (
-                          <Cell key={entry.name} fill={["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"][i % 6]} />
+                          <Cell key={entry.name} fill={["#3A5F7D", "#C9A86A", "#FF8C00", "#8B0000", "#22c55e", "#6b7280"][i % 6]} />
                         ))}
                       </Pie>
                       <Tooltip />

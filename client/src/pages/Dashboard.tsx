@@ -90,9 +90,12 @@ export default function Dashboard() {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="metal-card p-5 h-28 animate-pulse" />
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="metal-card p-5 h-28">
+                <div className="skeleton-shimmer h-4 w-20 mb-4" />
+                <div className="skeleton-shimmer h-8 w-16 mt-2" />
+              </div>
             ))}
           </div>
         ) : (

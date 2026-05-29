@@ -127,9 +127,51 @@
   --chart-5: #22C55E;
 }
 
+/* ─── Custom animations ──────────────────────────────────────────────────── */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(201,168,106,0.15); }
+  50% { box-shadow: 0 0 20px rgba(201,168,106,0.3); }
+}
+
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+:global(.animate-fade-in-up) {
+  animation: fade-in-up 0.4s ease-out both;
+}
+
+:global(.animate-shimmer) {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+:global(.animate-pulse-glow) {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    -webkit-tap-highlight-color: transparent;
   }
   body {
     @apply bg-background text-foreground antialiased;
@@ -144,15 +186,35 @@
     inset: 0;
     pointer-events: none;
     background-image:
-      linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px);
+      linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
     background-size: 90px 90px, 90px 90px;
-    opacity: 0.06;
+    opacity: 0.04;
     z-index: -1;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Montserrat', 'Poppins', 'Inter', system-ui, sans-serif;
     font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+  ::selection {
+    background-color: rgba(201,168,106,0.3);
+    color: inherit;
+  }
+  .dark ::selection {
+    background-color: rgba(201,168,106,0.25);
+  }
+
+  /* Global interactive element smoothing */
+  a, button, [role="button"], select, input[type="checkbox"], input[type="radio"] {
+    transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.2s ease;
+  }
+  button:active:not(:disabled),
+  [role="button"]:active:not([aria-disabled="true"]),
+  [type="button"]:active:not(:disabled),
+  [type="submit"]:active:not(:disabled),
+  [type="reset"]:active:not(:disabled) {
+    transform: scale(0.97);
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
@@ -165,12 +227,32 @@
   input[type="radio"]:not(:disabled) {
     @apply cursor-pointer;
   }
+
+  /* Card base — layered shadows for depth */
   .metal-card {
-    @apply bg-white border border-[#D0D5DD] rounded-[0.65rem] shadow-[0_18px_50px_-36px_rgba(11,31,51,0.10)];
+    @apply bg-white border border-[#D0D5DD] rounded-[0.65rem];
+    box-shadow:
+      0 18px 50px -36px rgba(11,31,51,0.10),
+      0 2px 4px -2px rgba(11,31,51,0.06);
+    transition: box-shadow 0.3s ease, transform 0.2s ease;
+  }
+  .metal-card:hover {
+    box-shadow:
+      0 24px 60px -40px rgba(11,31,51,0.15),
+      0 4px 12px -4px rgba(11,31,51,0.10);
   }
   .dark .metal-card {
-    @apply bg-[#122A45] border border-white/10 shadow-[0_18px_50px_-36px_rgba(0,0,0,0.3)];
+    @apply bg-[#122A45] border border-white/10;
+    box-shadow:
+      0 18px 50px -36px rgba(0,0,0,0.3),
+      inset 0 1px 0 rgba(255,255,255,0.04);
   }
+  .dark .metal-card:hover {
+    box-shadow:
+      0 24px 60px -40px rgba(0,0,0,0.4),
+      inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+
   .sidebar-metallic {
     background: #0B1F33;
     border-right: 1px solid rgba(255,255,255,0.08);
@@ -184,6 +266,8 @@
     border: 1px solid rgba(255,255,255,0.10);
     border-radius: 0.75rem;
   }
+
+  /* Typography helpers */
   .dashboard-title {
     @apply uppercase tracking-[0.12em] text-[#0B1F33];
   }
@@ -209,10 +293,16 @@
     @apply bg-[#1A3350] border border-white/10 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)];
   }
   .dashboard-shell {
-    @apply bg-white border border-[#D0D5DD] rounded-[1rem] shadow-[0_20px_40px_-26px_rgba(11,31,51,0.10)];
+    @apply bg-white border border-[#D0D5DD] rounded-[1rem];
+    box-shadow:
+      0 20px 40px -26px rgba(11,31,51,0.10),
+      0 2px 4px -2px rgba(11,31,51,0.04);
   }
   .dark .dashboard-shell {
-    @apply bg-[#122A45] border border-white/10 shadow-[0_20px_40px_-26px_rgba(0,0,0,0.3)];
+    @apply bg-[#122A45] border border-white/10;
+    box-shadow:
+      0 20px 40px -26px rgba(0,0,0,0.3),
+      inset 0 1px 0 rgba(255,255,255,0.04);
   }
   .status-pill {
     @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold;
@@ -234,6 +324,11 @@
     background: rgba(201,168,106,0.15);
     color: #C9A86A;
     border: 1px solid rgba(201,168,106,0.25);
+  }
+
+  /* Page enter animation */
+  .page-enter {
+    animation: fade-in-up 0.35s ease-out both;
   }
 }
 
@@ -265,6 +360,7 @@
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { @apply bg-muted; }
 ::-webkit-scrollbar-thumb { @apply bg-border rounded-full; }
+::-webkit-scrollbar-thumb:hover { @apply bg-muted-foreground/40; }
 
 /* EAP Markdown prose styles */
 .eap-prose p { @apply mb-2 leading-relaxed; }
@@ -292,7 +388,7 @@
   font-size: 0.875rem;
   border-radius: 0 0 0.5rem 0;
   text-decoration: none;
-  transition: top 0.1s;
+  transition: top 0.1s, opacity 0.15s;
 }
 .skip-nav:focus {
   top: 0;
@@ -338,6 +434,14 @@
 button, [role="button"], a, input[type="checkbox"], input[type="radio"] {
   min-height: 24px;
   min-width: 24px;
+}
+
+/* Shimmer loading skeleton */
+.skeleton-shimmer {
+  background: linear-gradient(90deg, var(--muted) 25%, var(--background) 50%, var(--muted) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
 }
 
 @layer components {

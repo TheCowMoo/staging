@@ -41,7 +41,7 @@ const ROLE_ICONS: Record<PlatformRole, React.ComponentType<{ size?: number }>> =
 };
 
 const RAS_ROLE_OPTIONS = [
-  { value: "",       label: "Not enrolled",    color: "bg-gray-100 text-gray-500" },
+  { value: "none",     label: "Not enrolled",    color: "bg-gray-100 text-gray-500" },
   { value: "admin",     label: "Admin",     color: "bg-red-100 text-red-700" },
   { value: "responder", label: "Responder", color: "bg-amber-100 text-amber-700" },
   { value: "staff",     label: "Staff",     color: "bg-blue-100 text-blue-700" },
@@ -322,11 +322,11 @@ export default function UserManagement() {
                       </TableCell>
                       <TableCell>
                         <Select
-                          value={u.rasRole ?? ""}
+                          value={u.rasRole ?? "none"}
                           onValueChange={(val) => {
                             setRasRole.mutate({
                               targetUserId: u.id,
-                              rasRole: val === "" ? null : (val as "admin" | "responder" | "staff"),
+                              rasRole: val === "none" ? null : (val as "admin" | "responder" | "staff"),
                             });
                           }}
                           disabled={setRasRole.isPending}
@@ -335,7 +335,7 @@ export default function UserManagement() {
                             <SelectValue placeholder="Not enrolled" />
                           </SelectTrigger>
                           <SelectContent>
-                            {RAS_ROLE_OPTIONS.filter((o) => o.value !== "" || true).map((opt) => (
+                            {RAS_ROLE_OPTIONS.map((opt) => (
                               <SelectItem key={opt.value} value={opt.value} className="text-xs">
                                 {opt.label}
                               </SelectItem>
@@ -442,11 +442,11 @@ export default function UserManagement() {
                       <span className="text-xs text-muted-foreground italic">Cannot change self</span>
                     ) : (
                       <Select
-                        value={u.rasRole ?? ""}
+                        value={u.rasRole ?? "none"}
                         onValueChange={(val) => {
                           setRasRole.mutate({
                             targetUserId: u.id,
-                            rasRole: val === "" ? null : (val as "admin" | "responder" | "staff"),
+                            rasRole: val === "none" ? null : (val as "admin" | "responder" | "staff"),
                           });
                         }}
                         disabled={setRasRole.isPending}
