@@ -284,7 +284,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       icon: <Radio size={18} />,
       items: [
         { href: "/mass-notification", label: "Mass Notifications",         icon: <Megaphone size={15} />,   locked: isPaid ? undefined : "paid" },
-        { href: "/ras",           label: "Response Activation System", icon: <AlertCircle size={15} />, locked: isPaid ? undefined : "paid" },
         { href: "/staff-checkin", label: "Staff Check-In",             icon: <Users size={15} />,       locked: isPaid ? undefined : "paid" },
       ],
     },
@@ -427,7 +426,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Menu size={20} />
           </button>
           <img src={LOGO_URL} alt="Five Stones Technology" className="h-24 w-auto max-w-[320px] object-contain" />
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <div className="relative group">
+              <button
+                className="inline-flex items-center justify-center rounded-lg border border-red-300 bg-red-500 px-2.5 py-2 text-white text-xs font-bold shadow-sm transition hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400"
+                title="Response Activation System"
+              >
+                RAS
+              </button>
+              <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-slate-800 border border-border rounded-lg shadow-lg z-50 hidden group-hover:block">
+                <a href="/ras" className="block px-3 py-2 text-xs font-semibold text-red-600 border-b border-border hover:bg-red-50 dark:hover:bg-red-950/30 rounded-t-lg">
+                  RAS Dashboard
+                </a>
+                <a href="/ras?action=lockdown" className="block px-3 py-2 text-xs text-foreground hover:bg-muted border-b border-border">🔒 Lockdown</a>
+                <a href="/ras?action=lockout" className="block px-3 py-2 text-xs text-foreground hover:bg-muted border-b border-border">🚪 Lockout</a>
+                <a href="/ras?action=fire" className="block px-3 py-2 text-xs text-foreground hover:bg-muted border-b border-border">🔥 Fire</a>
+                <a href="/ras?action=weather" className="block px-3 py-2 text-xs text-foreground hover:bg-muted rounded-b-lg">🌪️ Weather</a>
+              </div>
+            </div>
             <NotificationBell />
           </div>
         </header>
@@ -476,10 +492,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <ChevronLeft className="w-4 h-4" />
             Back
           </Button>
-          <NotificationBell />
+          <div className="flex items-center gap-2">
+            <div className="relative group">
+              <button
+                className="inline-flex items-center justify-center rounded-lg border border-red-300 bg-red-500 px-2.5 py-2 text-white text-xs font-bold shadow-sm transition hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400"
+                title="Response Activation System"
+              >
+                RAS
+              </button>
+              <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-slate-800 border border-border rounded-lg shadow-lg z-50 hidden group-hover:block">
+                <a href="/ras" className="block px-3 py-2 text-xs font-semibold text-red-600 border-b border-border hover:bg-red-50 dark:hover:bg-red-950/30 rounded-t-lg">
+                  RAS Dashboard
+                </a>
+                <a href="/ras?action=lockdown" className="block px-3 py-2 text-xs text-foreground hover:bg-muted border-b border-border">🔒 Lockdown</a>
+                <a href="/ras?action=lockout" className="block px-3 py-2 text-xs text-foreground hover:bg-muted border-b border-border">🚪 Lockout</a>
+                <a href="/ras?action=fire" className="block px-3 py-2 text-xs text-foreground hover:bg-muted border-b border-border">🔥 Fire</a>
+                <a href="/ras?action=weather" className="block px-3 py-2 text-xs text-foreground hover:bg-muted rounded-b-lg">🌪️ Weather</a>
+              </div>
+            </div>
+            <NotificationBell />
+          </div>
+          </div>
         </div>
-      </div>
-      {children}
+        {children}
         </main>
         <footer className="border-t border-border bg-card px-6 py-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
           <span>&copy; {new Date().getFullYear()} Five Stones Technology. All rights reserved.</span>

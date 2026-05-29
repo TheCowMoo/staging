@@ -1,6 +1,7 @@
 using System;
 using System.Drawing;
 using System.IO;
+using System.Media;
 using System.Net.Http;
 using System.Diagnostics;
 using System.Reflection;
@@ -25,7 +26,6 @@ namespace RasDesktopAlert
                 switch (args[1].ToLowerInvariant())
                 {
                     case "--close":
-                        // Kill any running instance
                         var current = Process.GetCurrentProcess();
                         foreach (var proc in Process.GetProcessesByName(current.ProcessName))
                         {
@@ -38,7 +38,6 @@ namespace RasDesktopAlert
                         return;
 
                     case "--uninstall":
-                        // Clean up registry on uninstall
                         SettingsManager.EnsureDirectoryExists();
                         SettingsManager.ApplyAutoStart(false);
                         return;
@@ -150,6 +149,104 @@ namespace RasDesktopAlert
                 File.AppendAllText(LogPath, line);
             }
             catch { }
+        }
+    }
+
+    // ─── ALERT SOUND PLAYER ───────────────────────────────────────────────────────
+    public static class AlertSoundPlayer
+    {
+        private static SoundPlayer _player;
+
+        /// <summary>
+        /// Generate a simple siren WAV in memory and play it in a loop.
+        /// The siren alternates between two frequencies (600 Hz and 900 Hz)
+        /// to create a classic emergency tone.
+        /// </summary>
+        public static void PlaySiren()
+        {
+            try
+            {
+                StopSiren();
+                _player = GenerateSirenSound();
+                _player.PlayLooping();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to play siren: {ex.Message}");
+            }
+        }
+
+        public static void StopSiren()
+        {
+            if (_player != null)
+            {
+                try
+                {
+                    _player.Stop();
+                    _player.Dispose();
+                }
+                catch { }
+                _player = null;
+            }
+        }
+
+        private static SoundPlayer GenerateSirenSound()
+        {
+            // Generate a WAV file in memory: ~3 seconds of alternating tone siren
+            int sampleRate = 22050;
+            int durationMs = 3000;
+            int numSamples = sampleRate * durationMs / 1000;
+            short[] samples = new short[numSamples];
+
+            double freq1 = 600.0; // Lower tone
+            double freq2 = 900.0; // Higher tone
+            double cycleMs = 500.0; // Switch every 500ms
+
+            for (int i = 0; i < numSamples; i++)
+            {
+                double t = (double)i / sampleRate;
+                double elapsedMs = t * 1000;
+                // Switch frequency every cycleMs
+                double freq = ((int)(elapsedMs / cycleMs) % 2 == 0) ? freq1 : freq2;
+                double sin = Math.Sin(2.0 * Math.PI * freq * t);
+                // Apply envelope: fade in/out slightly to avoid clicks
+                double envelope = 1.0;
+                if (elapsedMs < 50) envelope = elapsedMs / 50.0;
+                if (elapsedMs > durationMs - 50) envelope = (durationMs - elapsedMs) / 50.0;
+                samples[i] = (short)(sin * envelope * 16000); // 16000 = volume
+            }
+
+            // Build WAV header
+            int dataSize = numSamples * 2; // 16-bit = 2 bytes per sample
+            int fileSize = 44 + dataSize;
+
+            using var ms = new MemoryStream(fileSize);
+            using var bw = new BinaryWriter(ms);
+
+            // RIFF header
+            bw.Write(new char[] { 'R', 'I', 'F', 'F' });
+            bw.Write(fileSize - 8);
+            bw.Write(new char[] { 'W', 'A', 'V', 'E' });
+
+            // fmt chunk
+            bw.Write(new char[] { 'f', 'm', 't', ' ' });
+            bw.Write(16); // chunk size
+            bw.Write((short)1); // PCM
+            bw.Write((short)1); // mono
+            bw.Write(sampleRate);
+            bw.Write(sampleRate * 2); // byte rate
+            bw.Write((short)2); // block align
+            bw.Write((short)16); // bits per sample
+
+            // data chunk
+            bw.Write(new char[] { 'd', 'a', 't', 'a' });
+            bw.Write(dataSize);
+            foreach (short s in samples)
+                bw.Write(s);
+
+            bw.Flush();
+            ms.Position = 0;
+            return new SoundPlayer(ms);
         }
     }
 
@@ -347,6 +444,9 @@ namespace RasDesktopAlert
             this.Tag = new Color[] { c1, c2 };
             flashTimer.Start();
 
+            // Play siren sound
+            AlertSoundPlayer.PlaySiren();
+
             if (!this.Visible) this.Show();
             this.Activate();
             this.TopMost = true;
@@ -356,6 +456,7 @@ namespace RasDesktopAlert
         private void Dismiss()
         {
             flashTimer.Stop();
+            AlertSoundPlayer.StopSiren();
             this.BackColor = Color.Black;
             alertLabel.Visible = false;
             messageLabel.Visible = false;
@@ -577,7 +678,6 @@ namespace RasDesktopAlert
             }
             catch (Exception ex)
             {
-                // Log but don't spam the user with errors
                 System.Diagnostics.Debug.WriteLine($"Poll error: {ex.Message}");
             }
         }
@@ -626,7 +726,6 @@ namespace RasDesktopAlert
                     return;
                 }
 
-                // New version available
                 var result = MessageBox.Show(
                     $"A new version ({update.Version}) is available.\n\nDownload and install now?",
                     "Update Available",
@@ -635,7 +734,6 @@ namespace RasDesktopAlert
 
                 if (result == DialogResult.Yes && !string.IsNullOrEmpty(update.DownloadUrl))
                 {
-                    // Download the installer to a temp location
                     var tempDir = Path.Combine(Path.GetTempPath(), "FiveStonesRASUpdate");
                     Directory.CreateDirectory(tempDir);
                     var installerPath = Path.Combine(tempDir, "FiveStonesRASAlert-Setup.exe");
@@ -647,15 +745,13 @@ namespace RasDesktopAlert
                         await File.WriteAllBytesAsync(installerPath, dlBytes);
                     }
 
-                    // Launch the installer and exit
                     Process.Start(new ProcessStartInfo()
                     {
                         FileName = installerPath,
                         UseShellExecute = true,
-                        Verb = "runas"  // request admin elevation for installer
+                        Verb = "runas"
                     });
 
-                    // Clean exit — the app will be replaced by the installer
                     pollTimer?.Stop();
                     updateTimer?.Stop();
                     trayIcon.Visible = false;

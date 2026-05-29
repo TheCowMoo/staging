@@ -250,6 +250,7 @@ export default function UserManagement() {
                   <TableHead>RAS Role</TableHead>
                   <TableHead>Last Signed In</TableHead>
                   <TableHead>Change Role</TableHead>
+                  <TableHead>Set RAS Role</TableHead>
                   {isUltraAdmin && <TableHead>Actions</TableHead>}
                 </TableRow>
               </TableHeader>
@@ -318,6 +319,29 @@ export default function UserManagement() {
                             </SelectContent>
                           </Select>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={u.rasRole ?? ""}
+                          onValueChange={(val) => {
+                            setRasRole.mutate({
+                              targetUserId: u.id,
+                              rasRole: val === "" ? null : (val as "admin" | "responder" | "staff"),
+                            });
+                          }}
+                          disabled={setRasRole.isPending}
+                        >
+                          <SelectTrigger className="w-36 h-8 text-xs">
+                            <SelectValue placeholder="Not enrolled" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {RAS_ROLE_OPTIONS.filter((o) => o.value !== "" || true).map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                                {opt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </TableCell>
                       {isUltraAdmin && (
                         <TableCell>
