@@ -57,6 +57,7 @@ import ResetPassword from "@/pages/ResetPassword";
 import SetPassword from "@/pages/SetPassword";
 import VerifyEmail from "@/pages/VerifyEmail";
 import Settings from "@/pages/Settings";
+import ApiKeys from "@/pages/ApiKeys";
 import MassNotification from "@/pages/MassNotification";
 import MicroDrillAdmin from "@/pages/MicroDrillAdmin";
 import MicroDrillRunner from "@/pages/MicroDrillRunner";
@@ -93,6 +94,7 @@ function Router() {
       <Route path="/eap" component={EAPList} />
       <Route path="/audit/:id/eap" component={EmergencyActionPlan} />
       <Route path="/admin/users" component={UserManagement} />
+      <Route path="/admin/api-keys" component={ApiKeys} />
       <Route path="/user-management">{() => { window.location.replace("/admin/users"); return null; }}</Route>
       <Route path="/admin/flagged-visitors" component={FlaggedVisitors} />
       <Route path="/facilities/onboarding" component={FacilityOnboarding} />

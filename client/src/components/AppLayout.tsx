@@ -9,7 +9,7 @@ import {
   Network, Users, Shield, UserCog, Eye,
   MapPin, FileText, GraduationCap, Radio, Lock, ChevronDown, ChevronUp,
   Megaphone, ShieldAlert, BookMarked, ShieldCheck, Flag, Wand2, UserX,
-  Star, Settings, History, Bell, BarChart3,
+  Star, Settings, History, Bell, BarChart3, Key,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -352,6 +352,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <NavLink item={{ href: "/analytics",     label: "Analytics Dashboard", icon: <BarChart3 size={18} /> }} />
             <NavLink item={{ href: "/organizations", label: "Organizations",      icon: <Network size={18} /> }} />
             <NavLink item={{ href: "/admin/users",   label: "User Management",    icon: <UserCog size={18} /> }} />
+            <NavLink item={{ href: "/admin/api-keys", label: "API Keys",          icon: <Key size={18} /> }} />
           </>
         )}
       </nav>
