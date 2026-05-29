@@ -737,7 +737,7 @@ export const alertEvents = mysqlTable("alert_events", {
   id: int("id").autoincrement().primaryKey(),
   orgId: int("orgId"),
   facilityId: int("facilityId").notNull(),
-  alertType: mysqlEnum("alertType", ["lockdown", "lockout"]).notNull(),
+  alertType: mysqlEnum("alertType", ["lockdown", "lockout", "fire", "weather"]).notNull(),
   status: mysqlEnum("alertStatus", ["active", "response_in_progress", "resolved"]).default("active").notNull(),
   messageTitle: varchar("messageTitle", { length: 255 }).notNull(),
   messageBody: text("messageBody").notNull(),

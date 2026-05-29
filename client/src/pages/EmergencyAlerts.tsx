@@ -64,11 +64,21 @@ function statusLabel(status: AlertStatus) {
 }
 
 function alertTypeLabel(type: string) {
-  return type === "lockdown" ? "LOCKDOWN" : "LOCKOUT";
+  switch (type) {
+    case "lockdown": return "LOCKDOWN";
+    case "fire": return "FIRE — EVACUATE";
+    case "weather": return "SEVERE WEATHER";
+    default: return "LOCKOUT";
+  }
 }
 
 function alertTypeColor(type: string) {
-  return type === "lockdown" ? "bg-red-700" : "bg-orange-600";
+  switch (type) {
+    case "lockdown": return "bg-red-700";
+    case "fire": return "bg-orange-600";
+    case "weather": return "bg-blue-700";
+    default: return "bg-orange-600";
+  }
 }
 
 function formatTime(ts: unknown) {
@@ -128,7 +138,7 @@ function ActivationModal({
   onClose,
   onSuccess,
 }: {
-  alertType: "lockdown" | "lockout";
+  alertType: "lockdown" | "lockout" | "fire" | "weather";
   facilityId: number;
   onClose: () => void;
   onSuccess: (id: number) => void;
@@ -143,20 +153,24 @@ function ActivationModal({
     },
   });
 
-  const isLockdown = alertType === "lockdown";
+  const titles: Record<string, { title: string; desc: string; btn: string }> = {
+    lockdown: { title: "Confirm Lockdown", desc: "This will immediately alert all personnel to lock doors, secure positions, and await further instructions.", btn: "Activate LOCKDOWN" },
+    lockout: { title: "Confirm Lockout", desc: "This will immediately alert all personnel to secure all exterior access points and prevent entry or exit.", btn: "Activate LOCKOUT" },
+    fire: { title: "Confirm FIRE", desc: "This will immediately alert all personnel to evacuate the building using the nearest safe exit.", btn: "Activate FIRE ALARM" },
+    weather: { title: "Confirm SEVERE WEATHER", desc: "This will immediately alert all personnel to seek shelter and stay away from windows.", btn: "Activate WEATHER ALERT" },
+  };
+  const t = titles[alertType] ?? titles.lockdown;
 
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
+          <DialogTitle className="flex items-center gap-2" style={{ color: alertType === "weather" ? "#2563eb" : "#dc2626" }}>
             <ShieldAlert className="h-5 w-5" />
-            Confirm {isLockdown ? "Lockdown" : "Lockout"}
+            {t.title}
           </DialogTitle>
           <DialogDescription className="text-sm leading-relaxed pt-1">
-            {isLockdown
-              ? "This will immediately alert all personnel to lock doors, secure positions, and await further instructions. Push notifications will be sent to all registered devices."
-              : "This will immediately alert all personnel to secure all exterior access points and prevent entry or exit. Push notifications will be sent to all registered devices."}
+            {t.desc} Push notifications will be sent to all registered devices.
           </DialogDescription>
         </DialogHeader>
         <div className={`rounded-md px-4 py-3 text-white text-sm font-semibold ${alertTypeColor(alertType)}`}>
@@ -167,11 +181,11 @@ function ActivationModal({
             Cancel
           </Button>
           <Button
-            className={`${isLockdown ? "bg-red-600 hover:bg-red-700" : "bg-orange-600 hover:bg-orange-700"} text-white`}
+            className={`text-white ${alertType === "lockdown" ? "bg-red-600 hover:bg-red-700" : alertType === "weather" ? "bg-blue-600 hover:bg-blue-700" : "bg-orange-600 hover:bg-orange-700"}`}
             onClick={() => activate.mutate({ facilityId, alertType })}
             disabled={activate.isPending}
           >
-            {activate.isPending ? "Activating…" : `Activate ${alertTypeLabel(alertType)}`}
+            {activate.isPending ? "Activating…" : t.btn}
           </Button>
         </DialogFooter>
       </DialogContent>

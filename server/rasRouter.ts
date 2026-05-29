@@ -53,6 +53,26 @@ const DEFAULT_TEMPLATES = {
     adminInstruction:
       "LOCKOUT IN EFFECT. Confirm all perimeter access points are secured. Coordinate with responding units. Issue status updates as information becomes available.",
   },
+  fire: {
+    title: "⚠️ FIRE — Evacuate Immediately",
+    body: "A fire alarm has been activated. Evacuate the building immediately using the nearest safe exit.",
+    staffInstruction:
+      "FIRE ALARM ACTIVATED. Evacuate immediately using the nearest exit. Do not use elevators. Proceed to your designated assembly point. Assist individuals with disabilities if safe to do so.",
+    responderInstruction:
+      "FIRE ALARM ACTIVATED. Initiate evacuation procedures. Check your assigned zone for remaining personnel. Report to the incident commander at the command post.",
+    adminInstruction:
+      "FIRE ALARM ACTIVATED. Coordinate with emergency services. Account for all personnel at assembly points. Prepare to provide facility information to fire department.",
+  },
+  weather: {
+    title: "🌪️ SEVERE WEATHER — Take Shelter",
+    body: "A severe weather warning has been issued for your area. Seek shelter immediately.",
+    staffInstruction:
+      "SEVERE WEATHER WARNING. Move to designated shelter areas immediately. Stay away from windows. Remain sheltered until the All Clear is announced. Monitor for further instructions.",
+    responderInstruction:
+      "SEVERE WEATHER WARNING. Direct personnel to shelter areas. Secure critical equipment and doors. Conduct sweep of your zone. Report status once sheltering is complete.",
+    adminInstruction:
+      "SEVERE WEATHER WARNING. Monitor weather updates. Coordinate shelter-in-place procedures. Track personnel status. Issue updates as conditions change.",
+  },
 };
 
 // ─── Helper: resolve orgId for a user ────────────────────────────────────────
@@ -137,7 +157,7 @@ export const rasRouter = router({
   activateAlert: paidProcedure
     .input(z.object({
       facilityId: z.number().int().positive(),
-      alertType: z.enum(["lockdown", "lockout"]),
+      alertType: z.enum(["lockdown", "lockout", "fire", "weather"]),
       // Optional overrides — defaults to template if not provided
       messageTitle: z.string().max(255).optional(),
       messageBody: z.string().optional(),

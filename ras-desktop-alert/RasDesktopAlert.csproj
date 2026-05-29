@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <AssemblyName>FiveStonesRASAlert</AssemblyName>
+    <RootNamespace>RasDesktopAlert</RootNamespace>
+    <Description>Five Stones RAS Desktop Alert - Flashes red/blue on emergency alerts</Description>
+    <Company>Five Stones Technology</Company>
+    <Product>Response Activation System - Desktop Alert</Product>
+    <Version>1.0.0</Version>
+    <ApplicationIcon />
+    <StartupObject>RasDesktopAlert.Program</StartupObject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="9.0.0" />
+  </ItemGroup>
+
+</Project>

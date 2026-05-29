@@ -45,7 +45,7 @@ export type RasRole = "admin" | "responder" | "staff";
 
 export interface PushPayload {
   alertEventId: number;
-  alertType: "lockdown" | "lockout";
+  alertType: "lockdown" | "lockout" | "fire" | "weather";
   title: string;
   body: string;
   /** Role-specific instruction shown in the notification body */
@@ -62,7 +62,7 @@ export interface PushPayload {
 export async function fanoutAlertPush(params: {
   orgId: number;
   alertEventId: number;
-  alertType: "lockdown" | "lockout";
+  alertType: "lockdown" | "lockout" | "fire" | "weather";
   messageTitle: string;
   roleInstructions: { staff: string; responder: string; admin: string };
 }): Promise<{ userId: number; endpoint: string; status: "sent" | "failed" | "expired" }[]> {
