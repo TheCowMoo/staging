@@ -1,10 +1,11 @@
 using System;
 using System.Drawing;
 using System.IO;
-using System.Media;
 using System.Net.Http;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -23,7 +24,6 @@ namespace RasDesktopAlert
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            // Handle command-line arguments (used by installer/uninstaller)
             var args = Environment.GetCommandLineArgs();
             if (args.Length > 1)
             {
@@ -55,6 +55,59 @@ namespace RasDesktopAlert
         public static readonly Color AlertRed = Color.FromArgb(220, 38, 38);
         public static readonly Color AlertOrange = Color.FromArgb(234, 88, 12);
         public static readonly Color AlertBlue = Color.FromArgb(37, 99, 235);
+    }
+
+    // ─── MP3 ALARM PLAYER (Windows MCI, no external dependencies) ────────────────
+    public static class AlarmPlayer
+    {
+        private static string _tempFile;
+        private static bool _initialized;
+
+        [DllImport("winmm.dll", CharSet = CharSet.Auto)]
+        private static extern int mciSendString(string command, StringBuilder buffer, int bufferSize, IntPtr hwndCallback);
+
+        public static void Initialize()
+        {
+            if (_initialized) return;
+            try
+            {
+                // Extract the MP3 from embedded resources to a temp file
+                using var stream = Assembly.GetExecutingAssembly()
+                    .GetManifestResourceStream("RasDesktopAlert.alarm.mp3");
+                if (stream != null)
+                {
+                    _tempFile = Path.Combine(Path.GetTempPath(), "fivestones_alarm.mp3");
+                    using var fs = new FileStream(_tempFile, FileMode.Create, FileAccess.Write);
+                    stream.CopyTo(fs);
+                    fs.Flush();
+                }
+                _initialized = true;
+            }
+            catch (Exception ex) { Debug.WriteLine($"Alarm init error: {ex.Message}"); }
+        }
+
+        public static void PlayAlarm()
+        {
+            StopAlarm();
+            if (!_initialized) Initialize();
+            if (!string.IsNullOrEmpty(_tempFile) && File.Exists(_tempFile))
+            {
+                mciSendString($"open \"{_tempFile}\" type mpegvideo alias alarm", null, 0, IntPtr.Zero);
+                mciSendString("play alarm repeat", null, 0, IntPtr.Zero);
+            }
+        }
+
+        public static void StopAlarm()
+        {
+            mciSendString("stop alarm", null, 0, IntPtr.Zero);
+            mciSendString("close alarm", null, 0, IntPtr.Zero);
+        }
+
+        public static void Cleanup()
+        {
+            StopAlarm();
+            try { if (_tempFile != null && File.Exists(_tempFile)) File.Delete(_tempFile); } catch { }
+        }
     }
 
     // ─── SETTINGS MODEL ───────────────────────────────────────────────────────────
@@ -109,59 +162,15 @@ namespace RasDesktopAlert
         }
     }
 
-    // ─── ALERT SOUND PLAYER ───────────────────────────────────────────────────────
-    public static class AlertSoundPlayer
-    {
-        private static SoundPlayer _player;
-
-        public static void PlaySiren()
-        {
-            try { StopSiren(); _player = GenerateSirenSound(); _player.PlayLooping(); }
-            catch (Exception ex) { Debug.WriteLine($"Siren error: {ex.Message}"); }
-        }
-
-        public static void StopSiren()
-        {
-            if (_player != null) try { _player.Stop(); _player.Dispose(); } catch { }
-            _player = null;
-        }
-
-        private static SoundPlayer GenerateSirenSound()
-        {
-            int sampleRate = 22050, durationMs = 3000, numSamples = sampleRate * durationMs / 1000;
-            short[] samples = new short[numSamples];
-            double freq1 = 600, freq2 = 900, cycleMs = 500;
-            for (int i = 0; i < numSamples; i++)
-            {
-                double t = (double)i / sampleRate, elapsedMs = t * 1000;
-                double freq = ((int)(elapsedMs / cycleMs) % 2 == 0) ? freq1 : freq2;
-                double sin = Math.Sin(2.0 * Math.PI * freq * t);
-                double envelope = 1.0;
-                if (elapsedMs < 50) envelope = elapsedMs / 50.0;
-                if (elapsedMs > durationMs - 50) envelope = (durationMs - elapsedMs) / 50.0;
-                samples[i] = (short)(sin * envelope * 16000);
-            }
-            int dataSize = numSamples * 2, fileSize = 44 + dataSize;
-            using var ms = new MemoryStream(fileSize);
-            using var bw = new BinaryWriter(ms);
-            bw.Write(new char[] { 'R', 'I', 'F', 'F' }); bw.Write(fileSize - 8);
-            bw.Write(new char[] { 'W', 'A', 'V', 'E' });
-            bw.Write(new char[] { 'f', 'm', 't', ' ' }); bw.Write(16);
-            bw.Write((short)1); bw.Write((short)1); bw.Write(sampleRate); bw.Write(sampleRate * 2);
-            bw.Write((short)2); bw.Write((short)16);
-            bw.Write(new char[] { 'd', 'a', 't', 'a' }); bw.Write(dataSize);
-            foreach (short s in samples) bw.Write(s);
-            bw.Flush(); ms.Position = 0;
-            return new SoundPlayer(ms);
-        }
-    }
-
     // ─── SETTINGS FORM ────────────────────────────────────────────────────────────
     public class SettingsForm : Form
     {
         private TextBox apiUrlBox, apiKeyBox;
         private NumericUpDown orgIdBox;
         private CheckBox autoStartCheck;
+        private Button testBtn;
+        private Label statusLabel;
+        private bool testing = false;
 
         public string ApiBaseUrl { get => apiUrlBox.Text.Trim(); set => apiUrlBox.Text = value; }
         public string ApiKey { get => apiKeyBox.Text.Trim(); set => apiKeyBox.Text = value; }
@@ -171,90 +180,200 @@ namespace RasDesktopAlert
         public SettingsForm()
         {
             this.Text = "Five Stones RAS Alert — Settings";
-            this.Size = new Size(520, 380);
+            this.Size = new Size(580, 490);
             this.MinimumSize = this.Size;
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.MaximumSize = new Size(620, 540);
+            this.FormBorderStyle = FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.StartPosition = FormStartPosition.CenterScreen;
             this.Icon = LoadAppIcon();
             this.BackColor = BrandColors.White;
+            this.Padding = new Padding(0);
 
-            // Brand header with logo
-            var headerPanel = new Panel() { Dock = DockStyle.Top, Height = 56, BackColor = BrandColors.Navy };
+            // ── Brand header with logo ──
+            var headerPanel = new Panel() { Dock = DockStyle.Top, Height = 64, BackColor = BrandColors.Navy };
             var headerLogo = new PictureBox()
             {
                 Image = LoadLogoImage(),
                 SizeMode = PictureBoxSizeMode.Zoom,
-                Width = 160, Height = 36,
+                Width = 180, Height = 42,
                 BackColor = Color.Transparent,
-                Location = new Point(10, 10)
+                Location = new Point(12, 11)
             };
             headerPanel.Controls.Add(headerLogo);
+            var headerText = new Label()
+            {
+                Text = "RAS Alert Monitor",
+                Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                ForeColor = BrandColors.Gold,
+                Location = new Point(200, 14),
+                AutoSize = true,
+                BackColor = Color.Transparent
+            };
+            headerPanel.Controls.Add(headerText);
 
-            // Main content
-            var mainPanel = new TableLayoutPanel()
+            // ── Body layout ──
+            var bodyPanel = new Panel() { Dock = DockStyle.Fill, Padding = new Padding(24, 16, 24, 8) };
+
+            var layout = new TableLayoutPanel()
             {
                 Dock = DockStyle.Fill,
-                Padding = new Padding(20, 10, 20, 10),
-                ColumnCount = 2, RowCount = 5,
-                ColumnStyles = { new ColumnStyle(SizeType.Absolute, 100), new ColumnStyle(SizeType.Percent, 100) },
+                ColumnCount = 2,
+                RowCount = 6,
+                ColumnStyles = {
+                    new ColumnStyle(SizeType.Absolute, 100),
+                    new ColumnStyle(SizeType.Percent, 100)
+                },
                 RowStyles = {
-                    new RowStyle(SizeType.Absolute, 38),
-                    new RowStyle(SizeType.Absolute, 38),
-                    new RowStyle(SizeType.Absolute, 38),
-                    new RowStyle(SizeType.Absolute, 38),
-                    new RowStyle(SizeType.Absolute, 50)
+                    new RowStyle(SizeType.Absolute, 44),
+                    new RowStyle(SizeType.Absolute, 44),
+                    new RowStyle(SizeType.Absolute, 44),
+                    new RowStyle(SizeType.Absolute, 44),
+                    new RowStyle(SizeType.Absolute, 50),
+                    new RowStyle(SizeType.Absolute, 60)
                 }
             };
 
-            var labelFont = new Font("Segoe UI", 10);
-            var inputFont = new Font("Segoe UI", 10);
+            var labelFont = new Font("Segoe UI", 10, FontStyle.Regular);
+            var inputFont = new Font("Segoe UI", 10, FontStyle.Regular);
 
-            mainPanel.Controls.Add(new Label() { Text = "API URL:", TextAlign = ContentAlignment.MiddleRight, Anchor = AnchorStyles.Right, Font = labelFont }, 0, 0);
-            apiUrlBox = new TextBox() { Text = "https://staging.fivestonestechnology.com", Dock = DockStyle.Fill, Font = inputFont, Margin = new Padding(5, 5, 0, 5) };
-            mainPanel.Controls.Add(apiUrlBox, 1, 0);
+            // Row 0: API URL
+            layout.Controls.Add(new Label() { Text = "API URL:", TextAlign = ContentAlignment.MiddleRight, Anchor = AnchorStyles.Right, Font = labelFont }, 0, 0);
+            apiUrlBox = new TextBox() { Text = "https://staging.fivestonestechnology.com", Dock = DockStyle.Fill, Font = inputFont, Margin = new Padding(6, 6, 0, 6) };
+            layout.Controls.Add(apiUrlBox, 1, 0);
 
-            mainPanel.Controls.Add(new Label() { Text = "API Key:", TextAlign = ContentAlignment.MiddleRight, Anchor = AnchorStyles.Right, Font = labelFont }, 0, 1);
-            apiKeyBox = new TextBox() { PasswordChar = '*', Dock = DockStyle.Fill, Font = inputFont, Margin = new Padding(5, 5, 0, 5) };
-            mainPanel.Controls.Add(apiKeyBox, 1, 1);
+            // Row 1: API Key
+            layout.Controls.Add(new Label() { Text = "API Key:", TextAlign = ContentAlignment.MiddleRight, Anchor = AnchorStyles.Right, Font = labelFont }, 0, 1);
+            apiKeyBox = new TextBox() { PasswordChar = '*', Dock = DockStyle.Fill, Font = inputFont, Margin = new Padding(6, 6, 0, 6) };
+            layout.Controls.Add(apiKeyBox, 1, 1);
 
-            mainPanel.Controls.Add(new Label() { Text = "Org ID:", TextAlign = ContentAlignment.MiddleRight, Anchor = AnchorStyles.Right, Font = labelFont }, 0, 2);
-            orgIdBox = new NumericUpDown() { Minimum = 0, Maximum = 999999, Width = 120, Font = inputFont, Margin = new Padding(5, 5, 0, 5) };
-            mainPanel.Controls.Add(orgIdBox, 1, 2);
+            // Row 2: Org ID
+            layout.Controls.Add(new Label() { Text = "Org ID:", TextAlign = ContentAlignment.MiddleRight, Anchor = AnchorStyles.Right, Font = labelFont }, 0, 2);
+            orgIdBox = new NumericUpDown() { Minimum = 0, Maximum = 999999, Width = 160, Font = inputFont, Margin = new Padding(6, 6, 0, 6) };
+            layout.Controls.Add(orgIdBox, 1, 2);
 
-            autoStartCheck = new CheckBox() { Text = "Run at Windows startup", Font = labelFont, Margin = new Padding(5, 5, 0, 5), AutoSize = true };
-            mainPanel.Controls.Add(autoStartCheck, 1, 3);
+            // Row 3: Auto-start
+            autoStartCheck = new CheckBox() { Text = "Launch at Windows startup", Font = labelFont, Margin = new Padding(8, 10, 0, 6), AutoSize = true };
+            layout.Controls.Add(autoStartCheck, 1, 3);
 
+            // Row 4: Test Connection
+            var testPanel = new FlowLayoutPanel() { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0, 2, 0, 0) };
+            testBtn = new Button()
+            {
+                Text = "Test Connection",
+                Size = new Size(140, 32),
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(34, 197, 94),
+                ForeColor = Color.White,
+                FlatAppearance = { BorderSize = 0 },
+                Cursor = Cursors.Hand,
+                Margin = new Padding(6, 2, 0, 0)
+            };
+            testBtn.Click += async (s, e) => await TestConnection();
+            testPanel.Controls.Add(testBtn);
+
+            statusLabel = new Label()
+            {
+                Text = "",
+                Font = new Font("Segoe UI", 9, FontStyle.Regular),
+                AutoSize = true,
+                Margin = new Padding(10, 6, 0, 0),
+                MaximumSize = new Size(280, 40)
+            };
+            testPanel.Controls.Add(statusLabel);
+            layout.Controls.Add(testPanel, 1, 4);
+
+            // Row 5: Save / Cancel
             var buttonPanel = new FlowLayoutPanel() { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Margin = new Padding(0, 8, 0, 0) };
             var saveBtn = new Button()
             {
-                Text = "Save & Connect", Size = new Size(130, 34), Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                Text = "Save & Connect", Size = new Size(130, 36), Font = new Font("Segoe UI", 10, FontStyle.Bold),
                 FlatStyle = FlatStyle.Flat, BackColor = BrandColors.Navy, ForeColor = BrandColors.White,
                 FlatAppearance = { BorderSize = 0 }, Cursor = Cursors.Hand
             };
             saveBtn.Click += (s, e) =>
             {
                 if (string.IsNullOrWhiteSpace(apiUrlBox.Text) || string.IsNullOrWhiteSpace(apiKeyBox.Text))
-                { MessageBox.Show("Please fill all fields.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+                { MessageBox.Show("Please fill all fields.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
                 DialogResult = DialogResult.OK; Close();
             };
-            var cancelBtn = new Button() { Text = "Cancel", Size = new Size(100, 34), Font = new Font("Segoe UI", 10), Cursor = Cursors.Hand };
+            var cancelBtn = new Button() { Text = "Cancel", Size = new Size(100, 36), Font = new Font("Segoe UI", 10), Cursor = Cursors.Hand };
             cancelBtn.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
             buttonPanel.Controls.Add(saveBtn); buttonPanel.Controls.Add(cancelBtn);
-            mainPanel.Controls.Add(buttonPanel, 1, 4);
+            layout.Controls.Add(buttonPanel, 1, 5);
 
-            this.Controls.Add(headerPanel);
-            this.Controls.Add(mainPanel);
-            this.Controls.Add(new Label()
+            bodyPanel.Controls.Add(layout);
+
+            // ── Footer ──
+            var footerLabel = new Label()
             {
-                Text = "Get API key from Dashboard > Admin > API Keys.",
+                Text = "Get API key from Dashboard \u2192 Admin \u2192 API Keys",
                 Dock = DockStyle.Bottom, TextAlign = ContentAlignment.MiddleLeft,
                 Font = new Font("Segoe UI", 8, FontStyle.Italic), ForeColor = BrandColors.Steel,
-                Height = 24, Padding = new Padding(16, 0, 0, 0)
-            });
+                Height = 28, Padding = new Padding(20, 2, 0, 0), BackColor = Color.FromArgb(240, 243, 246)
+            };
+
+            this.Controls.Add(headerPanel);
+            this.Controls.Add(bodyPanel);
+            this.Controls.Add(footerLabel);
             this.AcceptButton = saveBtn;
             this.CancelButton = cancelBtn;
+        }
+
+        private async Task TestConnection()
+        {
+            if (testing) return;
+            testing = true;
+            testBtn.Enabled = false;
+            statusLabel.ForeColor = BrandColors.Steel;
+            statusLabel.Text = "Testing...";
+
+            try
+            {
+                using var c = new HttpClient();
+                c.DefaultRequestHeaders.Add("X-Api-Key", apiKeyBox.Text.Trim());
+                c.Timeout = TimeSpan.FromSeconds(8);
+                var url = $"{apiUrlBox.Text.Trim().TrimEnd('/')}/api/ras/alerts/active?orgId={(int)orgIdBox.Value}";
+                var r = await c.GetAsync(url);
+
+                if (r.IsSuccessStatusCode)
+                {
+                    statusLabel.ForeColor = Color.FromArgb(22, 163, 74);
+                    statusLabel.Text = "\u2713 Connected! Alert polling is working.";
+                }
+                else if (r.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    statusLabel.ForeColor = Color.FromArgb(220, 38, 38);
+                    statusLabel.Text = "\u2717 Unauthorized \u2014 check your API key.";
+                }
+                else
+                {
+                    statusLabel.ForeColor = Color.FromArgb(220, 38, 38);
+                    statusLabel.Text = $"\u2717 Server returned {(int)r.StatusCode}. Check settings.";
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                statusLabel.ForeColor = Color.FromArgb(220, 38, 38);
+                statusLabel.Text = "\u2717 Connection timed out.";
+            }
+            catch (HttpRequestException ex)
+            {
+                statusLabel.ForeColor = Color.FromArgb(220, 38, 38);
+                statusLabel.Text = $"\u2717 {ex.Message}";
+            }
+            catch (Exception ex)
+            {
+                statusLabel.ForeColor = Color.FromArgb(220, 38, 38);
+                statusLabel.Text = $"\u2717 {ex.Message}";
+            }
+            finally
+            {
+                testing = false;
+                testBtn.Enabled = true;
+            }
         }
 
         private static Icon LoadAppIcon()
@@ -288,41 +407,50 @@ namespace RasDesktopAlert
             this.ControlBox = false;
             this.BackColor = Color.Black;
 
-            // Branded header
-            brandedHeader = new Panel() { Height = 44, Dock = DockStyle.Top, BackColor = BrandColors.Navy, Visible = false };
+            // Branded header with logo
+            brandedHeader = new Panel() { Height = 48, Dock = DockStyle.Top, BackColor = BrandColors.Navy, Visible = false };
+            var headerLogo = new PictureBox()
+            {
+                Image = LoadLogoImage(),
+                SizeMode = PictureBoxSizeMode.Zoom,
+                Width = 140, Height = 32,
+                BackColor = Color.Transparent,
+                Location = new Point(8, 8)
+            };
             var brandLabel = new Label()
             {
-                Text = "  Five Stones Technology  —  Response Activation System",
-                Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = BrandColors.Gold,
-                Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, Padding = new Padding(10, 0, 0, 0)
+                Text = "  Five Stones Technology  \u2014  Response Activation System",
+                Font = new Font("Segoe UI", 12, FontStyle.Bold), ForeColor = BrandColors.Gold,
+                Location = new Point(156, 10), AutoSize = true, BackColor = Color.Transparent
             };
+            brandedHeader.Controls.Add(headerLogo);
             brandedHeader.Controls.Add(brandLabel);
 
             alertLabel = new Label()
             {
-                AutoSize = false, Dock = DockStyle.Top, Height = 130,
+                AutoSize = false, Dock = DockStyle.Top, Height = 140,
                 TextAlign = ContentAlignment.MiddleCenter,
-                Font = new Font("Arial Black", 52, FontStyle.Bold),
+                Font = new Font("Arial Black", 56, FontStyle.Bold),
                 ForeColor = Color.White, BackColor = Color.Transparent, Visible = false
             };
 
             messageLabel = new Label()
             {
                 AutoSize = false, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter,
-                Font = new Font("Segoe UI", 26, FontStyle.Regular), ForeColor = Color.White,
-                BackColor = Color.Transparent, Padding = new Padding(60), Visible = false
+                Font = new Font("Segoe UI", 28, FontStyle.Regular), ForeColor = Color.White,
+                BackColor = Color.Transparent, Padding = new Padding(40, 0, 40, 60), Visible = false
             };
 
             dismissButton = new Button()
             {
                 Text = "ACKNOWLEDGE & DISMISS", FlatStyle = FlatStyle.Flat,
                 BackColor = Color.FromArgb(220, Color.White), ForeColor = Color.Black,
-                Font = new Font("Segoe UI", 16, FontStyle.Bold), Size = new Size(340, 66),
+                Font = new Font("Segoe UI", 16, FontStyle.Bold), Size = new Size(380, 70),
                 FlatAppearance = { BorderSize = 0 }, Visible = false, Cursor = Cursors.Hand
             };
             dismissButton.Click += (s, e) => Dismiss();
 
-            var bottomPanel = new Panel() { Dock = DockStyle.Bottom, Height = 100, BackColor = Color.Transparent };
+            var bottomPanel = new Panel() { Dock = DockStyle.Bottom, Height = 110, BackColor = Color.Transparent };
 
             this.Controls.Add(messageLabel);
             this.Controls.Add(alertLabel);
@@ -358,14 +486,14 @@ namespace RasDesktopAlert
             dismissButton.Visible = true; dismissButton.BringToFront();
             isRed = true; this.BackColor = c1; this.Tag = new Color[] { c1, c2 };
             flashTimer.Start();
-            AlertSoundPlayer.PlaySiren();
+            AlarmPlayer.PlayAlarm();
             if (!this.Visible) this.Show();
             this.Activate(); this.TopMost = true; this.BringToFront();
         }
 
         private void Dismiss()
         {
-            flashTimer.Stop(); AlertSoundPlayer.StopSiren();
+            flashTimer.Stop(); AlarmPlayer.StopAlarm();
             this.BackColor = Color.Black; brandedHeader.Visible = false;
             alertLabel.Visible = false; messageLabel.Visible = false; dismissButton.Visible = false;
             this.Hide();
@@ -376,9 +504,15 @@ namespace RasDesktopAlert
             if (keyData == Keys.Escape) { Dismiss(); return true; }
             return base.ProcessCmdKey(ref msg, keyData);
         }
+
+        private static Image LoadLogoImage()
+        {
+            try { using var s = Assembly.GetExecutingAssembly().GetManifestResourceStream("RasDesktopAlert.logo.png"); if (s != null) return Image.FromStream(s); } catch { }
+            return null;
+        }
     }
 
-    // ─── API MODEL ────────────────────────────────────────────────────────────────
+    // ─── API MODELS ────────────────────────────────────────────────────────────────
     public class RasAlert
     {
         [JsonPropertyName("type")]    public string Type { get; set; }
@@ -405,16 +539,23 @@ namespace RasDesktopAlert
 
         public TrayApplication()
         {
+            AlarmPlayer.Initialize();
+
             settings = SettingsManager.Load();
             trayIcon = new NotifyIcon() { Icon = LoadTrayIcon(), Text = "Five Stones RAS - Monitoring", Visible = true };
             var menu = new ContextMenuStrip();
             menu.Items.Add("Status: Monitoring", null, (s, e) => { });
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Settings...", null, (s, e) => ShowSettings());
-            menu.Items.Add("Test Alert", null, (s, e) => { if (!hasActiveAlert) TriggerAlert("TEST ALERT", "Test alert.", "lockdown"); });
+            menu.Items.Add("Test Alert", null, (s, e) => { if (!hasActiveAlert) TriggerAlert("TEST ALERT", "Test alert from tray menu.", "lockdown"); });
             menu.Items.Add("Check for Updates", null, async (s, e) => await CheckForUpdates(true));
             menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("Exit", null, (s, e) => { pollTimer?.Stop(); updateTimer?.Stop(); trayIcon.Visible = false; Application.Exit(); });
+            menu.Items.Add("Exit", null, (s, e) =>
+            {
+                pollTimer?.Stop(); updateTimer?.Stop();
+                AlarmPlayer.Cleanup();
+                trayIcon.Visible = false; Application.Exit();
+            });
             trayIcon.ContextMenuStrip = menu;
             trayIcon.DoubleClick += (s, e) => ShowSettings();
 
@@ -434,7 +575,6 @@ namespace RasDesktopAlert
                 pollTimer.Tick += async (s, e) => await PollForAlert();
                 pollTimer.Start();
             }
-
             updateTimer = new System.Windows.Forms.Timer { Interval = 6 * 60 * 60 * 1000 };
             updateTimer.Tick += async (s, e) => await CheckForUpdates(false);
             updateTimer.Start();
@@ -483,7 +623,7 @@ namespace RasDesktopAlert
                     var a = JsonSerializer.Deserialize<RasAlert>(j, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                     if (a != null && a.Status != "resolved" && !hasActiveAlert)
                     { hasActiveAlert = true; TriggerAlert(a.Type?.ToUpper() ?? "ALERT", a.Message ?? "Alert activated", a.Type ?? "general"); }
-                    else if (a == null || a.Status == "resolved" && hasActiveAlert)
+                    else if ((a == null || a.Status == "resolved") && hasActiveAlert)
                     { hasActiveAlert = false; alertForm?.Invoke((System.Windows.Forms.MethodInvoker)(() => alertForm.Hide())); trayIcon.Text = "Five Stones RAS - Monitoring"; }
                 }
             }
@@ -494,8 +634,8 @@ namespace RasDesktopAlert
         {
             if (alertForm == null || alertForm.IsDisposed) alertForm = new AlertForm();
             alertForm.ShowAlert(alertType, message, rawType);
-            trayIcon.Text = $"\u26a0\ufe0f ALERT: {alertType}";
-            trayIcon.ShowBalloonTip(15000, "\u26a0\ufe0f EMERGENCY ALERT", $"{alertType}: {message}", ToolTipIcon.Warning);
+            trayIcon.Text = "\u26a0\ufe0f ALERT: " + alertType;
+            trayIcon.ShowBalloonTip(15000, "\u26a0\ufe0f EMERGENCY ALERT", alertType + ": " + message, ToolTipIcon.Warning);
         }
 
         private async Task CheckForUpdates(bool userInitiated)
@@ -508,7 +648,7 @@ namespace RasDesktopAlert
                 var u = JsonSerializer.Deserialize<UpdateInfo>(j, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 if (u == null || string.IsNullOrEmpty(u.Version) || !Version.TryParse(u.Version, out var lv)) return;
                 if (lv <= CurrentVersion) { if (userInitiated) MessageBox.Show("Latest version.", "No Update", MessageBoxButtons.OK, MessageBoxIcon.Information); return; }
-                if (MessageBox.Show($"Version {u.Version} available. Install now?", "Update", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes && !string.IsNullOrEmpty(u.DownloadUrl))
+                if (MessageBox.Show("Version " + u.Version + " available. Install now?", "Update", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes && !string.IsNullOrEmpty(u.DownloadUrl))
                 {
                     var t = Path.Combine(Path.GetTempPath(), "FiveStonesRASUpdate"); Directory.CreateDirectory(t);
                     var p = Path.Combine(t, "FiveStonesRASAlert-Setup.exe");
@@ -518,7 +658,7 @@ namespace RasDesktopAlert
                     pollTimer?.Stop(); updateTimer?.Stop(); trayIcon.Visible = false; Application.Exit();
                 }
             }
-            catch (Exception ex) { if (userInitiated) MessageBox.Show($"Update check failed: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
+            catch (Exception ex) { if (userInitiated) MessageBox.Show("Update check failed: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
         }
     }
 }
