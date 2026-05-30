@@ -300,9 +300,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <aside className={`${mobile ? "flex flex-col h-full" : "hidden lg:flex flex-col h-screen fixed top-0 left-0"} w-64 sidebar-metallic`} style={{ zIndex: 2000 }}>
       {/* Logo area */}
       <div className="flex items-center justify-center px-3 py-3 border-b border-sidebar-border">
-        <div className="sidebar-logo-wrapper p-1.5 flex items-center justify-center w-full">
-          <img src={LOGO_URL} alt="Five Stones Technology" className="h-44 w-full object-contain" />
-        </div>
+        <img src={LOGO_URL} alt="Five Stones Technology" className="h-48 w-full object-contain" />
         {mobile && (
           <button onClick={() => setSidebarOpen(false)} className="ml-2 text-sidebar-foreground hover:text-white transition-colors p-1 -mr-1">
             <X size={18} />
@@ -496,10 +494,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          {/* Page content with enter animation */}
-          <div className="page-enter">
-            {children}
-          </div>
+          {children}
         </main>
 
         {/* Footer */}
