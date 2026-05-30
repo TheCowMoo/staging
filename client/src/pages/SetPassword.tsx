@@ -21,7 +21,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Shield, CheckCircle, XCircle } from "lucide-react";
+import { Shield, CheckCircle, XCircle, ArrowLeft } from "lucide-react";
 
 export default function SetPassword() {
   const [, setLocation] = useLocation();
@@ -173,6 +173,14 @@ export default function SetPassword() {
             </form>
           )}
         </Card>
+
+        <button
+          onClick={() => setLocation("/login")}
+          className="mt-4 flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mx-auto"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Sign In
+        </button>
       </div>
     </div>
   );

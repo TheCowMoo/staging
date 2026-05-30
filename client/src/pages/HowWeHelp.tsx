@@ -12,7 +12,7 @@
  *   /how-we-help#training-drill-implementation
  */
 import { useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import {
   ShieldCheck,
   ClipboardList,
@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import AppLayout from "@/components/AppLayout";
+import { ProtectedLayout } from "@/components/ProtectedLayout";
 import { AssessmentCTAButton } from "@/components/assessment";
 import { BRAND, HEADING_FONT } from "@/components/assessment/brandUtils";
 
@@ -112,9 +114,7 @@ const SERVICES = [
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export default function HowWeHelp() {
-  const [, navigate] = useLocation();
-
+function HowWeHelpContent() {
   // Scroll to anchor on mount if hash is present
   useEffect(() => {
     const hash = window.location.hash.replace("#", "");
@@ -127,25 +127,6 @@ export default function HowWeHelp() {
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-4 space-y-14">
-
-      {/* ── Back navigation ─────────────────────────────────────────────────── */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => {
-          // Use browser history when available; fall back to Liability Scan
-          // (which restores scan context from sessionStorage).
-          if (window.history.length > 1) {
-            window.history.back();
-          } else {
-            navigate("/liability-scan");
-          }
-        }}
-        className="text-muted-foreground hover:text-foreground -ml-1"
-      >
-        <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
-        Back
-      </Button>
 
       {/* ── Page header ─────────────────────────────────────────────────────── */}
       <div className="space-y-4">
@@ -344,5 +325,17 @@ export default function HowWeHelp() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function HowWeHelp() {
+  return (
+    <ProtectedLayout>
+      <AppLayout>
+        <div className="p-6 max-w-6xl mx-auto">
+          <HowWeHelpContent />
+        </div>
+      </AppLayout>
+    </ProtectedLayout>
   );
 }

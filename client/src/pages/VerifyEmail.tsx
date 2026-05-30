@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useSearch } from "wouter";
-import { Shield, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Shield, CheckCircle, XCircle, Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -100,6 +100,14 @@ export default function VerifyEmail() {
             </Button>
           </div>
         )}
+
+        <button
+          onClick={() => setLocation("/login")}
+          className="mt-6 flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mx-auto"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Sign In
+        </button>
       </div>
     </div>
   );
