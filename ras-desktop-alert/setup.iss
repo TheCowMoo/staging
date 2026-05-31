@@ -2,7 +2,7 @@
 ; Build: iscc setup.iss
 
 #define MyAppName "Five Stones RAS Alert"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "Five Stones Technology"
 #define MyAppURL "https://fivestonestechnology.com"
 #define MyAppExeName "FiveStonesRASAlert.exe"
@@ -39,8 +39,9 @@ Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription
 Name: "runatstartup"; Description: "&Launch at Windows startup"; GroupDescription: "Additional options:"; Flags: checkedonce
 
 [Files]
-Source: "..\ras-desktop-alert\dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\ras-desktop-alert\app.ico"; DestDir: "{app}"; Flags: ignoreversion
+Source: "dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "app.ico"; DestDir: "{app}"; Flags: ignoreversion
+Source: "dist\ras_settings.json"; DestDir: "{localappdata}\FiveStones\RAS Alert"; Flags: onlyifdoesntexist ignoreversion
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
@@ -52,14 +53,12 @@ Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: po
 Filename: "{reg:HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run,FiveStonesRASAlert}"; Flags: skipifdoesntexist
 
 [Registry]
-; Add Run at startup if user checked the task during install
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "FiveStonesRASAlert"; ValueData: """{app}\{#MyAppExeName}"""; Tasks: runatstartup; Flags: uninsdeletevalue
 
 [UninstallRun]
 Filename: "{app}\{#MyAppExeName}"; Parameters: "--uninstall"; RunOnceId: "FiveStonesRASAlertShutdown"; Flags: runhidden
 
 [Code]
-{ Custom uninstall to ensure the app isn't running }
 function InitializeUninstall(): Boolean;
 var
   ResultCode: Integer;

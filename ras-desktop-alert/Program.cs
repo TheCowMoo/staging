@@ -124,6 +124,9 @@ namespace RasDesktopAlert
         private static readonly string AppDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "FiveStones", "RAS Alert");
         private static readonly string SettingsPath = Path.Combine(AppDir, "ras_settings.json");
+        private static readonly string BundledDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FiveStones", "RAS Alert");
+        private static readonly string BundledPath = Path.Combine(BundledDir, "ras_settings.json");
         private static readonly string LogPath = Path.Combine(AppDir, "ras_error.log");
         private static readonly JsonSerializerOptions JsonOpts = new() { WriteIndented = true, PropertyNameCaseInsensitive = true };
 
@@ -131,8 +134,29 @@ namespace RasDesktopAlert
         public static AppSettings Load()
         {
             EnsureDirectoryExists();
+
+            // Priority 1: User-configured settings in CommonAppData
             try { if (File.Exists(SettingsPath)) return JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(SettingsPath), JsonOpts) ?? new(); }
             catch (Exception ex) { Log($"Load: {ex.Message}"); }
+
+            // Priority 2: Bundled settings from installer (first-run only)
+            try
+            {
+                if (File.Exists(BundledPath))
+                {
+                    var bundled = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(BundledPath), JsonOpts);
+                    if (bundled != null && !string.IsNullOrEmpty(bundled.ApiKey))
+                    {
+                        // Copy bundled settings to CommonAppData so they persist across updates
+                        Save(bundled);
+                        // Delete bundled copy so it doesn't re-apply on next launch
+                        try { File.Delete(BundledPath); } catch { }
+                        return bundled;
+                    }
+                }
+            }
+            catch (Exception ex) { Log($"Load bundled: {ex.Message}"); }
+
             return new AppSettings();
         }
         public static void Save(AppSettings settings)
@@ -195,13 +219,12 @@ namespace RasDesktopAlert
 
         public SettingsForm()
         {
-            this.Text = "Five Stones RAS Alert";
-            this.Size = new Size(620, 480);
-            this.MinimumSize = new Size(560, 420);
+            this.Text = "Five Stones RAS Alert  v1.1.0";
+            this.Size = new Size(800, 620);
+            this.MinimumSize = new Size(720, 560);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.Icon = LoadAppIcon();
             this.BackColor = BrandColors.White;
-            this.Padding = new Padding(0);
             this.Font = new Font("Segoe UI", 10);
 
             // ── HEADER ──
@@ -213,80 +236,171 @@ namespace RasDesktopAlert
                 Location = new Point(16, 13)
             };
             header.Controls.Add(logo);
-            var hdrSub = new Label()
+            header.Controls.Add(new Label()
             {
                 Text = "Desktop Alert Monitor", Font = new Font("Segoe UI", 11, FontStyle.Regular),
                 ForeColor = BrandColors.Gold, BackColor = Color.Transparent,
                 Location = new Point(230, 26), AutoSize = true
+            });
+
+            // ── BODY ──
+            var body = new Panel() { Dock = DockStyle.Fill, BackColor = BrandColors.White };
+            body.Resize += (s, e) => RepositionBody(body);
+
+            body.Controls.Add(new Label()
+            {
+                Text = "CONNECTION", Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                ForeColor = BrandColors.Steel, AutoSize = true,
+                Location = new Point(36, 20)
+            });
+
+            // We'll position everything manually with proper resize handling
+            body.Tag = 36; // left margin
+            BuildForm(body);
+
+            // ── FOOTER ──
+            var footer = new Panel() { Dock = DockStyle.Bottom, Height = 32, BackColor = BrandColors.LightBg };
+            footer.Controls.Add(new Label()
+            {
+                Text = "  \u2139\ufe0f  Get API key from Dashboard \u2192 Admin \u2192 API Keys",
+                Font = new Font("Segoe UI", 8, FontStyle.Italic), ForeColor = BrandColors.TextMuted,
+                Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft
+            });
+
+            this.Controls.Add(header);
+            this.Controls.Add(body);
+            this.Controls.Add(footer);
+        }
+
+        private void BuildForm(Panel body)
+        {
+            int leftMargin = 36;
+            int labelW = 90;
+            int fieldX = leftMargin + labelW + 12; // label right edge + gap
+            int y = 44; // after "CONNECTION" header
+
+            // Row: API URL
+            body.Controls.Add(new Label()
+            {
+                Text = "API URL", TextAlign = ContentAlignment.MiddleRight,
+                Location = new Point(leftMargin, y + 6), Size = new Size(labelW, 28),
+                Font = new Font("Segoe UI", 10, FontStyle.Regular), ForeColor = BrandColors.TextMuted,
+                Anchor = AnchorStyles.Left
+            });
+            apiUrlBox = new TextBox()
+            {
+                Text = "https://staging.fivestonestechnology.com",
+                Font = new Font("Segoe UI", 10), BorderStyle = BorderStyle.FixedSingle,
+                BackColor = Color.FromArgb(250, 251, 252),
+                Location = new Point(fieldX, y), Height = 30,
+                Anchor = AnchorStyles.Left | AnchorStyles.Right
             };
-            header.Controls.Add(hdrSub);
+            body.Controls.Add(apiUrlBox);
+            y += 48;
 
-            // ── BODY (manual layout, precise positioning) ──
-            var body = new Panel() { Dock = DockStyle.Fill, Padding = new Padding(28, 20, 28, 12) };
+            // Row: API Key
+            body.Controls.Add(new Label()
+            {
+                Text = "API Key", TextAlign = ContentAlignment.MiddleRight,
+                Location = new Point(leftMargin, y + 6), Size = new Size(labelW, 28),
+                Font = new Font("Segoe UI", 10, FontStyle.Regular), ForeColor = BrandColors.TextMuted,
+                Anchor = AnchorStyles.Left
+            });
+            apiKeyBox = new TextBox()
+            {
+                PasswordChar = '*', Font = new Font("Segoe UI", 10),
+                BorderStyle = BorderStyle.FixedSingle, BackColor = Color.FromArgb(250, 251, 252),
+                Location = new Point(fieldX, y), Height = 30,
+                Anchor = AnchorStyles.Left | AnchorStyles.Right
+            };
+            body.Controls.Add(apiKeyBox);
+            y += 48;
 
-            int xLabel = 0, xInput = 110, y = 0, rh = 40;
+            // Row: Org ID
+            body.Controls.Add(new Label()
+            {
+                Text = "Org ID", TextAlign = ContentAlignment.MiddleRight,
+                Location = new Point(leftMargin, y + 6), Size = new Size(labelW, 28),
+                Font = new Font("Segoe UI", 10, FontStyle.Regular), ForeColor = BrandColors.TextMuted,
+                Anchor = AnchorStyles.Left
+            });
+            orgIdBox = new NumericUpDown()
+            {
+                Minimum = 0, Maximum = 999999, Font = new Font("Segoe UI", 10),
+                BackColor = Color.FromArgb(250, 251, 252),
+                Location = new Point(fieldX, y), Width = 180, Height = 30
+            };
+            body.Controls.Add(orgIdBox);
+            y += 48;
 
-            // Row 0: API URL
-            var lbl0 = new Label() { Text = "API URL", Location = new Point(xLabel, y + 10), Size = new Size(100, 20),
-                Font = new Font("Segoe UI", 10, FontStyle.SemiBold), ForeColor = BrandColors.TextMuted };
-            apiUrlBox = new TextBox() { Location = new Point(xInput, y), Size = new Size(460, 28),
-                Text = "https://staging.fivestonestechnology.com", Font = new Font("Segoe UI", 10),
-                BorderStyle = BorderStyle.FixedSingle };
-            body.Controls.Add(lbl0); body.Controls.Add(apiUrlBox);
-            y += rh;
-
-            // Row 1: API Key
-            var lbl1 = new Label() { Text = "API Key", Location = new Point(xLabel, y + 10), Size = new Size(100, 20),
-                Font = new Font("Segoe UI", 10, FontStyle.SemiBold), ForeColor = BrandColors.TextMuted };
-            apiKeyBox = new TextBox() { Location = new Point(xInput, y), Size = new Size(460, 28),
-                PasswordChar = '*', Font = new Font("Segoe UI", 10), BorderStyle = BorderStyle.FixedSingle };
-            body.Controls.Add(lbl1); body.Controls.Add(apiKeyBox);
-            y += rh;
-
-            // Row 2: Org ID
-            var lbl2 = new Label() { Text = "Org ID", Location = new Point(xLabel, y + 10), Size = new Size(100, 20),
-                Font = new Font("Segoe UI", 10, FontStyle.SemiBold), ForeColor = BrandColors.TextMuted };
-            orgIdBox = new NumericUpDown() { Location = new Point(xInput, y), Size = new Size(160, 28),
-                Minimum = 0, Maximum = 999999, Font = new Font("Segoe UI", 10) };
-            body.Controls.Add(lbl2); body.Controls.Add(orgIdBox);
-            y += rh;
-
-            // Row 3: Auto-start checkbox
-            autoStartCheck = new CheckBox() { Text = " Launch at Windows startup", Location = new Point(xInput, y + 4),
-                Font = new Font("Segoe UI", 10), AutoSize = true, ForeColor = BrandColors.TextMuted };
+            // Row: Auto-start
+            autoStartCheck = new CheckBox()
+            {
+                Text = "Launch at Windows startup",
+                Font = new Font("Segoe UI", 10), AutoSize = true,
+                ForeColor = BrandColors.TextMuted,
+                Location = new Point(fieldX, y + 4)
+            };
             body.Controls.Add(autoStartCheck);
-            y += rh + 4;
-
-            // Separator
-            var sep = new Panel() { Location = new Point(0, y), Width = body.Width, Height = 1,
-                BackColor = BrandColors.Border, Anchor = AnchorStyles.Left | AnchorStyles.Right };
-            body.Controls.Add(sep);
-            y += 16;
-
-            // Row 4: Test Connection
-            testBtn = new RoundButton()
-            {
-                Text = "Test Connection", Location = new Point(xInput, y), Size = new Size(150, 36),
-                BackColor = BrandColors.Success, ForeColor = BrandColors.White,
-                Font = new Font("Segoe UI", 10, FontStyle.Bold), Cursor = Cursors.Hand
-            };
-            testBtn.Click += async (s, e) => await TestConnection();
-            body.Controls.Add(testBtn);
-
-            statusLabel = new Label()
-            {
-                Text = "", Location = new Point(xInput + 162, y + 6), AutoSize = true,
-                Font = new Font("Segoe UI", 9), ForeColor = BrandColors.TextMuted, MaximumSize = new Size(300, 40)
-            };
-            body.Controls.Add(statusLabel);
             y += 50;
 
-            // Row 5: Save / Cancel
+            // Divider
+            var sep = new Panel()
+            {
+                Location = new Point(leftMargin, y),
+                Height = 1, BackColor = BrandColors.Border,
+                Anchor = AnchorStyles.Left | AnchorStyles.Right
+            };
+            body.Controls.Add(sep);
+            y += 22;
+
+            // Section: ACTIVATE
+            body.Controls.Add(new Label()
+            {
+                Text = "ACTIVATE", Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                ForeColor = BrandColors.Steel, AutoSize = true,
+                Location = new Point(leftMargin, y)
+            });
+            y += 30;
+
+            // Test button
+            testBtn = new RoundButton()
+            {
+                Text = "Test Connection",
+                Location = new Point(fieldX, y),
+                Size = new Size(155, 36),
+                BackColor = BrandColors.Success,
+                ForeColor = BrandColors.White,
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                Cursor = Cursors.Hand
+            };
+            testBtn.Click += async (s, e) => await TestConnection(body);
+            body.Controls.Add(testBtn);
+            y += 44;
+
+            // Status label
+            statusLabel = new Label()
+            {
+                Text = "",
+                Location = new Point(fieldX, y),
+                Font = new Font("Segoe UI", 9),
+                ForeColor = BrandColors.TextMuted,
+                Width = 400, Height = 20,
+                AutoSize = false
+            };
+            body.Controls.Add(statusLabel);
+            y += 36;
+
+            // Save / Cancel
             saveBtn = new RoundButton()
             {
-                Text = "Save && Connect", Location = new Point(320, y), Size = new Size(130, 36),
-                BackColor = BrandColors.Navy, ForeColor = BrandColors.White,
-                Font = new Font("Segoe UI", 10, FontStyle.Bold), Cursor = Cursors.Hand
+                Text = "Save && Connect",
+                Location = new Point(fieldX, y),
+                Size = new Size(140, 38),
+                BackColor = BrandColors.Navy,
+                ForeColor = BrandColors.White,
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                Cursor = Cursors.Hand
             };
             saveBtn.Click += (s, e) =>
             {
@@ -296,35 +410,42 @@ namespace RasDesktopAlert
             };
             cancelBtn = new RoundButton()
             {
-                Text = "Cancel", Location = new Point(460, y), Size = new Size(100, 36),
-                BackColor = Color.FromArgb(100, 116, 139), ForeColor = BrandColors.White,
-                Font = new Font("Segoe UI", 10), Cursor = Cursors.Hand
+                Text = "Cancel",
+                Location = new Point(fieldX + 150, y),
+                Size = new Size(100, 38),
+                BackColor = Color.FromArgb(100, 116, 139),
+                ForeColor = BrandColors.White,
+                Font = new Font("Segoe UI", 10),
+                Cursor = Cursors.Hand
             };
             cancelBtn.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
-            body.Controls.Add(saveBtn); body.Controls.Add(cancelBtn);
+            body.Controls.Add(saveBtn);
+            body.Controls.Add(cancelBtn);
             this.AcceptButton = saveBtn; this.CancelButton = cancelBtn;
-
-            // ── FOOTER ──
-            var footer = new Panel() { Dock = DockStyle.Bottom, Height = 32, BackColor = BrandColors.LightBg };
-            var fLabel = new Label()
-            {
-                Text = "  \u2139\ufe0f  Get API key from Dashboard \u2192 Admin \u2192 API Keys",
-                Font = new Font("Segoe UI", 8, FontStyle.Italic), ForeColor = BrandColors.TextMuted,
-                Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft
-            };
-            footer.Controls.Add(fLabel);
-
-            this.Controls.Add(header);
-            this.Controls.Add(body);
-            this.Controls.Add(footer);
         }
 
-        private async Task TestConnection()
+        private void RepositionBody(Panel body)
+        {
+            var width = body.ClientSize.Width;
+            int fieldX = 138; // leftMargin(36) + labelW(90) + gap(12)
+            int fieldWidth = width - fieldX - 36; // right margin
+
+            // Update text box widths
+            if (apiUrlBox != null && apiUrlBox.Width != fieldWidth)
+            {
+                apiUrlBox.Width = Math.Max(fieldWidth, 200);
+                apiKeyBox.Width = Math.Max(fieldWidth, 200);
+                statusLabel.Width = Math.Min(fieldWidth, 400);
+            }
+        }
+
+        private async Task TestConnection(Panel body)
         {
             if (testing) return;
             testing = true; testBtn.Enabled = false;
             statusLabel.ForeColor = BrandColors.TextMuted;
             statusLabel.Text = "Testing...";
+            statusLabel.Height = 40;
 
             try
             {
@@ -350,7 +471,8 @@ namespace RasDesktopAlert
         }
         private static Image LoadLogoImage()
         {
-            try { using var s = Assembly.GetExecutingAssembly().GetManifestResourceStream("RasDesktopAlert.logo.png"); if (s != null) return Image.FromStream(s); } catch { return null; }
+            try { using var s = Assembly.GetExecutingAssembly().GetManifestResourceStream("RasDesktopAlert.logo.png"); if (s != null) return Image.FromStream(s); } catch { }
+            return null;
         }
     }
 
@@ -369,22 +491,24 @@ namespace RasDesktopAlert
             this.WindowState = FormWindowState.Maximized;
             this.TopMost = true;
             this.ShowInTaskbar = true;
-            this.ControlBox = false;
+            this.ControlBox = true;
             this.BackColor = Color.Black;
 
+            int screenH = Screen.PrimaryScreen.Bounds.Height;
+
             // Branded header
-            brandedHeader = new Panel() { Height = 52, Dock = DockStyle.Top, BackColor = BrandColors.Navy, Visible = false };
+            brandedHeader = new Panel() { Height = (int)(screenH * 0.05), Dock = DockStyle.Top, BackColor = BrandColors.Navy, Visible = false };
             var headerLogo = new PictureBox()
             {
                 Image = LoadLogoImage(), SizeMode = PictureBoxSizeMode.Zoom,
-                Width = 160, Height = 36, BackColor = Color.Transparent,
-                Location = new Point(12, 8)
+                Width = (int)(screenH * 0.15), Height = (int)(screenH * 0.034), BackColor = Color.Transparent,
+                Location = new Point((int)(screenH * 0.01), (int)(screenH * 0.008))
             };
             var brandLabel = new Label()
             {
                 Text = "  Five Stones Technology  \u2014  Response Activation System",
-                Font = new Font("Segoe UI", 13, FontStyle.Bold), ForeColor = BrandColors.Gold,
-                Location = new Point(180, 12), AutoSize = true, BackColor = Color.Transparent
+                Font = new Font("Segoe UI", (float)(screenH * 0.012), FontStyle.Bold), ForeColor = BrandColors.Gold,
+                Location = new Point((int)(screenH * 0.17), (int)(screenH * 0.012)), AutoSize = true, BackColor = Color.Transparent
             };
             brandedHeader.Controls.Add(headerLogo);
             brandedHeader.Controls.Add(brandLabel);
@@ -392,9 +516,9 @@ namespace RasDesktopAlert
             // Alert type text
             alertLabel = new Label()
             {
-                AutoSize = false, Dock = DockStyle.Top, Height = 160,
+                AutoSize = false, Dock = DockStyle.Top, Height = (int)(screenH * 0.18),
                 TextAlign = ContentAlignment.MiddleCenter,
-                Font = new Font("Arial Black", 64, FontStyle.Bold),
+                Font = new Font("Arial Black", (float)(screenH * 0.06), FontStyle.Bold),
                 ForeColor = Color.White, BackColor = Color.Transparent, Visible = false
             };
 
@@ -402,29 +526,28 @@ namespace RasDesktopAlert
             messageLabel = new Label()
             {
                 AutoSize = false, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter,
-                Font = new Font("Segoe UI", 30, FontStyle.Regular), ForeColor = Color.White,
+                Font = new Font("Segoe UI", (float)(screenH * 0.028), FontStyle.Regular), ForeColor = Color.White,
                 BackColor = Color.Transparent, Padding = new Padding(50, 0, 50, 40), Visible = false
             };
 
-            // Dismiss button — ADDED TO BOTTOM PANEL (was never parented before!)
+            // Dismiss button
             dismissButton = new RoundButton()
             {
                 Text = "ACKNOWLEDGE && DISMISS",
-                Size = new Size(400, 72),
+                Size = new Size((int)(screenH * 0.35), (int)(screenH * 0.065)),
                 BackColor = Color.FromArgb(230, Color.White),
                 ForeColor = Color.FromArgb(30, 30, 30),
-                Font = new Font("Segoe UI", 18, FontStyle.Bold),
-                Visible = false, Cursor = Cursors.Hand
+                Font = new Font("Segoe UI", (float)(screenH * 0.018), FontStyle.Bold),
+                Visible = false, Cursor = Cursors.Hand, Anchor = AnchorStyles.None
             };
             dismissButton.Click += (s, e) => Dismiss();
 
-            var bottomPanel = new Panel() { Dock = DockStyle.Bottom, Height = 120, BackColor = Color.Transparent };
-            dismissButton.Parent = bottomPanel; // FIXED: properly parent the button
+            var bottomPanel = new Panel() { Dock = DockStyle.Bottom, Height = (int)(screenH * 0.11), BackColor = Color.Transparent };
             bottomPanel.Controls.Add(dismissButton);
 
-            this.Controls.Add(messageLabel);
-            this.Controls.Add(alertLabel);
             this.Controls.Add(brandedHeader);
+            this.Controls.Add(alertLabel);
+            this.Controls.Add(messageLabel);
             this.Controls.Add(bottomPanel);
 
             flashTimer = new System.Windows.Forms.Timer { Interval = 600 };
@@ -437,7 +560,6 @@ namespace RasDesktopAlert
             };
 
             this.Resize += (s, e) => CenterDismiss();
-            // Initial center
             this.Load += (s, e) => CenterDismiss();
         }
 
@@ -463,13 +585,10 @@ namespace RasDesktopAlert
 
             brandedHeader.Visible = true;
             brandedHeader.BringToFront();
-
             alertLabel.Text = $"{icon}  {alertType}";
             alertLabel.Visible = true;
-
             messageLabel.Text = message;
             messageLabel.Visible = true;
-
             dismissButton.Visible = true;
             dismissButton.BringToFront();
 
@@ -477,7 +596,6 @@ namespace RasDesktopAlert
             this.BackColor = c1;
             this.Tag = new Color[] { c1, c2 };
             flashTimer.Start();
-
             AlarmPlayer.PlayAlarm();
 
             if (!this.Visible) this.Show();
@@ -504,7 +622,8 @@ namespace RasDesktopAlert
 
         private static Image LoadLogoImage()
         {
-            try { using var s = Assembly.GetExecutingAssembly().GetManifestResourceStream("RasDesktopAlert.logo.png"); if (s != null) return Image.FromStream(s); } catch { return null; }
+            try { using var s = Assembly.GetExecutingAssembly().GetManifestResourceStream("RasDesktopAlert.logo.png"); if (s != null) return Image.FromStream(s); } catch { }
+            return null;
         }
     }
 
@@ -529,7 +648,7 @@ namespace RasDesktopAlert
         private System.Windows.Forms.Timer pollTimer, updateTimer;
         private AppSettings settings;
         private bool hasActiveAlert = false, settingsShowing = false;
-        private static readonly Version CurrentVersion = new(1, 0, 0, 0);
+        private static readonly Version CurrentVersion = new(1, 1, 0, 0);
         private static readonly string UpdateUrl = "https://staging.fivestonestechnology.com/api/ras/update/version.json";
 
         public TrayApplication()
