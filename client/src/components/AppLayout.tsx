@@ -440,6 +440,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </button>
           <img src={LOGO_URL} alt="Five Stones Technology" className="h-24 w-auto max-w-[320px] object-contain" />
           <div className="ml-auto flex items-center gap-2">
+            <Link href="/ras" className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-500 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20 px-2.5 py-1.5 rounded-md transition-colors border border-red-500/20" onClick={() => setSidebarOpen(false)}>
+              <ShieldAlert className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">RAS</span>
+            </Link>
             <NotificationBell />
           </div>
         </header>
@@ -495,6 +499,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </Button>
               </div>
               <div className="flex items-center gap-2">
+                <Link href="/ras" className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-500 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20 px-2.5 py-1.5 rounded-md border border-red-500/20 transition-colors">
+                  <ShieldAlert className="w-3.5 h-3.5" />
+                  RAS
+                </Link>
                 <NotificationBell />
               </div>
             </div>
