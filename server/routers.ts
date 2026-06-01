@@ -2281,13 +2281,31 @@ const adminUserRouter = router({
         expiresAt,
       });
       const inviteUrl = `${input.origin}/join?inviteToken=${token}`;
+      const appName = process.env.APP_NAME ?? "Safeguard Audit";
+      // Send invite email to the new user
       try {
-        const { notifyOwner } = await import("./_core/notification");
-        await notifyOwner({
-          title: `New user invite: ${input.email} -> ${input.role}`,
-          content: `Invite URL: ${inviteUrl}\nRole: ${input.role}\nExpires: ${expiresAt.toISOString()}`,
+        await sendGhlEmail({
+          toEmail: input.email,
+          toName: input.email.split("@")[0],
+          subject: `You're invited to ${appName}`,
+          html: `
+            <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#fafafa;border-radius:8px;">
+              <div style="background:#111;color:#fff;padding:24px;border-radius:8px 8px 0 0;text-align:center;">
+                <h1 style="margin:0;font-size:20px;">${appName}</h1>
+              </div>
+              <div style="background:#fff;padding:32px 24px;border-radius:0 0 8px 8px;border:1px solid #e0e0e0;border-top:none;">
+                <p style="color:#333;font-size:15px;margin:0 0 16px;">You have been invited to join <strong>${appName}</strong>.</p>
+                <p style="color:#555;font-size:14px;margin:0 0 8px;"><strong>Role:</strong> ${input.role}</p>
+                <p style="color:#555;font-size:14px;margin:0 0 20px;"><strong>Expires:</strong> ${expiresAt.toLocaleDateString()}</p>
+                <a href="${inviteUrl}" style="display:inline-block;background:#111;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-size:15px;font-weight:600;">Accept Invitation</a>
+                <p style="color:#999;font-size:12px;margin:24px 0 0;">If you were not expecting this invitation, you can safely ignore this email.</p>
+              </div>
+            </div>
+          `,
         });
-      } catch {}
+      } catch (emailErr: any) {
+        console.warn("[Invite] Failed to send email to invitee:", emailErr?.message ?? emailErr);
+      }
       return { success: true, inviteUrl, token };
     }),
 

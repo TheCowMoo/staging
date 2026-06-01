@@ -29,6 +29,7 @@ const ALERT_BLOCKS = [
     desc: "Secure in place. Lock doors, silence devices, await All Clear.",
     color: "red",
     bgClass: "bg-red-600 hover:bg-red-700",
+    solidBgClass: "bg-red-600 hover:bg-red-700 active:bg-red-800",
     borderClass: "border-red-500/30",
     ringColor: "focus:ring-red-500",
     icon: Lock,
@@ -39,6 +40,7 @@ const ALERT_BLOCKS = [
     desc: "Secure the perimeter. Lock exterior doors, restrict entry/exit.",
     color: "green",
     bgClass: "bg-green-600 hover:bg-green-700",
+    solidBgClass: "bg-green-700 hover:bg-green-800 active:bg-green-900",
     borderClass: "border-green-500/30",
     ringColor: "focus:ring-green-500",
     icon: ShieldAlert,
@@ -49,6 +51,7 @@ const ALERT_BLOCKS = [
     desc: "Evacuate immediately using the nearest safe exit. Do not use elevators.",
     color: "yellow",
     bgClass: "bg-yellow-500 hover:bg-yellow-600",
+    solidBgClass: "bg-yellow-600 hover:bg-yellow-700 active:bg-yellow-800",
     borderClass: "border-yellow-500/30",
     ringColor: "focus:ring-yellow-500",
     icon: AlertTriangle,
@@ -59,6 +62,7 @@ const ALERT_BLOCKS = [
     desc: "Seek shelter immediately. Stay away from windows. Monitor for updates.",
     color: "blue",
     bgClass: "bg-blue-600 hover:bg-blue-700",
+    solidBgClass: "bg-blue-700 hover:bg-blue-800 active:bg-blue-900",
     borderClass: "border-blue-500/30",
     ringColor: "focus:ring-blue-500",
     icon: AlertTriangle,
@@ -237,22 +241,16 @@ export default function RASActivation() {
             <button
               key={block.type}
               onClick={() => setPending(block.type)}
-              className={`group relative flex flex-col items-center justify-center gap-4 rounded-2xl border-2 ${block.borderClass} bg-card hover:${block.borderClass.replace("/30", "/60")} transition-all p-10 focus:outline-none focus:ring-2 ${block.ringColor} focus:ring-offset-2`}
+              className={`group relative flex flex-col items-center justify-center gap-5 rounded-2xl ${block.solidBgClass} text-white shadow-xl transition-all p-12 sm:p-14 focus:outline-none focus:ring-2 ${block.ringColor} focus:ring-offset-2 min-h-[280px]`}
             >
-              <div className={`rounded-2xl ${block.bgClass} p-6 group-hover:scale-110 transition-transform shadow-lg`}>
-                <Icon className="h-12 w-12 text-white" />
+              <div className={`rounded-2xl bg-black/15 p-5 group-hover:scale-110 transition-transform`}>
+                <Icon className="h-16 w-16 sm:h-20 sm:w-20" />
               </div>
               <div className="text-center">
-                <div className={`text-xl font-black tracking-wider ${
-                  block.color === "red" ? "text-red-600 dark:text-red-400" :
-                  block.color === "green" ? "text-green-600 dark:text-green-400" :
-                  block.color === "yellow" ? "text-yellow-500 dark:text-yellow-400" :
-                  block.color === "blue" ? "text-blue-600 dark:text-blue-400" :
-                  "text-red-600 dark:text-red-400"
-                }`}>
+                <div className="text-2xl sm:text-3xl font-black tracking-wider drop-shadow-sm">
                   {block.title}
                 </div>
-                <p className="text-sm text-muted-foreground mt-2 max-w-[220px]">
+                <p className="text-sm sm:text-base text-white/80 mt-3 max-w-[260px] font-medium">
                   {block.desc}
                 </p>
               </div>

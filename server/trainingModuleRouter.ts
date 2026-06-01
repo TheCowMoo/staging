@@ -27,19 +27,39 @@ export const trainingModuleRouter = router({
           for (const dirName of dirs) {
             const storagePrefix = `${prefix}/${dirName}`;
             const existing = await getTrainingModuleByStoragePrefix(storagePrefix);
-            if (!existing) {
-              // New format: read course_link.txt for the URL and check for course.webp
-              const linkText = await storageGetText(`${storagePrefix}/course_link.txt`);
-              const launchPath = linkText?.trim() || "story.html";
-              const thumbnailUrl = `${storagePrefix}/course.webp`; // Will be verified at display time
-              const playerType = linkText ? "external_link" : "Articulate_Storyline_Web";
+            
+            // Parse course_link.txt for URL and course name
+            // Format:
+            //   Couse_link="https://..."
+            //   Course_name="Active Threat Shooter"
+            const linkText = await storageGetText(`${storagePrefix}/course_link.txt`);
+            let launchPath = "story.html";
+            let courseTitle = dirName;
+            let playerType: "external_link" | "Articulate_Storyline_Web" = "Articulate_Storyline_Web";
 
+            if (linkText) {
+              // Extract URL from Couse_link or Course_link
+              const linkMatch = linkText.match(/(?:Couse|Course)_link\s*=\s*"([^"]+)"/i);
+              if (linkMatch) {
+                launchPath = linkMatch[1];
+                playerType = "external_link";
+              }
+              // Extract course name from Course_name
+              const nameMatch = linkText.match(/Course_name\s*=\s*"([^"]+)"/i);
+              if (nameMatch) {
+                courseTitle = nameMatch[1];
+              }
+            }
+
+            const thumbnailUrl = playerType === "external_link" ? `${storagePrefix}/course.webp` : null;
+
+            if (!existing) {
               await createTrainingModule({
                 orgId: null as any,
                 createdByUserId: ctx.user.id,
-                courseTitle: dirName,
+                courseTitle,
                 launchPath,
-                thumbnailUrl: linkText ? thumbnailUrl : null,
+                thumbnailUrl,
                 playerType: playerType as any,
                 trackingType: "None",
                 storagePrefix,
@@ -47,9 +67,37 @@ export const trainingModuleRouter = router({
                 metaJson: JSON.stringify({
                   autoDiscovered: true,
                   discoveredAt: new Date().toISOString(),
-                  format: linkText ? "external_link" : "storyline",
+                  format: playerType === "external_link" ? "external_link" : "storyline",
                 }),
               });
+            } else {
+              // Fix existing entries that may have been created with the old buggy code
+              // (where course_link.txt raw content was stored as launchPath and courseTitle is wrong)
+              const needsFix = linkText && (
+                existing.courseTitle !== courseTitle ||
+                (playerType === "external_link" && existing.launchPath !== launchPath) ||
+                existing.playerType !== playerType
+              );
+              if (needsFix) {
+                // Delete the stale entry so it gets re-created with correct data below
+                await deleteTrainingModule(existing.id);
+                await createTrainingModule({
+                  orgId: null as any,
+                  createdByUserId: ctx.user.id,
+                  courseTitle,
+                  launchPath,
+                  thumbnailUrl,
+                  playerType: playerType as any,
+                  trackingType: "None",
+                  storagePrefix,
+                  sourceFileName: null,
+                  metaJson: JSON.stringify({
+                    autoDiscovered: true,
+                    discoveredAt: new Date().toISOString(),
+                    format: playerType === "external_link" ? "external_link" : "storyline",
+                  }),
+                });
+              }
             }
           }
         } catch (err: any) {
@@ -98,18 +146,37 @@ export const trainingModuleRouter = router({
               if (existing) {
                 results.push({ dirName, status: "already_exists" });
               } else {
-                // New format: read course_link.txt for the URL
+                // Parse course_link.txt for URL and course name
+                // Format:
+                //   Couse_link="https://..."
+                //   Course_name="Active Threat Shooter"
                 const linkText = await storageGetText(`${storagePrefix}/course_link.txt`);
-                const launchPath = linkText?.trim() || "story.html";
-                const thumbnailUrl = `${storagePrefix}/course.webp`;
-                const playerType = linkText ? "external_link" : "Articulate_Storyline_Web";
+                let launchPath = "story.html";
+                let courseTitle = dirName;
+                let playerType: "external_link" | "Articulate_Storyline_Web" = "Articulate_Storyline_Web";
+                let thumbnailUrl: string | null = null;
+
+                if (linkText) {
+                  // Extract URL from Couse_link or Course_link
+                  const linkMatch = linkText.match(/(?:Couse|Course)_link\s*=\s*"([^"]+)"/i);
+                  if (linkMatch) {
+                    launchPath = linkMatch[1];
+                    playerType = "external_link";
+                    thumbnailUrl = `${storagePrefix}/course.webp`;
+                  }
+                  // Extract course name from Course_name
+                  const nameMatch = linkText.match(/Course_name\s*=\s*"([^"]+)"/i);
+                  if (nameMatch) {
+                    courseTitle = nameMatch[1];
+                  }
+                }
 
                 await createTrainingModule({
                   orgId: null as any,
                   createdByUserId: ctx.user.id,
-                  courseTitle: dirName,
+                  courseTitle,
                   launchPath,
-                  thumbnailUrl: linkText ? thumbnailUrl : null,
+                  thumbnailUrl,
                   playerType: playerType as any,
                   trackingType: "None",
                   storagePrefix,
@@ -117,7 +184,7 @@ export const trainingModuleRouter = router({
                   metaJson: JSON.stringify({
                     autoDiscovered: true,
                     discoveredAt: new Date().toISOString(),
-                    format: linkText ? "external_link" : "storyline",
+                    format: playerType === "external_link" ? "external_link" : "storyline",
                   }),
                 });
                 results.push({ dirName, status: "registered" });
@@ -149,6 +216,11 @@ export const trainingModuleRouter = router({
       // If launchPath is an external URL (http/https), return it directly
       if (mod.launchPath.startsWith("http://") || mod.launchPath.startsWith("https://")) {
         return { url: mod.launchPath };
+      }
+
+      // Also handle bare domain URLs without protocol prefix (e.g. "app.pursuitpathways.com/...")
+      if (mod.launchPath.startsWith("//") || /^[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(mod.launchPath)) {
+        return { url: mod.launchPath.startsWith("//") ? `https:${mod.launchPath}` : `https://${mod.launchPath}` };
       }
 
       // Legacy Storyline modules: generate presigned URL for the story.html file
