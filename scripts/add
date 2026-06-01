@@ -1,0 +1,21 @@
+import { readFileSync, writeFileSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const filePath = join(__dirname, "..", "server", "routers.ts");
+let content = readFileSync(filePath, "utf8");
+
+// CRITICAL: File uses \r\n line endings
+const R = "\r\n";
+const replaceTarget = `.id, adminId2));${R}      return { success: true };${R}    }),${R}});${R}${R}// \u2500\u2500\u2500 Liability Scan Router \u2500\u2500\u2500`;
+
+const newContent = `.id, adminId2));${R}      return { success: true };${R}    }),${R}${R}  // Ultra Admin: invite a new user to the platform${R}  inviteUser: ultraAdminProcedure${R}    .input(z.object({${R}      email: z.string().email(),${R}      role: z.enum(["ultra_admin", "super_admin", "admin", "auditor", "user", "viewer"]).default("user"),${R}      origin: z.string(),${R}    }))${R}    .mutation(async ({ ctx, input }) => {${R}      const { createUserInvite } = await import("./db");${R}      const { nanoid } = await import("nanoid");${R}      const token = nanoid(32);${R}      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);${R}      await createUserInvite({${R}        email: input.email,${R}        role: input.role,${R}        token,${R}        invitedByUserId: ctx.user.id,${R}        expiresAt,${R}      });${R}      const inviteUrl = \`\${input.origin}/join?inviteToken=\${token}\`;${R}      try {${R}        const { notifyOwner } = await import("./_core/notification");${R}        await notifyOwner({${R}          title: \`New user invite: \${input.email} -> \${input.role}\`,${R}          content: \`Invite URL: \${inviteUrl}\\\\nRole: \${input.role}\\\\nExpires: \${expiresAt.toISOString()}\`,${R}        });${R}      } catch {}${R}      return { success: true, inviteUrl, token };${R}    }),${R}${R}  // Ultra Admin: list pending user invites${R}  listInvites: ultraAdminProcedure.query(async () => {${R}    const { listPendingUserInvites } = await import("./db");${R}    return listPendingUserInvites();${R}  }),${R}${R}  // Ultra Admin: cancel a pending invite${R}  cancelInvite: ultraAdminProcedure${R}    .input(z.object({ id: z.number() }))${R}    .mutation(async ({ input }) => {${R}      const { deleteUserInvite } = await import("./db");${R}      await deleteUserInvite(input.id);${R}      return { success: true };${R}    }),${R}});${R}${R}// \u2500\u2500\u2500 Liability Scan Router \u2500\u2500\u2500`;
+
+if (content.includes(replaceTarget)) {
+  content = content.replace(replaceTarget, newContent);
+  writeFileSync(filePath, content, "utf8");
+  console.log("SUCCESS! File updated.");
+} else {
+  console.log("FAILED. Context:", JSON.stringify(content.substring(content.indexOf("Liability Scan Router") - 80, content.indexOf("Liability Scan Router") + 10)));
+}

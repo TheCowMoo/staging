@@ -105,6 +105,23 @@ export const orgInvites = mysqlTable("org_invites", {
 export type OrgInvite = typeof orgInvites.$inferSelect;
 export type InsertOrgInvite = typeof orgInvites.$inferInsert;
 
+// ─── Platform User Invites ───────────────────────────────────────────────────
+// Platform-level invitations sent by ultra_admins to invite new users to the platform.
+// When the recipient signs up with the token, their role is pre-assigned.
+export const userInvites = mysqlTable("user_invites", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 320 }).notNull(),
+  // The platform role to assign upon signup
+  role: mysqlEnum("inviteRole", ["ultra_admin", "super_admin", "admin", "auditor", "user", "viewer"]).default("user").notNull(),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  invitedByUserId: int("invitedByUserId").notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  usedAt: timestamp("usedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type UserInvite = typeof userInvites.$inferSelect;
+export type InsertUserInvite = typeof userInvites.$inferInsert;
+
 // ─── Users ────────────────────────────────────────────────────────────────────
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
@@ -200,7 +217,7 @@ export const facilities = mysqlTable("facilities", {
 export type Facility = typeof facilities.$inferSelect;
 export type InsertFacility = typeof facilities.$inferInsert;
 
-// ─── Audits ───────────────────────────────────────────────────────────────────
+// ─── Audits ──────────────────────────────────────────────────────────────────
 export const audits = mysqlTable("audits", {
   id: int("id").autoincrement().primaryKey(),
   orgId: int("orgId"),          // null = legacy
@@ -998,110 +1015,3 @@ export const btamManagementPlan = mysqlTable("btam_management_plan", {
 });
 export type BtamManagementPlan = typeof btamManagementPlan.$inferSelect;
 export type InsertBtamManagementPlan = typeof btamManagementPlan.$inferInsert;
-
-export const btamCaseNotes = mysqlTable("btam_case_notes", {
-  id: int("id").autoincrement().primaryKey(),
-  caseId: int("caseId").notNull(),
-  authorId: int("authorId").notNull(),
-  noteType: mysqlEnum("noteType", ["observation", "interview", "external_report", "law_enforcement", "legal", "hr", "general"]).notNull(),
-  // AES-256-GCM encrypted note content
-  content: text("content").notNull(),
-  isPrivileged: boolean("isPrivileged").default(false).notNull(),
-  // JSON array of {fileKey, url, filename, mimeType}
-  attachments: json("attachments"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
-export type BtamCaseNote = typeof btamCaseNotes.$inferSelect;
-export type InsertBtamCaseNote = typeof btamCaseNotes.$inferInsert;
-
-export const btamStatusHistory = mysqlTable("btam_status_history", {
-  id: int("id").autoincrement().primaryKey(),
-  caseId: int("caseId").notNull(),
-  changedBy: int("changedBy").notNull(),
-  changedAt: timestamp("changedAt").defaultNow().notNull(),
-  previousStatus: varchar("previousStatus", { length: 64 }),
-  newStatus: varchar("newStatus", { length: 64 }),
-  previousConcernLevel: varchar("previousConcernLevel", { length: 32 }),
-  newConcernLevel: varchar("newConcernLevel", { length: 32 }),
-  reason: text("reason"),
-});
-export type BtamStatusHistory = typeof btamStatusHistory.$inferSelect;
-export type InsertBtamStatusHistory = typeof btamStatusHistory.$inferInsert;
-
-// ─── Incident Communications ────────────────────────────────────────────────────
-export const incidentCommunications = mysqlTable("incident_communications", {
-  id: int("id").autoincrement().primaryKey(),
-  incidentId: int("incident_id").notNull(),
-  senderRole: mysqlEnum("sender_role", ["admin", "reporter"]).notNull(),
-  senderName: varchar("sender_name", { length: 255 }),
-  message: text("message").notNull(),
-  isFromAdmin: boolean("is_from_admin").default(true).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-export type IncidentCommunication = typeof incidentCommunications.$inferSelect;
-export type InsertIncidentCommunication = typeof incidentCommunications.$inferInsert;
-
-// ─── Facility Floor Maps ──────────────────────────────────────────────────────
-export const facilityFloorMaps = mysqlTable("facility_floor_maps", {
-  id: int("id").autoincrement().primaryKey(),
-  facilityId: int("facility_id").notNull(),
-  orgId: int("org_id"),
-  name: varchar("name", { length: 255 }).notNull(),
-  floor: varchar("floor", { length: 100 }),
-  imageUrl: text("image_url"),
-  fileKey: text("file_key"),
-  mapData: json("map_data"),
-  annotations: json("annotations"),
-  width: int("width"),
-  height: int("height"),
-  createdByUserId: int("created_by_user_id").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
-});
-export type FacilityFloorMap = typeof facilityFloorMaps.$inferSelect;
-export type InsertFacilityFloorMap = typeof facilityFloorMaps.$inferInsert;
-
-// ─── Micro Drill Assignments ──────────────────────────────────────────────────
-// Tracks individual drill assignments to personnel, completion status,
-// choices made during the drill, and which considerations were checked off.
-export const microDrillAssignments = mysqlTable("micro_drill_assignments", {
-  id: int("id").autoincrement().primaryKey(),
-  orgId: int("org_id"),
-  assignedByUserId: int("assigned_by_user_id").notNull(),
-  assignedToUserId: int("assigned_to_user_id"),
-  assignedToName: varchar("assigned_to_name", { length: 255 }),
-  assignedToEmail: varchar("assigned_to_email", { length: 320 }),
-  drillId: int("drill_id").notNull(),
-  drillCategory: varchar("drill_category", { length: 255 }).notNull(),
-  drillTitle: varchar("drill_title", { length: 255 }).notNull(),
-  assignedDate: timestamp("assigned_date").defaultNow().notNull(),
-  completionDate: timestamp("completion_date"),
-  dueDate: timestamp("due_date"),
-  status: mysqlEnum("status", ["pending", "in_progress", "completed", "expired"]).default("pending").notNull(),
-  step1Choice: varchar("step1_choice", { length: 10 }),
-  step2Choices: json("step2_choices"),
-  considerationsChecked: json("considerations_checked"),
-  completedAt: timestamp("completed_at"),
-  completedByName: varchar("completed_by_name", { length: 255 }),
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
-});
-export type MicroDrillAssignment = typeof microDrillAssignments.$inferSelect;
-export type InsertMicroDrillAssignment = typeof microDrillAssignments.$inferInsert;
-
-// ─── Notifications ──────────────────────────────────────────────────────────────
-export const notifications = mysqlTable("notifications", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("user_id").notNull(),
-  orgId: int("org_id"),
-  type: varchar("type", { length: 64 }).notNull(), // e.g. "new_incident", "incident_message", "staff_checkin", "flagged_visitor", "ras_alert"
-  title: varchar("title", { length: 255 }).notNull(),
-  body: text("body"),
-  link: varchar("link", { length: 512 }), // URL to navigate to when clicked
-  metadata: json("metadata"), // flexible payload
-  read: boolean("read").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-export type Notification = typeof notifications.$inferSelect;
-export type InsertNotification = typeof notifications.$inferInsert;

@@ -16,9 +16,11 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
-  UserCog, ShieldCheck, Eye, Pencil, Crown, Shield, User, Users, Settings, ArrowLeft, Radio,
+  UserCog, ShieldCheck, Eye, Pencil, Crown, Shield, User, Users, Settings, ArrowLeft, Radio, Mail, Plus, X,
 } from "lucide-react";
 import { ROLE_META, type PlatformRole } from "@shared/permissions";
 
@@ -64,6 +66,9 @@ export default function UserManagement() {
 
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [flagsDialogOpen, setFlagsDialogOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<PlatformRole>("user");
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
   // Guard: only platform admins (ultra_admin or admin) can access this page
   if (user && user.role !== "ultra_admin" && user.role !== "admin") {
@@ -79,6 +84,9 @@ export default function UserManagement() {
 
   const { data: allUsers, isLoading } = trpc.adminUser.listAll.useQuery();
   const { data: rasUsers } = trpc.ras.listRasUsers.useQuery();
+  const { data: pendingInvites, isLoading: invitesLoading } = trpc.adminUser.listInvites.useQuery(undefined, {
+    enabled: isUltraAdmin,
+  });
 
   const updateRole = trpc.adminUser.updateRole.useMutation({
     onSuccess: (_, vars) => {
@@ -99,7 +107,7 @@ export default function UserManagement() {
 
   const impersonateUser = trpc.adminUser.impersonateUser.useMutation({
     onSuccess: async (_, vars) => {
-      toast.success(`Now acting as user #${vars.targetUserId}. Redirecting to their dashboard…`);
+      toast.success(`Now acting as user #${vars.targetUserId}. Redirecting to their dashboard\u2026`);
       await utils.auth.me.invalidate();
       // Navigate to dashboard as the impersonated user
       window.location.href = "/";
@@ -109,11 +117,30 @@ export default function UserManagement() {
 
   const stopImpersonation = trpc.adminUser.stopImpersonation.useMutation({
     onSuccess: async () => {
-      toast.success("Impersonation ended. Returning to your account…");
+      toast.success("Impersonation ended. Returning to your account\u2026");
       await utils.auth.me.invalidate();
       window.location.href = "/admin/users";
     },
     onError: (err: any) => toast.error(err?.message || "Failed to stop impersonation"),
+  });
+
+  const inviteUser = trpc.adminUser.inviteUser.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Invite sent! Link: ${data.inviteUrl}`);
+      setInviteDialogOpen(false);
+      setInviteEmail("");
+      setInviteRole("user");
+      utils.adminUser.listInvites.invalidate();
+    },
+    onError: (err: any) => toast.error(err?.message || "Failed to send invite"),
+  });
+
+  const cancelInvite = trpc.adminUser.cancelInvite.useMutation({
+    onSuccess: () => {
+      toast.success("Invite cancelled");
+      utils.adminUser.listInvites.invalidate();
+    },
+    onError: (err: any) => toast.error(err?.message || "Failed to cancel invite"),
   });
 
   function getRoleIcon(role: string) {
@@ -135,6 +162,8 @@ export default function UserManagement() {
       </Badge>
     );
   }
+
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
@@ -170,6 +199,12 @@ export default function UserManagement() {
             disabled={stopImpersonation.isPending}
           >
             Stop Impersonation
+          </Button>
+        )}
+        {isUltraAdmin && (
+          <Button variant="default" size="sm" onClick={() => setInviteDialogOpen(true)}>
+            <Plus size={14} className="mr-1" />
+            Invite User
           </Button>
         )}
       </div>
@@ -219,6 +254,79 @@ export default function UserManagement() {
         </CardContent>
       </Card>
 
+      {/* Invite Users Section - Ultra Admin Only */}
+      {isUltraAdmin && (
+        <Card className="border-purple-200 dark:border-purple-800">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Mail size={18} />
+              Platform Invitations
+            </CardTitle>
+            <CardDescription>
+              Invite new users to the platform. Invited users will receive a link to set up their account with the assigned role. Invites expire after 7 days.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            {invitesLoading ? (
+              <div className="flex items-center justify-center py-8 text-muted-foreground text-sm">
+                Loading invites&hellip;
+              </div>
+            ) : !pendingInvites || pendingInvites.length === 0 ? (
+              <div className="flex items-center justify-center py-8 text-muted-foreground text-sm">
+                No pending invitations.
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Expires</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingInvites.map((invite: any) => (
+                    <TableRow key={invite.id}>
+                      <TableCell>
+                        <div className="font-medium text-sm">{invite.email}</div>
+                      </TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${getRoleColor(invite.role)}`}>
+                          {getRoleIcon(invite.role)}
+                          {ROLE_META[invite.role as PlatformRole]?.label ?? invite.role}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-[10px] h-5 px-1.5 bg-yellow-50 text-yellow-700 border-yellow-300">
+                          Pending
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {invite.expiresAt ? new Date(invite.expiresAt).toLocaleDateString() : "\u2014"}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs h-7 text-red-600 border-red-300 hover:bg-red-50"
+                          onClick={() => cancelInvite.mutate({ id: invite.id })}
+                          disabled={cancelInvite.isPending}
+                        >
+                          <X size={12} className="mr-1" />
+                          Cancel
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Users Table */}
       <Card>
         <CardHeader>
@@ -261,12 +369,12 @@ export default function UserManagement() {
                     <TableRow key={u.id}>
                       <TableCell>
                         <div className="font-medium text-sm flex items-center gap-1.5">
-                          {u.name ?? "—"}
+                          {u.name ?? "\u2014"}
                           {isSelf && (
                             <Badge variant="outline" className="text-[10px] h-4 px-1">You</Badge>
                           )}
                         </div>
-                        <div className="text-xs text-muted-foreground">{u.email ?? "—"}</div>
+                        <div className="text-xs text-muted-foreground">{u.email ?? "\u2014"}</div>
                       </TableCell>
                       <TableCell>
                         <span
@@ -280,7 +388,7 @@ export default function UserManagement() {
                         {u.rasRole ? (
                           getRasRoleBadge(u.rasRole)
                         ) : (
-                          <span className="text-xs text-muted-foreground italic">—</span>
+                          <span className="text-xs text-muted-foreground italic">\u2014</span>
                         )}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
@@ -416,8 +524,8 @@ export default function UserManagement() {
               ) : (rasUsers ?? []).map((u: any) => (
                 <TableRow key={u.id}>
                   <TableCell>
-                    <div className="font-medium text-sm">{u.name ?? "—"}</div>
-                    <div className="text-xs text-muted-foreground">{u.email ?? "—"}</div>
+                    <div className="font-medium text-sm">{u.name ?? "\u2014"}</div>
+                    <div className="text-xs text-muted-foreground">{u.email ?? "\u2014"}</div>
                   </TableCell>
                   <TableCell>
                     {u.rasRole ? (
@@ -470,6 +578,64 @@ export default function UserManagement() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Invite User Dialog */}
+      <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail size={16} />
+              Invite a New User
+            </DialogTitle>
+            <DialogDescription>
+              Send a platform invitation to a new user. They will receive a link to set up their account and will be assigned the selected role.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="inviteEmail">Email address</Label>
+              <Input
+                id="inviteEmail"
+                type="email"
+                placeholder="user@example.com"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="inviteRole">Platform Role</Label>
+              <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as PlatformRole)}>
+                <SelectTrigger id="inviteRole" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PLATFORM_ROLES.map((r) => (
+                    <SelectItem key={r} value={r}>
+                      <span className="flex items-center gap-2">
+                        {getRoleIcon(r)}
+                        {ROLE_META[r].label}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              className="w-full"
+              onClick={() => {
+                if (!inviteEmail.trim()) {
+                  toast.error("Please enter an email address");
+                  return;
+                }
+                inviteUser.mutate({ email: inviteEmail.trim(), role: inviteRole, origin });
+              }}
+              disabled={inviteUser.isPending || !inviteEmail.trim()}
+            >
+              {inviteUser.isPending ? "Sending invite\u2026" : "Send Invitation"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Permission Flags Info Dialog */}
       <Dialog open={flagsDialogOpen} onOpenChange={setFlagsDialogOpen}>

@@ -15,6 +15,7 @@ import {
   organizations, InsertOrganization,
   orgMembers, InsertOrgMember,
   orgInvites, InsertOrgInvite,
+  userInvites, InsertUserInvite,
   personnelLocations, InsertPersonnelLocation,
   auditLogs,
   visitorLogs, InsertVisitorLog,
@@ -1437,4 +1438,41 @@ export async function resetPasswordWithToken(
     })
     .where(eq(users.id, user.id));
   return true;
+}
+
+// ─── Platform User Invites (ultra_admin) ────────────────────────────────────
+
+export async function createUserInvite(data: InsertUserInvite): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(userInvites).values(data);
+}
+
+export async function getUserInviteByToken(token: string): Promise<typeof userInvites.$inferSelect | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(userInvites).where(eq(userInvites.token, token)).limit(1);
+  return result[0];
+}
+
+export async function listPendingUserInvites(): Promise<(typeof userInvites.$inferSelect)[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(userInvites)
+    .where(and(isNull(userInvites.usedAt), gte(userInvites.expiresAt, new Date())))
+    .orderBy(desc(userInvites.createdAt));
+}
+
+export async function markUserInviteUsed(token: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(userInvites).set({ usedAt: new Date() }).where(eq(userInvites.token, token));
+}
+
+export async function deleteUserInvite(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(userInvites).where(eq(userInvites.id, id));
 }
