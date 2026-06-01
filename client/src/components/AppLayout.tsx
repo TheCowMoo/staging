@@ -440,9 +440,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </button>
           <img src={LOGO_URL} alt="Five Stones Technology" className="h-24 w-auto max-w-[320px] object-contain" />
           <div className="ml-auto flex items-center gap-2">
-            <Link href="/ras/activate" className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-500 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20 px-2.5 py-1.5 rounded-md transition-colors border border-red-500/20" onClick={() => setSidebarOpen(false)}>
-              <ShieldAlert className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Response Action System</span>
+            <Link href="/ras/activate" className="inline-flex items-center gap-3 text-lg font-black text-white bg-red-600 hover:bg-red-700 active:bg-red-800 px-7 py-4 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:scale-[1.02] border-2 border-red-400/30" onClick={() => setSidebarOpen(false)}>
+              <ShieldAlert className="w-8 h-8" />
+              <span className="hidden sm:inline">RESPONSE ACTIVATION</span>
             </Link>
             <NotificationBell />
           </div>
@@ -499,9 +499,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </Button>
               </div>
               <div className="flex items-center gap-2">
-                <Link href="/ras/activate" className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-500 hover:text-red-400 bg-red-500/10 hover:bg-red-500/20 px-2.5 py-1.5 rounded-md border border-red-500/20 transition-colors">
-                  <ShieldAlert className="w-3.5 h-3.5" />
-                  Response Action System
+                <Link href="/ras/activate" className="inline-flex items-center gap-3 text-lg font-black text-white bg-red-600 hover:bg-red-700 active:bg-red-800 px-7 py-4 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:scale-[1.02] border-2 border-red-400/30">
+                  <ShieldAlert className="w-8 h-8" />
+                  RESPONSE ACTIVATION
                 </Link>
                 <NotificationBell />
               </div>
