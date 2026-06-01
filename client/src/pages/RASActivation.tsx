@@ -234,23 +234,23 @@ export default function RASActivation() {
       )}
 
       {/* 4 Big Blocks */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {ALERT_BLOCKS.map((block) => {
           const Icon = block.icon;
           return (
             <button
               key={block.type}
               onClick={() => setPending(block.type)}
-              className={`group relative flex flex-col items-center justify-center gap-5 rounded-2xl ${block.solidBgClass} text-white shadow-xl transition-all p-12 sm:p-14 focus:outline-none focus:ring-2 ${block.ringColor} focus:ring-offset-2 min-h-[280px]`}
+              className={`group relative flex flex-col items-center justify-center gap-6 rounded-3xl ${block.solidBgClass} text-white shadow-2xl transition-all p-14 sm:p-20 focus:outline-none focus:ring-2 ${block.ringColor} focus:ring-offset-2 min-h-[340px] sm:min-h-[400px]`}
             >
-              <div className={`rounded-2xl bg-black/15 p-5 group-hover:scale-110 transition-transform`}>
-                <Icon className="h-16 w-16 sm:h-20 sm:w-20" />
+              <div className={`rounded-3xl bg-black/15 p-7 sm:p-10 group-hover:scale-110 transition-transform`}>
+                <Icon className="h-24 w-24 sm:h-32 sm:w-32" />
               </div>
               <div className="text-center">
-                <div className="text-2xl sm:text-3xl font-black tracking-wider drop-shadow-sm">
+                <div className="text-3xl sm:text-5xl font-black tracking-wider drop-shadow-sm">
                   {block.title}
                 </div>
-                <p className="text-sm sm:text-base text-white/80 mt-3 max-w-[260px] font-medium">
+                <p className="text-base sm:text-lg text-white/80 mt-4 max-w-md font-medium">
                   {block.desc}
                 </p>
               </div>
