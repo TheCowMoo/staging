@@ -442,7 +442,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="ml-auto flex items-center gap-2">
             <Link href="/ras/activate" className="inline-flex items-center gap-3 text-lg font-black text-white bg-red-600 hover:bg-red-700 active:bg-red-800 px-7 py-4 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:scale-[1.02] border-2 border-red-400/30" onClick={() => setSidebarOpen(false)}>
               <ShieldAlert className="w-8 h-8" />
-              <span className="hidden sm:inline">RESPONSE ACTIVATION</span>
+              <span className="hidden sm:inline">RESPONSE ACTIVATION SYSTEM</span>
             </Link>
             <NotificationBell />
           </div>
@@ -501,7 +501,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <div className="flex items-center gap-2">
                 <Link href="/ras/activate" className="inline-flex items-center gap-3 text-lg font-black text-white bg-red-600 hover:bg-red-700 active:bg-red-800 px-7 py-4 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:scale-[1.02] border-2 border-red-400/30">
                   <ShieldAlert className="w-8 h-8" />
-                  RESPONSE ACTIVATION
+                  RESPONSE ACTIVATION SYSTEM
                 </Link>
                 <NotificationBell />
               </div>
