@@ -21,7 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Copy, Key, Plus, Shield, Trash2, Check, AlertTriangle, Clock, Building2 } from "lucide-react";
+import { Copy, Key, Plus, Shield, Trash2, Check, AlertTriangle, Clock, Building2, Download } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function ApiKeys() {

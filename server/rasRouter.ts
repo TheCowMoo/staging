@@ -567,7 +567,11 @@ export const rasRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
-      await assertRasRole(db, ctx.user.id, ["admin"]);
+      // Allow if caller is a platform admin (ultra_admin, admin role) OR has RAS admin role
+      const isPlatformAdmin = ["ultra_admin", "admin"].includes(ctx.user.role);
+      if (!isPlatformAdmin) {
+        await assertRasRole(db, ctx.user.id, ["admin"]);
+      }
       // Verify target user exists
       const [target] = (await db.execute(
         `SELECT id, name FROM users WHERE id = ${input.targetUserId} LIMIT 1`

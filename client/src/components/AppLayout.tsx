@@ -27,6 +27,7 @@ interface NavItem {
   icon: React.ReactNode;
   /** "coming-soon" = feature not built yet; "paid" = requires paid plan */
   locked?: "coming-soon" | "paid";
+  beta?: boolean;
 }
 
 interface NavSection {
@@ -186,6 +187,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       >
         {item.icon}
         {item.label}
+        {item.beta && (
+          <span className="text-[8px] font-bold px-1 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 leading-none ml-0.5">
+            BETA
+          </span>
+        )}
         {isActive && <ChevronRight size={14} className="ml-auto text-sidebar-primary" />}
       </Link>
     );
@@ -288,7 +294,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       label: "Training & Drills",
       icon: <GraduationCap size={18} />,
       items: [
-        { href: "/training-modules", label: "Training Modules",                 icon: <BookMarked size={15} />,    locked: isPaid ? undefined : "paid" },
+        { href: "/training-modules", label: "Training",                 icon: <BookMarked size={15} />,    locked: isPaid ? undefined : "paid" },
         { href: "/drills", label: "Drill Planner",                    icon: <ClipboardList size={15} />, locked: isPaid ? undefined : "paid" },
         { href: "/drills/after-action", label: "Drill After-Action",              icon: <TrendingUp size={15} />,    locked: isPaid ? undefined : "paid" },
         { href: "/ras", label: "Drill Response Activation System", icon: <AlertCircle size={15} />,   locked: isPaid ? undefined : "paid" },
@@ -351,7 +357,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <NavLink item={{ href: "/analytics",     label: "Analytics Dashboard", icon: <BarChart3 size={18} /> }} />
             <NavLink item={{ href: "/organizations", label: "Organizations",      icon: <Network size={18} /> }} />
             <NavLink item={{ href: "/admin/users",   label: "User Management",    icon: <UserCog size={18} /> }} />
-            <NavLink item={{ href: "/admin/api-keys", label: "API Keys",          icon: <Key size={18} /> }} />
+            <NavLink item={{ href: "/admin/api-keys", label: "API Keys",          icon: <Key size={18} />, beta: true }} />
           </>
         )}
       </nav>
