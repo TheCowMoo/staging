@@ -19,7 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Lock, ShieldAlert, AlertTriangle, BellOff,
+  Lock, ShieldAlert, AlertTriangle, BellOff, Download,
 } from "lucide-react";
 
 const ALERT_BLOCKS = [
@@ -168,6 +168,10 @@ export default function RASActivation() {
     );
   }
 
+  const { data: installerData, isLoading: installerLoading } = trpc.ras.getInstallerDownload.useQuery(undefined, {
+    enabled: !!user && rasRole === "admin",
+  });
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Header */}
@@ -180,6 +184,42 @@ export default function RASActivation() {
           Select an alert type to immediately notify all personnel. Push notifications will be sent to all registered devices.
         </p>
       </div>
+
+      {/* Download Desktop Alert (admin only) */}
+      {rasRole === "admin" && (
+        <div className="mb-8 p-4 rounded-lg border border-border bg-card">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <Download className="h-4 w-4 text-primary" />
+                RAS Desktop Alert v{installerData?.version ?? "1.1.0"}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Download the desktop alert monitor for your organization.
+                The installer is pre-configured with your org-specific API key.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              disabled={installerLoading || !installerData?.downloadUrl}
+              onClick={() => {
+                if (installerData?.downloadUrl) {
+                  window.open(installerData.downloadUrl, "_blank");
+                } else {
+                  toast.error("Installer not yet available. Run the build script first.");
+                }
+              }}
+            >
+              {installerLoading ? "Checking..." : "Download Installer"}
+            </Button>
+          </div>
+          {installerData?.downloadUrl && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Last built for org {installerData.orgId}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* 4 Big Blocks */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

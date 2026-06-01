@@ -484,7 +484,7 @@ export default function IncidentDashboard() {
               value={tokenInput}
               onChange={(e) => setTokenInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") setTokenSearch(tokenInput.trim()); }}
-              className="max-w-xs bg-white"
+              className="max-w-xs bg-white text-foreground"
             />
             <Button
               size="sm"
@@ -614,7 +614,7 @@ export default function IncidentDashboard() {
                         </Badge>
                       )}
                     </div>
-                    <p className="text-sm text-slate-600 truncate">{report.description}</p>
+                    <p className="text-sm text-foreground truncate">{report.description}</p>
                     <div className="flex items-center gap-3 mt-1 text-xs text-slate-400">
                       {report.facilityName && <span>{report.facilityName}</span>}
                       {report.location && <span>· {report.location}</span>}

@@ -275,7 +275,7 @@ export default function AnalyticsDashboard() {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 px-6">
         {/* Header */}
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div className="flex items-start gap-4">

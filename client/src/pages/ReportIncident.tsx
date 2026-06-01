@@ -200,6 +200,14 @@ export default function ReportIncident() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-start py-8 px-4">
+      {/* Back navigation */}
+      <div className="w-full max-w-2xl mb-4">
+        <Button variant="ghost" size="sm" onClick={() => window.history.length > 1 ? window.history.back() : window.location.href = "/dashboard"} className="gap-1.5 text-muted-foreground hover:text-foreground">
+          <ChevronRight className="w-4 h-4 rotate-180" />
+          Back
+        </Button>
+      </div>
+
       {/* Header */}
       <div className="w-full max-w-2xl mb-6">
         <div className="flex items-center gap-3 mb-2">

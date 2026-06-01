@@ -22,6 +22,7 @@ import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure, paidProcedure, publicProcedure } from "./_core/trpc";
 import { writeAuditLog, buildLogContext } from "./auditLogger";
 import { fanoutAlertPush } from "./push";
+import { storageGet, storagePut } from "./storage";
 import { getDb as getSharedDb } from "./db";
 import {
   alertEvents,
@@ -499,6 +500,47 @@ export const rasRouter = router({
         noPush,
         respondersNoPush,
         usersDetail,
+      };
+    }),
+
+  // ── Get installer download URL for this org ──────────────────────────────
+  getInstallerDownload: paidProcedure
+    .query(async ({ ctx }) => {
+      const db = await getDb();
+      const { orgId } = await assertRasRole(db, ctx.user.id, ["admin"]);
+
+      const version = "1.1.0";
+      const fileName = `FiveStonesRASAlert-Setup-Org${orgId}.exe`;
+      const s3Key = `installers/ras-alert/${orgId}/v${version}/${fileName}`;
+
+      let installerUrl = null;
+
+      // Check if cached in S3
+      try {
+        const result = await storageGet(s3Key);
+        installerUrl = result.url;
+      } catch {
+        // Not cached yet — check if a build is already in progress
+        installerUrl = null;
+      }
+
+      // Store build metadata for polling
+      const buildMetaKey = `installers/ras-alert/${orgId}/v${version}/build-meta.json`;
+      let buildStatus = "ready";
+      try {
+        const meta = await storageGet(buildMetaKey);
+        if (meta) buildStatus = "ready";
+      } catch {
+        buildStatus = installerUrl ? "ready" : "not_found";
+      }
+
+      return {
+        orgId,
+        version,
+        downloadUrl: installerUrl,
+        buildStatus,
+        fileName,
+        buildCommand: `node scripts/build-org-installer.mjs --orgId ${orgId} --version ${version}`,
       };
     }),
 

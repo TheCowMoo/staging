@@ -297,7 +297,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   ];
 
   const Sidebar = ({ mobile = false }: { mobile?: boolean }) => (
-    <aside className={`${mobile ? "flex flex-col h-full" : "hidden lg:flex flex-col h-screen fixed top-0 left-0"} w-64 sidebar-metallic`} style={{ zIndex: 2000 }}>
+    <aside className={`${mobile ? "flex flex-col h-full" : "hidden lg:flex flex-col min-h-screen fixed top-0 left-0 bottom-0"} w-64 sidebar-metallic overflow-y-auto`} style={{ zIndex: 2000 }}>
       {/* Logo area */}
       <div className="flex items-center justify-center px-3 py-3 border-b border-sidebar-border">
         <img src={LOGO_URL} alt="Five Stones Technology" className="h-48 w-full object-contain" />
