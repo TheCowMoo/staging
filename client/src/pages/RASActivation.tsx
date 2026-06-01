@@ -148,6 +148,11 @@ export default function RASActivation() {
 
   const rasRole = (user as Record<string, unknown> | null)?.rasRole as string | null | undefined;
 
+  // Must call hooks before any early return — React 19 rules of hooks
+  const { data: installerData, isLoading: installerLoading } = trpc.ras.getInstallerDownload.useQuery(undefined, {
+    enabled: !!user && rasRole === "admin",
+  });
+
   if (!user || !rasRole) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-12">
@@ -174,10 +179,6 @@ export default function RASActivation() {
       </div>
     );
   }
-
-  const { data: installerData, isLoading: installerLoading } = trpc.ras.getInstallerDownload.useQuery(undefined, {
-    enabled: !!user && rasRole === "admin",
-  });
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
