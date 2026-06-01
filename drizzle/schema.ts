@@ -78,7 +78,9 @@ export const trainingModules = mysqlTable("training_modules", {
   createdByUserId: int("createdByUserId").notNull(),
   courseTitle: varchar("courseTitle", { length: 255 }).notNull(),
   launchPath: text("launchPath").notNull(),
-  playerType: mysqlEnum("playerType", ["Articulate_Storyline_Web"]).default("Articulate_Storyline_Web").notNull(),
+  // S3 key for the course thumbnail image (course.webp). Null for legacy modules.
+  thumbnailUrl: text("thumbnailUrl"),
+  playerType: mysqlEnum("playerType", ["Articulate_Storyline_Web", "external_link"]).default("Articulate_Storyline_Web").notNull(),
   trackingType: mysqlEnum("trackingType", ["None"]).default("None").notNull(),
   storagePrefix: varchar("storagePrefix", { length: 512 }).notNull(),
   sourceFileName: varchar("sourceFileName", { length: 255 }),

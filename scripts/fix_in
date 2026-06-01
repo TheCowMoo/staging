@@ -1,0 +1,54 @@
+import { readFileSync, writeFileSync } from "fs";
+
+const filePath = "server/routers.ts";
+let c = readFileSync(filePath, "utf8");
+
+// Fix 1: broken import closing brace
+c = c.replace('import("./db"}),', 'import("./db"));');
+
+// Fix 2: broken structure - fix the }), that appears before inviteUser
+// Pattern: `}),\n  // Ultra Admin: invite` should be `});\n\n  // Ultra Admin: invite`
+c = c.replace(/}\);\s*\n\s*\)?,?\s*\n\s*\/\/ Ultra Admin: invite/, '});\n\n  // Ultra Admin: invite');
+
+// Fix 3: Remaining )\n  // Ultra Admin: invite after 
+c = c.replace(/\);?\s*\n\s*\)(,?\s*\n\s*\/\/ Ultra Admin: invite)/, '});$1');
+
+// Fix 4: Ensure cancelInvite doesn't end with ); but with }),
+c = c.replace(
+  /deleteUserInvite\(input\.id\);\s*\n\s*return \{ success: true \};\s*\n\s*\}\);(\s*\n\s*\}\);?)/,
+  "deleteUserInvite(input.id);\n      return { success: true };\n    }),$1"
+);
+
+// Fix 5: listPendingUserInvites fix
+c = c.replace(
+  /listPendingUserInvites\(\);\s*\n\s*\}\);(\s*,)?/,
+  "listPendingUserInvites();\n  }),"
+);
+
+// Fix 6: Fix any remaining });
+c = c.replace(/}\);(\s*\);)()/g, "});");
+c = c.replace(/\n\s*\);(\s*\n)/g, "\n});$1");
+
+writeFileSync(filePath, c, "utf8");
+
+// Check if the main symbols exist
+const hasInvite = c.includes("inviteUser:");
+const hasList = c.includes("listInvites:");
+const hasCancel = c.includes("cancelInvite:");
+console.log(`inviteUser: ${hasInvite}, listInvites: ${hasList}, cancelInvite: ${hasCancel}`);
+
+// Validate: compile check the adminUserRouter section
+const start = c.indexOf("const adminUserRouter");
+const end = c.indexOf("const liabilityScanRouter", start);
+if (start > -1 && end > -1) {
+  const section = c.substring(start, end);
+  const openCount = (section.match(/\{/g) || []).length;
+  const closeCount = (section.match(/\}/g) || []).length;
+  console.log(`Braces in adminUserRouter: { = ${openCount}, } = ${closeCount} (should match)`);
+  if (openCount !== closeCount) {
+    console.log("UNMATCHED BRACES - there is a syntax error");
+    console.log("Last 500 chars:", section.substring(section.length - 500));
+  } else {
+    console.log("Syntax looks correct!");
+  }
+}

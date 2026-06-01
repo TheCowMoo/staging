@@ -1,4 +1,4 @@
-import { storageGet, storageListDirectories } from "./storage";
+import { storageGet, storageGetText, storageListDirectories } from "./storage";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure, paidProcedure, orgAdminProcedure } from "./_core/trpc";
@@ -28,16 +28,27 @@ export const trainingModuleRouter = router({
             const storagePrefix = `${prefix}/${dirName}`;
             const existing = await getTrainingModuleByStoragePrefix(storagePrefix);
             if (!existing) {
+              // New format: read course_link.txt for the URL and check for course.webp
+              const linkText = await storageGetText(`${storagePrefix}/course_link.txt`);
+              const launchPath = linkText?.trim() || "story.html";
+              const thumbnailUrl = `${storagePrefix}/course.webp`; // Will be verified at display time
+              const playerType = linkText ? "external_link" : "Articulate_Storyline_Web";
+
               await createTrainingModule({
                 orgId: null as any,
                 createdByUserId: ctx.user.id,
                 courseTitle: dirName,
-                launchPath: "story.html",
-                playerType: "Articulate_Storyline_Web",
+                launchPath,
+                thumbnailUrl: linkText ? thumbnailUrl : null,
+                playerType: playerType as any,
                 trackingType: "None",
                 storagePrefix,
                 sourceFileName: null,
-                metaJson: JSON.stringify({ autoDiscovered: true, discoveredAt: new Date().toISOString() }),
+                metaJson: JSON.stringify({
+                  autoDiscovered: true,
+                  discoveredAt: new Date().toISOString(),
+                  format: linkText ? "external_link" : "storyline",
+                }),
               });
             }
           }
@@ -87,16 +98,27 @@ export const trainingModuleRouter = router({
               if (existing) {
                 results.push({ dirName, status: "already_exists" });
               } else {
+                // New format: read course_link.txt for the URL
+                const linkText = await storageGetText(`${storagePrefix}/course_link.txt`);
+                const launchPath = linkText?.trim() || "story.html";
+                const thumbnailUrl = `${storagePrefix}/course.webp`;
+                const playerType = linkText ? "external_link" : "Articulate_Storyline_Web";
+
                 await createTrainingModule({
                   orgId: null as any,
                   createdByUserId: ctx.user.id,
                   courseTitle: dirName,
-                  launchPath: "story.html",
-                  playerType: "Articulate_Storyline_Web",
+                  launchPath,
+                  thumbnailUrl: linkText ? thumbnailUrl : null,
+                  playerType: playerType as any,
                   trackingType: "None",
                   storagePrefix,
                   sourceFileName: null,
-                  metaJson: JSON.stringify({ autoDiscovered: true, discoveredAt: new Date().toISOString() }),
+                  metaJson: JSON.stringify({
+                    autoDiscovered: true,
+                    discoveredAt: new Date().toISOString(),
+                    format: linkText ? "external_link" : "storyline",
+                  }),
                 });
                 results.push({ dirName, status: "registered" });
               }
@@ -105,14 +127,13 @@ export const trainingModuleRouter = router({
             }
           }
         } catch (err: any) {
-          // Prefix-level error
           results.push({ dirName: prefix, status: "error", error: err?.message ?? String(err) });
         }
       }
       return results;
     }),
 
-  // Generate a presigned S3 URL for launching a training course
+  // Get launch URL — for external links return the URL directly, for legacy Storyline return presigned S3 URL
   getLaunchUrl: paidProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
@@ -124,6 +145,13 @@ export const trainingModuleRouter = router({
           throw new TRPCError({ code: "FORBIDDEN" });
         }
       }
+
+      // If launchPath is an external URL (http/https), return it directly
+      if (mod.launchPath.startsWith("http://") || mod.launchPath.startsWith("https://")) {
+        return { url: mod.launchPath };
+      }
+
+      // Legacy Storyline modules: generate presigned URL for the story.html file
       const s3Key = mod.storagePrefix
         ? `${mod.storagePrefix}/${mod.launchPath}`
         : mod.launchPath;

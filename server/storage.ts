@@ -106,3 +106,23 @@ export async function storageListDirectories(prefix: string): Promise<string[]> 
     .filter(Boolean)
     .map((p) => p.replace(normalizedPrefix, "").replace(/\/+$/, ""));
 }
+
+/**
+ * Read a text file from S3 and return its contents as a string.
+ * Returns null if the file doesn't exist or can't be read.
+ */
+export async function storageGetText(relKey: string): Promise<string | null> {
+  assertStorageConfig();
+  const key = normalizeKey(relKey);
+  const client = getS3Client();
+  try {
+    const result = await client.send(
+      new GetObjectCommand({ Bucket: ENV.s3BucketName, Key: key })
+    );
+    if (!result.Body) return null;
+    return await result.Body.transformToString("utf-8");
+  } catch (err: any) {
+    if (err?.name === "NoSuchKey") return null;
+    throw err;
+  }
+}

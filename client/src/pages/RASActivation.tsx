@@ -37,20 +37,20 @@ const ALERT_BLOCKS = [
     type: "lockout" as const,
     title: "LOCKOUT",
     desc: "Secure the perimeter. Lock exterior doors, restrict entry/exit.",
-    color: "orange",
-    bgClass: "bg-orange-600 hover:bg-orange-700",
-    borderClass: "border-orange-500/30",
-    ringColor: "focus:ring-orange-500",
+    color: "green",
+    bgClass: "bg-green-600 hover:bg-green-700",
+    borderClass: "border-green-500/30",
+    ringColor: "focus:ring-green-500",
     icon: ShieldAlert,
   },
   {
     type: "fire" as const,
     title: "FIRE — EVACUATE",
     desc: "Evacuate immediately using the nearest safe exit. Do not use elevators.",
-    color: "orange",
-    bgClass: "bg-orange-600 hover:bg-orange-700",
-    borderClass: "border-orange-500/30",
-    ringColor: "focus:ring-orange-500",
+    color: "yellow",
+    bgClass: "bg-yellow-500 hover:bg-yellow-600",
+    borderClass: "border-yellow-500/30",
+    ringColor: "focus:ring-yellow-500",
     icon: AlertTriangle,
   },
   {
@@ -93,13 +93,20 @@ function ActivationConfirmModal({
 
   const t = TITLES[alertType] ?? TITLES.lockdown;
   const isWeather = alertType === "weather";
-  const btnColor = alertType === "lockdown" ? "bg-red-600 hover:bg-red-700" : isWeather ? "bg-blue-600 hover:bg-blue-700" : "bg-orange-600 hover:bg-orange-700";
+  const isFire = alertType === "fire";
+  const isLockout = alertType === "lockout";
+  const btnColor = alertType === "lockdown" ? "bg-red-600 hover:bg-red-700" : isWeather ? "bg-blue-600 hover:bg-blue-700" : isFire ? "bg-yellow-500 hover:bg-yellow-600" : isLockout ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700";
 
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2" style={{ color: isWeather ? "#2563eb" : "#dc2626" }}>
+          <DialogTitle className="flex items-center gap-2" style={{
+            color: alertType === "lockdown" ? "#dc2626" :
+                   alertType === "lockout" ? "#16a34a" :
+                   alertType === "fire" ? "#ca8a04" :
+                   alertType === "weather" ? "#2563eb" : "#dc2626"
+          }}>
             <ShieldAlert className="h-5 w-5" />
             {t.title}
           </DialogTitle>
@@ -107,7 +114,7 @@ function ActivationConfirmModal({
             {t.desc} Push notifications will be sent to all registered devices.
           </DialogDescription>
         </DialogHeader>
-        <div className={`rounded-md px-4 py-3 text-white text-sm font-semibold ${alertType === "lockdown" ? "bg-red-600" : isWeather ? "bg-blue-600" : "bg-orange-600"}`}>
+        <div className={`rounded-md px-4 py-3 text-white text-sm font-semibold ${alertType === "lockdown" ? "bg-red-600" : isWeather ? "bg-blue-600" : isFire ? "bg-yellow-500" : isLockout ? "bg-green-600" : "bg-red-600"}`}>
           {alertType.toUpperCase()} — This action cannot be undone without issuing an All Clear.
         </div>
         <DialogFooter className="gap-2">
@@ -235,7 +242,13 @@ export default function RASActivation() {
                 <Icon className="h-12 w-12 text-white" />
               </div>
               <div className="text-center">
-                <div className={`text-xl font-black tracking-wider ${block.color === "blue" ? "text-blue-600 dark:text-blue-400" : "text-red-600 dark:text-red-400"}`}>
+                <div className={`text-xl font-black tracking-wider ${
+                  block.color === "red" ? "text-red-600 dark:text-red-400" :
+                  block.color === "green" ? "text-green-600 dark:text-green-400" :
+                  block.color === "yellow" ? "text-yellow-500 dark:text-yellow-400" :
+                  block.color === "blue" ? "text-blue-600 dark:text-blue-400" :
+                  "text-red-600 dark:text-red-400"
+                }`}>
                   {block.title}
                 </div>
                 <p className="text-sm text-muted-foreground mt-2 max-w-[220px]">

@@ -1,0 +1,2 @@
+ALTER TABLE \`training_modules\` ADD COLUMN IF NOT EXISTS \`thumbnailUrl\` text;
+ALTER TABLE \`training_modules\` MODIFY COLUMN \`playerType\` enum('Articulate_Storyline_Web','external_link') NOT NULL DEFAULT 'Articulate_Storyline_Web';

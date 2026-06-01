@@ -2261,7 +2261,6 @@ const adminUserRouter = router({
         .where(eq(usersTable.id, adminId2));
       return { success: true };
     }),
-}),
   // Ultra Admin: invite a new user to the platform
   inviteUser: ultraAdminProcedure
     .input(z.object({
@@ -2270,7 +2269,7 @@ const adminUserRouter = router({
       origin: z.string(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const { createUserInvite } = await import("./db"}),
+      const { createUserInvite } = await import("./db");
       const { nanoid } = await import("nanoid");
       const token = nanoid(32);
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -2294,7 +2293,7 @@ const adminUserRouter = router({
 
   // Ultra Admin: list pending user invites
   listInvites: ultraAdminProcedure.query(async () => {
-    const { listPendingUserInvites = await import("./db");
+    const { listPendingUserInvites } = await import("./db");
     return listPendingUserInvites();
   }),
 
@@ -2306,7 +2305,7 @@ const adminUserRouter = router({
       await deleteUserInvite(input.id);
       return { success: true };
     }),
-);
+});
 
 // ─── Liability Scan Router ─
 

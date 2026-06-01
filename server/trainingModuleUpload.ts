@@ -4,7 +4,7 @@ import { Open } from "unzipper";
 import { nanoid } from "nanoid";
 import path from "path";
 import { requireApiKey, ApiKeyAuthenticatedRequest } from "./_core/apiKeyAuth";
-import { storagePut, storagePublicUrl } from "./storage";
+import { storagePut } from "./storage";
 import { createTrainingModule } from "./db";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 200 * 1024 * 1024 } });
@@ -16,58 +16,6 @@ function normalizeArchivePath(entryPath: string): string {
     .replace(/^\/+/, "")
     .replace(/^\.\//, "")
     .trim();
-}
-
-function detectContentType(fileName: string): string {
-  const ext = path.extname(fileName).toLowerCase();
-  switch (ext) {
-    case ".html":
-    case ".htm":
-      return "text/html";
-    case ".css":
-      return "text/css";
-    case ".js":
-      return "application/javascript";
-    case ".json":
-      return "application/json";
-    case ".xml":
-      return "application/xml";
-    case ".svg":
-      return "image/svg+xml";
-    case ".png":
-      return "image/png";
-    case ".jpg":
-    case ".jpeg":
-      return "image/jpeg";
-    case ".gif":
-      return "image/gif";
-    case ".webp":
-      return "image/webp";
-    case ".mp4":
-      return "video/mp4";
-    case ".mp3":
-      return "audio/mpeg";
-    case ".woff":
-      return "font/woff";
-    case ".woff2":
-      return "font/woff2";
-    case ".ttf":
-      return "font/ttf";
-    case ".otf":
-      return "font/otf";
-    default:
-      return "application/octet-stream";
-  }
-}
-
-function extractTitleFromHtml(html: string): string | null {
-  const match = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  return match ? match[1].trim() : null;
-}
-
-function extractTitleFromMetaXml(xml: string): string | null {
-  const match = xml.match(/<name>([\s\S]*?)<\/name>/i);
-  return match ? match[1].trim() : null;
 }
 
 trainingModuleUploadRouter.post(
@@ -89,8 +37,8 @@ trainingModuleUploadRouter.post(
         return res.status(400).json({ error: "No package file uploaded" });
       }
 
-      const archiveName = req.file.originalname || "storyline-package.zip";
-      const moduleTitleOverride = typeof req.body.courseTitle === "string" ? req.body.courseTitle.trim() : undefined;
+      const archiveName = req.file.originalname || "training-package.zip";
+      const courseTitleOverride = typeof req.body.courseTitle === "string" ? req.body.courseTitle.trim() : undefined;
       const orgId = req.body.orgId ? parseInt(req.body.orgId, 10) : undefined;
 
       const zipArchive = await Open.buffer(req.file.buffer);
@@ -101,71 +49,70 @@ trainingModuleUploadRouter.post(
         return res.status(400).json({ error: "Archive contains invalid path segments" });
       }
 
-      const storyEntry = zipArchive.files.find((entry: any) => normalizeArchivePath(entry.path) === "story.html");
-      if (!storyEntry) {
-        return res.status(400).json({ error: "Storyline package must contain a root-level story.html file" });
+      // ✅ NEW FORMAT: Look for course_link.txt and course.webp
+      const linkEntry = zipArchive.files.find(
+        (entry: any) => normalizeArchivePath(entry.path) === "course_link.txt"
+      );
+      const thumbEntry = zipArchive.files.find(
+        (entry: any) => normalizeArchivePath(entry.path) === "course.webp"
+      );
+
+      if (!linkEntry) {
+        return res.status(400).json({
+          error: "Training package must contain a course_link.txt file with the course URL",
+        });
       }
 
-      const contentRootFound = zipArchive.files.some((entry: any) => {
-        const normalized = normalizeArchivePath(entry.path);
-        const segment = normalized.split("/")[0];
-        return ["story_content", "story_html5", "html5"].includes(segment);
-      });
-      if (!contentRootFound) {
-        return res.status(400).json({ error: "Storyline package must include a root content folder such as story_content or story_html5" });
+      const linkContent = (await linkEntry.buffer()).toString("utf-8").trim();
+      if (!linkContent) {
+        return res.status(400).json({ error: "course_link.txt is empty" });
       }
 
-      const storyHtmlBuffer = await storyEntry.buffer();
-      const storyHtml = storyHtmlBuffer.toString("utf-8");
-      const storyTitle = extractTitleFromHtml(storyHtml);
-
-      let packageTitle = storyTitle;
-      if (!packageTitle) {
-        const metaEntry = zipArchive.files.find((entry: any) => /(^|\/)meta\.xml$/i.test(normalizeArchivePath(entry.path)));
-        if (metaEntry) {
-          const metaXml = (await metaEntry.buffer()).toString("utf-8");
-          packageTitle = extractTitleFromMetaXml(metaXml);
-        }
-      }
-
-      if (!packageTitle) {
-        packageTitle = moduleTitleOverride || path.parse(archiveName).name || "Articulate Storyline Course";
-      }
+      // Derive course title from the archive name or override
+      const courseTitle = courseTitleOverride || path.parse(archiveName).name || "Training Course";
 
       const storagePrefix = `training-modules/${orgId || "global"}/${nanoid(10)}`;
-      for (const entry of zipArchive.files) {
-        if (entry.type === "Directory") continue;
-        const relativePath = normalizeArchivePath(entry.path);
-        if (!relativePath) continue;
 
-        const buffer = await entry.buffer();
-        const contentType = detectContentType(relativePath);
-        await storagePut(`${storagePrefix}/${relativePath}`, buffer, contentType);
+      // Upload course_link.txt
+      await storagePut(`${storagePrefix}/course_link.txt`, linkContent, "text/plain");
+
+      // Upload course.webp if present
+      let thumbnailKey: string | null = null;
+      if (thumbEntry) {
+        const thumbBuffer = await thumbEntry.buffer();
+        await storagePut(`${storagePrefix}/course.webp`, thumbBuffer, "image/webp");
+        thumbnailKey = `${storagePrefix}/course.webp`;
       }
 
-      const launchPath = storagePublicUrl(`${storagePrefix}/story.html`);
+      // launchPath stores the URL read from course_link.txt
+      const launchPath = linkContent;
       const moduleId = await createTrainingModule({
-        orgId: orgId || undefined,
+        orgId: orgId || (null as any),
         createdByUserId: user.id,
-        courseTitle: moduleTitleOverride || packageTitle,
+        courseTitle,
         launchPath,
-        playerType: "Articulate_Storyline_Web",
+        thumbnailUrl: thumbnailKey,
+        playerType: "external_link" as any,
         trackingType: "None",
         storagePrefix,
         sourceFileName: archiveName,
-        metaJson: JSON.stringify({ uploadedAt: new Date().toISOString(), rootFolders: Array.from(new Set(normalizedPaths.map((p: string) => p.split("/")[0]))) }),
+        metaJson: JSON.stringify({
+          uploadedAt: new Date().toISOString(),
+          format: "external_link",
+        }),
       });
 
       return res.json({
         success: true,
         moduleId,
-        courseTitle: moduleTitleOverride || packageTitle,
+        courseTitle,
         launchPath,
+        thumbnailUrl: thumbnailKey,
         storagePrefix,
       });
     } catch (error: any) {
       console.error("[TrainingModuleUpload] Error:", error);
-      return res.status(500).json({ error: error?.message || "Failed to ingest Storyline package" });
+      return res.status(500).json({ error: error?.message || "Failed to ingest training package" });
     }
   }
 );
