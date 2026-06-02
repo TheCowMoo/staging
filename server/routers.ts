@@ -4176,7 +4176,8 @@ export const appRouter = router({
         { name: "CREATE api_keys", q: sql`CREATE TABLE IF NOT EXISTS \`api_keys\` (\`id\` int AUTO_INCREMENT NOT NULL, \`userId\` int NOT NULL, \`orgId\` int, \`label\` varchar(255), \`keyHash\` varchar(128) NOT NULL, \`permissions\` json, \`lastUsedAt\` timestamp, \`revokedAt\` timestamp, \`expiresAt\` timestamp, \`createdAt\` timestamp NOT NULL DEFAULT (now()), CONSTRAINT \`api_keys_id\` PRIMARY KEY(\`id\`))` },
       
         { name: "CREATE training_modules", q: sql`CREATE TABLE IF NOT EXISTS \`training_modules\` (\`id\` int AUTO_INCREMENT NOT NULL, \`orgId\` int, \`createdByUserId\` int NOT NULL, \`courseTitle\` varchar(255) NOT NULL, \`launchPath\` text NOT NULL, \`playerType\` enum('Articulate_Storyline_Web') NOT NULL DEFAULT 'Articulate_Storyline_Web', \`trackingType\` enum('None') NOT NULL DEFAULT 'None', \`storagePrefix\` varchar(512) NOT NULL, \`sourceFileName\` varchar(255), \`metaJson\` text, \`createdAt\` timestamp NOT NULL DEFAULT (now()), \`updatedAt\` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP, CONSTRAINT \`training_modules_id\` PRIMARY KEY(\`id\`))` },
-
+        { name: "ADD training_modules.thumbnailUrl", q: sql`ALTER TABLE \`training_modules\` ADD COLUMN IF NOT EXISTS \`thumbnailUrl\` text AFTER \`launchPath\`` },
+        { name: "MODIFY training_modules.playerType external_link", q: sql`ALTER TABLE \`training_modules\` MODIFY COLUMN \`playerType\` enum('Articulate_Storyline_Web','external_link') NOT NULL DEFAULT 'Articulate_Storyline_Web'` },
 ];
       const results: { name: string; ok: boolean; err?: string }[] = [];
       for (const s of stmts) {
