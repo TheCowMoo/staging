@@ -2269,44 +2269,89 @@ const adminUserRouter = router({
       origin: z.string(),
     }))
     .mutation(async ({ ctx, input }) => {
+      const email = input.email.trim().toLowerCase();
+      // Check if user already exists
+      const existingUser = await getUserByEmail(email);
+      if (existingUser) {
+        throw new TRPCError({ code: "CONFLICT", message: "A user with this email already exists." });
+      }
+      // Create the user account with a temporary unusable password
+      const { randomBytes: rb, createHash: ch } = await import("crypto");
+      const openId = rb(16).toString("hex");
+      const tempSalt = rb(16).toString("hex");
+      const tempHash = ch("sha256")
+        .update(tempSalt + rb(32).toString("hex"))
+        .digest("hex");
+      await upsertUser({
+        openId,
+        email,
+        loginMethod: "email",
+        name: email.split("@")[0],
+        passwordHash: tempHash,
+        passwordSalt: tempSalt,
+        role: input.role,
+        lastSignedIn: new Date(),
+      });
+      const newUser = await getUserByEmail(email);
+      if (!newUser) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create user." });
+      // Set a password-reset token (48-hour expiry) used as the set-password link
+      const setPasswordToken = rb(32).toString("hex");
+      const { setPasswordResetToken } = await import("./db");
+      await setPasswordResetToken(email, setPasswordToken);
+      // Also track the invite in user_invites for UI visibility
       const { createUserInvite } = await import("./db");
       const { nanoid } = await import("nanoid");
-      const token = nanoid(32);
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
       await createUserInvite({
-        email: input.email,
+        email,
         role: input.role,
-        token,
-        invitedByUserId: ctx.user.id,
+        token: setPasswordToken,
+        invitedByUserId: ctx.user!.id,
         expiresAt,
       });
-      const inviteUrl = `${input.origin}/join?inviteToken=${token}`;
-      const appName = process.env.APP_NAME ?? "Safeguard Audit";
-      // Send invite email to the new user
+      // Build invite URL matching the SetPassword.tsx route
+      const appUrl = process.env.APP_BASE_URL || input.origin;
+      const inviteUrl = `${appUrl}/set-password?token=${encodeURIComponent(setPasswordToken)}`;
+      const roleLabels: Record<string, string> = {
+        ultra_admin: "Ultra Admin",
+        super_admin: "Super Admin",
+        admin: "Admin",
+        auditor: "Auditor",
+        user: "Staff",
+        viewer: "Viewer",
+      };
+      // Send invite email via GHL
       try {
         await sendGhlEmail({
-          toEmail: input.email,
-          toName: input.email.split("@")[0],
-          subject: `You're invited to ${appName}`,
+          toEmail: email,
+          toName: email.split("@")[0],
+          subject: `You've been invited to FiveStones Workplace Violence Prevention`,
           html: `
-            <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#fafafa;border-radius:8px;">
-              <div style="background:#111;color:#fff;padding:24px;border-radius:8px 8px 0 0;text-align:center;">
-                <h1 style="margin:0;font-size:20px;">${appName}</h1>
+            <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;">
+              <div style="background:#0B1F33;padding:16px 24px;border-radius:8px 8px 0 0;">
+                <h2 style="color:#fff;margin:0;font-size:18px;">FiveStones Workplace Violence Prevention</h2>
               </div>
-              <div style="background:#fff;padding:32px 24px;border-radius:0 0 8px 8px;border:1px solid #e0e0e0;border-top:none;">
-                <p style="color:#333;font-size:15px;margin:0 0 16px;">You have been invited to join <strong>${appName}</strong>.</p>
-                <p style="color:#555;font-size:14px;margin:0 0 8px;"><strong>Role:</strong> ${input.role}</p>
-                <p style="color:#555;font-size:14px;margin:0 0 20px;"><strong>Expires:</strong> ${expiresAt.toLocaleDateString()}</p>
-                <a href="${inviteUrl}" style="display:inline-block;background:#111;color:#fff;padding:12px 28px;border-radius:6px;text-decoration:none;font-size:15px;font-weight:600;">Accept Invitation</a>
-                <p style="color:#999;font-size:12px;margin:24px 0 0;">If you were not expecting this invitation, you can safely ignore this email.</p>
+              <div style="background:#f9fafb;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;padding:24px;">
+                <p style="font-size:15px;color:#111827;margin-top:0;">Hello,</p>
+                <p style="font-size:14px;color:#374151;">
+                  You have been invited to join <strong>FiveStones WPV</strong> with the role of
+                  <strong>${roleLabels[input.role] ?? input.role}</strong>.
+                </p>
+                <p style="font-size:14px;color:#374151;">
+                  Click the button below to set your password and activate your account.
+                </p>
+                <a href="${inviteUrl}" style="display:inline-block;background:#0B1F33;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-size:15px;margin:16px 0;">Set Password & Activate Account</a>
+                <p style="font-size:12px;color:#9ca3af;margin-top:24px;">
+                  This invitation expires in 48 hours. If you did not expect this invitation, you can ignore this email.
+                </p>
               </div>
             </div>
-          `,
+          `.trim(),
         });
       } catch (emailErr: any) {
         console.warn("[Invite] Failed to send email to invitee:", emailErr?.message ?? emailErr);
       }
-      return { success: true, inviteUrl, token };
+      return { inviteUrl };
     }),
 
   // Ultra Admin: list pending user invites

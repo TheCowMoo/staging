@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "c:\\Users\\Nathanael\\Desktop\\FiveStones\\staging-main\\ras-desktop-alert\\RasDesktopAlert.csproj": {}
+    "C:\\Users\\Nathanael\\Desktop\\FiveStones\\staging-main\\ras-desktop-alert\\RasDesktopAlert.csproj": {}
   },
   "projects": {
-    "c:\\Users\\Nathanael\\Desktop\\FiveStones\\staging-main\\ras-desktop-alert\\RasDesktopAlert.csproj": {
+    "C:\\Users\\Nathanael\\Desktop\\FiveStones\\staging-main\\ras-desktop-alert\\RasDesktopAlert.csproj": {
       "version": "1.1.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\Nathanael\\Desktop\\FiveStones\\staging-main\\ras-desktop-alert\\RasDesktopAlert.csproj",
+        "projectUniqueName": "C:\\Users\\Nathanael\\Desktop\\FiveStones\\staging-main\\ras-desktop-alert\\RasDesktopAlert.csproj",
         "projectName": "FiveStonesRASAlert",
-        "projectPath": "c:\\Users\\Nathanael\\Desktop\\FiveStones\\staging-main\\ras-desktop-alert\\RasDesktopAlert.csproj",
+        "projectPath": "C:\\Users\\Nathanael\\Desktop\\FiveStones\\staging-main\\ras-desktop-alert\\RasDesktopAlert.csproj",
         "packagesPath": "C:\\Users\\Nathanael\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\Nathanael\\Desktop\\FiveStones\\staging-main\\ras-desktop-alert\\obj\\",
+        "outputPath": "C:\\Users\\Nathanael\\Desktop\\FiveStones\\staging-main\\ras-desktop-alert\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Nathanael\\AppData\\Roaming\\NuGet\\NuGet.Config"
