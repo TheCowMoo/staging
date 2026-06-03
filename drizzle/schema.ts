@@ -28,6 +28,7 @@ export const organizations = mysqlTable("organizations", {
   planUpdatedAt: timestamp("planUpdatedAt"),
   // External subscription/customer ID from payment provider (e.g. Stripe customer ID)
   externalSubscriptionId: varchar("externalSubscriptionId", { length: 255 }),
+  websiteResourceLinks: text("websiteResourceLinks").default("[]"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

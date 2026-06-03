@@ -708,9 +708,31 @@ const reportRouter = router({
         ? `\nAUDITOR GENERAL NOTES: ${(audit as any).auditorNotes}\n`
         : "";
 
+      // Load org-level website resource links for AI context injection
+      let websiteResourceContext = "";
+      try {
+        const org = facility.orgId ? await getOrganizationById(facility.orgId) : null;
+        if (org) {
+          const rawLinks = (org as any).websiteResourceLinks;
+          if (rawLinks) {
+            let links: string[] = [];
+            if (typeof rawLinks === "string") {
+              try { links = JSON.parse(rawLinks); } catch { links = []; }
+            } else if (Array.isArray(rawLinks)) {
+              links = rawLinks;
+            }
+            if (links.length > 0) {
+              websiteResourceContext = `\nORGANIZATION-SPECIFIC REGULATORY REFERENCES (these URLs have been added by the organization's administrators as relevant context for this facility):\n${links.map((url) => `- ${url}`).join("\n")}\n`;
+            }
+          }
+        }
+      } catch {
+        // Non-blocking — don't fail EAP generation if org lookup errors
+      }
+
       // Build shared facility context string for all LLM calls
       const sharedContext = `FACILITY CONTEXT:
-${facilityContext}${facilityNotesSection}${auditorNotesSection}${eapContactsSection}${unavoidableEAPSection}${attachmentSection}${sectionEapNotesSection}${eapFlaggedSection}${notedResponsesSection}
+${facilityContext}${facilityNotesSection}${auditorNotesSection}${eapContactsSection}${unavoidableEAPSection}${attachmentSection}${sectionEapNotesSection}${eapFlaggedSection}${notedResponsesSection}${websiteResourceContext}
 Facility Size: ${facilitySize} (${occupancy} max occupancy)
 Overall Risk Level: ${audit.overallRiskLevel ?? "Unknown"}
 High-Risk Categories: ${highRiskCategories.length > 0 ? highRiskCategories.join("; ") : "None at elevated level"}
@@ -1546,11 +1568,17 @@ const orgRouter = router({
       name: z.string().min(2).optional(),
       contactEmail: z.string().email().optional().or(z.literal("")),
       logoUrl: z.string().url().optional().or(z.literal("")),
+      websiteResourceLinks: z.array(z.string()).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       if ((!["admin","ultra_admin"].includes(ctx.user.role))) throw new TRPCError({ code: "FORBIDDEN" });
       const { id, ...data } = input;
-      await updateOrganization(id, data);
+      // Serialize websiteResourceLinks to JSON string for storage
+      const updateData: Record<string, unknown> = { ...data };
+      if (updateData.websiteResourceLinks) {
+        updateData.websiteResourceLinks = JSON.stringify(updateData.websiteResourceLinks);
+      }
+      await updateOrganization(id, updateData as any);
       return getOrganizationById(id);
     }),
 

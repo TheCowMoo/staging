@@ -1,11 +1,15 @@
 /**
  * WebsiteResourceLinks
  *
- * Interface component for collecting website resource links used as
- * regulatory reference context for AI-driven EAP generation.
+ * Interface component for collecting organization-level website resource
+ * links used as regulatory reference context for AI-driven EAP generation.
  *
  * Pre-populated with OSHA EAP checklist URLs. Supports dynamic addition
  * of localized or state-specific web resource links.
+ *
+ * Scoped to the organization: links stored here are only used when the AI
+ * generates an EAP for a facility in this org. Ultra admins can see all orgs'
+ * links via the AdminOrgs page.
  */
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,7 +31,6 @@ const DEFAULT_OSHA_LINKS = [
   "https://www.osha.gov/etools/evacuation-plans-procedures/eap/develop-implement",
 ];
 
-// Simple URL validation
 function isValidUrl(str: string): boolean {
   try {
     const url = new URL(str);
@@ -46,7 +49,7 @@ export function WebsiteResourceLinks({
 }: WebsiteResourceLinksProps) {
   const [newUrl, setNewUrl] = useState("");
 
-  // Combine default OSHA links with user-added links, deduplicating
+  // Separate default OSHA links from user-added links (always show defaults if not in user list)
   const defaultLinks = DEFAULT_OSHA_LINKS.filter(
     (defaultLink) => !links.some((l) => l.toLowerCase() === defaultLink.toLowerCase())
   );
@@ -62,14 +65,13 @@ export function WebsiteResourceLinks({
       toast.error("Please enter a valid URL (http:// or https://).");
       return;
     }
-    // Check for duplicates
     if (links.some((l) => l.toLowerCase() === trimmed.toLowerCase())) {
       toast.error("This URL has already been added.");
       return;
     }
     onChange([...links, trimmed]);
     setNewUrl("");
-    toast.success("Website resource link added.");
+    toast.success("Website resource link added. It will be used as AI context for EAP generation.");
   };
 
   const handleRemoveUrl = (urlToRemove: string) => {
@@ -93,9 +95,15 @@ export function WebsiteResourceLinks({
       </CardHeader>
       <CardContent>
         <p className="text-xs text-muted-foreground mb-3">
-          These regulatory reference URLs are injected as structural context into
-          the AI when generating the Emergency Action Plan. Base OSHA references
-          are pre-populated. Add localized or state-specific directives as needed.
+          Add relevant website resource links that the AI should reference when
+          generating Emergency Action Plans for this organization. These URLs are
+          passed as structural reference context to the AI — they help ensure the
+          generated EAP incorporates local, state, or industry-specific directives.
+        </p>
+        <p className="text-xs text-muted-foreground mb-4">
+          <strong>Org-scoped:</strong> Links are only visible to the AI when generating
+          EAPs for this organization. Other organizations cannot access them.
+          {readOnly && " (Platform admins can view all organizations' links.)"}
         </p>
 
         {/* Link list */}
@@ -141,6 +149,9 @@ export function WebsiteResourceLinks({
               </div>
             );
           })}
+          {allLinks.length === 0 && (
+            <p className="text-xs text-muted-foreground italic py-2">No resource links configured.</p>
+          )}
         </div>
 
         {/* Add URL input */}
@@ -165,8 +176,8 @@ export function WebsiteResourceLinks({
         )}
 
         <p className="text-[10px] text-muted-foreground mt-2">
-          URLs added here are passed as reference context to the AI when generating
-          the Emergency Action Plan for this facility.
+          URLs are validated on entry. The AI will reference these when generating
+          the Emergency Action Plan for any facility in this organization.
         </p>
       </CardContent>
     </Card>
