@@ -724,7 +724,7 @@ export const AUDIT_CATEGORIES: AuditCategory[] = [
   {
     id: "interior_layout",
     name: "Interior Layout & Visibility",
-    section: "cpted_physical",
+    section: "eap_development", // Moved from cpted_physical — now feeds EAP generation
     weight: 0.10,
     description: "Interior sightlines, blind spots, staff observation capability, and isolation risks.",
     standardsRef: "CPTED Principles; OSHA 3148",

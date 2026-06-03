@@ -13,6 +13,7 @@ import {
   Lock, Users, Paperclip
 } from "lucide-react";
 import { AttachmentsPanel } from "@/components/AttachmentsPanel";
+import { NewAuditButton } from "@/components/NewAuditButton";
 import {
   AUDIT_CATEGORIES, getQuestionsForFacility, calculateCategoryScore,
   FACILITY_TYPES, REMEDIATION_TIMELINES, CONDITION_TYPES,
@@ -531,7 +532,59 @@ export default function AuditWalkthrough() {
             </div>
           </div>
           <nav className="flex-1 p-2">
+            {/* CPTED Section Header */}
+            {(() => {
+              const firstCptedIdx = categories.findIndex((c) => c.section === "cpted_physical");
+              if (firstCptedIdx < 0) return null;
+              return (
+                <div className="px-3 py-3 mt-1 mb-1 border-b border-border/30">
+                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1">
+                    <Shield size={10} className="text-blue-500" />
+                    Menu A: CPTED
+                  </p>
+                  <p className="text-[9px] text-muted-foreground/70 leading-tight mt-0.5">
+                    Crime Prevention Through Environmental Design
+                  </p>
+                  <p className="text-[8px] text-muted-foreground/50 mt-0.5 italic">
+                    Excluded from EAP generation
+                  </p>
+                </div>
+              );
+            })()}
             {categories.map((cat, idx) => {
+              // Insert EAP section header before first EAP category
+              if (cat.section === "eap_development" && idx > 0) {
+                const prevCat = categories[idx - 1];
+                if (prevCat && prevCat.section !== "eap_development") {
+                  return (
+                    <React.Fragment key={`eap_header_${idx}`}>
+                      <div className="px-3 py-3 mt-2 mb-1 border-t border-border/30">
+                        <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider flex items-center gap-1">
+                          <AlertTriangle size={10} className="text-red-500" />
+                          Menu B: Emergency Action Plan
+                        </p>
+                        <p className="text-[9px] text-muted-foreground/70 leading-tight mt-0.5">
+                          Primary data for EAP generation
+                        </p>
+                        <p className="text-[8px] text-muted-foreground/50 mt-0.5 italic">
+                          Feeds into AI-generated Emergency Action Plan
+                        </p>
+                      </div>
+                      <button
+                        key={cat.id}
+                        onClick={() => handleCategoryChange(idx)}
+                        className={`w-full text-left flex items-center justify-between px-3 py-2.5 rounded-lg mb-0.5 transition-colors ${
+                          idx === activeCategoryIdx && !isEapContactsStep ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-xs font-medium truncate">{cat.name}</span>
+                        </div>
+                      </button>
+                    </React.Fragment>
+                  );
+                }
+              }
               // info-type questions (facility profile) are pre-populated from the facility record
               // and never stored in responses — treat the whole category as complete
               const isInfoCategory = cat.questions.every((q) => q.inputType === "info");
@@ -595,7 +648,7 @@ export default function AuditWalkthrough() {
               </div>
             </button>
           </nav>
-          <div className="p-3 border-t border-border">
+          <div className="p-3 border-t border-border space-y-2">
             <Button
               className="w-full"
               size="sm"
@@ -605,6 +658,9 @@ export default function AuditWalkthrough() {
               <Flag size={13} className="mr-1.5" />
               {completing ? "Completing..." : "Complete Audit"}
             </Button>
+            {facility && (
+              <NewAuditButton facilityId={facility.id} variant="outline" />
+            )}
           </div>
         </div>
 

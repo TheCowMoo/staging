@@ -22,6 +22,7 @@ import { LIKELIHOOD_VALUES, IMPACT_VALUES, PREPAREDNESS_MODIFIERS, PRIORITY_ORDE
 import { generateRecommendedActions, getCategoryToRecommendationMap, getActionPriorityBadgeClass, getActionPriorityLabel, type RecommendedAction } from "../../../shared/actionEngine";
 import { toast } from "sonner";
 import { HeroScoreCard } from "@/components/assessment";
+import { NewAuditButton } from "@/components/NewAuditButton";
 
 const LIKELIHOOD_OPTIONS = Object.keys(LIKELIHOOD_VALUES);
 const IMPACT_OPTIONS = Object.keys(IMPACT_VALUES);
@@ -497,6 +498,7 @@ export default function AuditReport() {
             </Link>
           </Button>
           <div className="flex items-center gap-2">
+            <NewAuditButton facilityId={facility?.id} variant="outline" />
             <Button
               variant="outline"
               size="sm"
