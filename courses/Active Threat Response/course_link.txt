@@ -1,0 +1,2 @@
+Couse_link="https://app.pursuitpathways.com/active_threat_response/story.html"
+Course_name="Active Threat Shooter"
