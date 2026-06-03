@@ -176,6 +176,33 @@ export async function createAudit(data: InsertAudit) {
   return result;
 }
 
+export async function duplicateAuditResponses(sourceAuditId: number, targetAuditId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  const sourceResponses = await getResponsesByAudit(sourceAuditId);
+  for (const r of sourceResponses) {
+    await db.insert(auditResponses).values({
+      auditId: targetAuditId,
+      categoryName: r.categoryName,
+      questionId: r.questionId,
+      questionText: r.questionText,
+      primaryResponse: r.primaryResponse,
+      concernLevel: r.concernLevel,
+      response: r.response,
+      conditionType: r.conditionType,
+      conditionTypes: r.conditionTypes,
+      isUnavoidable: r.isUnavoidable,
+      score: r.score,
+      notes: r.notes,
+      recommendedActionNotes: r.recommendedActionNotes,
+      remediationTimeline: r.remediationTimeline,
+      followUpResponse: r.followUpResponse,
+      photoUrls: r.photoUrls,
+      addToEap: (r as any).addToEap,
+    });
+  }
+}
+
 export async function getAuditsByFacility(facilityId: number) {
   const db = await getDb();
   if (!db) return [];

@@ -6,7 +6,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, auditorProcedure, adminProcedure, ultraAdminProcedure, superAdminProcedure, orgAdminProcedure, paidProcedure, router } from "./_core/trpc";
 import {
   createFacility, getFacilitiesByUser, getFacilityById, updateFacility, deleteFacility,
-  createAudit, getAuditsByFacility, getAuditsByUser, getAuditById, updateAudit,
+  createAudit, getAuditsByFacility, getAuditsByUser, getAuditById, updateAudit, duplicateAuditResponses,
   upsertAuditResponse, getResponsesByAudit,
   createThreatFinding, getThreatFindingsByAudit, deleteThreatFindingsByAudit,
   createAuditPhoto, getPhotosByAudit, deletePhoto,
@@ -370,6 +370,28 @@ const auditRouter = router({
       const audit = await getAuditById(input.auditId);
       return (audit?.sectionEapNotes as Record<string, string> | null) ?? {};
     }),
+  duplicate: paidProcedure
+    .input(z.object({ auditId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const sourceAudit = await getAuditById(input.auditId);
+      if (!sourceAudit) throw new TRPCError({ code: "NOT_FOUND" });
+      const facility = await getFacilityById(sourceAudit.facilityId);
+      if (!facility) throw new TRPCError({ code: "NOT_FOUND" });
+      // Create new in_progress audit for same facility
+      await createAudit({
+        facilityId: sourceAudit.facilityId,
+        auditorId: ctx.user.id,
+        status: "in_progress",
+        auditorNotes: `Duplicated from audit #${input.auditId}`,
+      });
+      const audits = await getAuditsByFacility(sourceAudit.facilityId);
+      const newAudit = audits[0];
+      if (!newAudit) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create new audit" });
+      // Copy all responses from source to new audit
+      await duplicateAuditResponses(input.auditId, newAudit.id);
+      return { id: newAudit.id };
+    }),
+
   reopen: paidProcedure
     .input(z.object({ auditId: z.number() }))
     .mutation(async ({ ctx, input }) => {

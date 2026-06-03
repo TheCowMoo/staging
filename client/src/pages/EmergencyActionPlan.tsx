@@ -14,6 +14,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
+import { NewAuditButton } from "@/components/NewAuditButton";
+import { DuplicateAuditButton } from "@/components/DuplicateAuditButton";
+import { useLocation } from "wouter";
 
 // ── 17-Section EARP Framework ─────────────────────────────────────────────────
 const EARP_SECTIONS = [
@@ -565,12 +568,18 @@ export default function EmergencyActionPlan() {
     <AppLayout>
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <Link href={`/audit/${auditId}/report`}>
-            <Button variant="ghost" size="sm" className="flex items-center gap-1.5 text-xs h-7">
-              <ArrowLeft size={13} /> Back to Report
-            </Button>
-          </Link>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href={`/audit/${auditId}/report`}>
+              <Button variant="ghost" size="sm" className="flex items-center gap-1.5 text-xs h-7">
+                <ArrowLeft size={13} /> Back to Report
+              </Button>
+            </Link>
+          </div>
+          <div className="flex items-center gap-2">
+            <NewAuditButton facilityId={audit?.facilityId ?? 0} variant="outline" />
+            <DuplicateAuditButton auditId={auditId} />
+          </div>
         </div>
 
         <div className="bg-gradient-to-r from-red-900 to-slate-900 rounded-2xl p-6 text-white">
