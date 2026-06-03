@@ -2392,8 +2392,12 @@ const liabilityScanRouter = router({
       answers: z.record(z.string(), z.any()).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
+      // Resolve the user's orgId from their org memberships
+      const memberships = await getOrgMembershipForUser(ctx.user.id);
+      const orgId = memberships.length > 0 ? memberships[0].orgId : null;
       const scanId = await insertLiabilityScan({
         userId: ctx.user.id,
+        orgId,
         score: input.score,
         classification: input.classification,
         riskMapLevel: input.riskMapLevel,
@@ -2424,24 +2428,45 @@ const liabilityScanRouter = router({
     .mutation(async ({ ctx, input }) => {
       const scan = await getLiabilityScanById(input.scanId);
       if (!scan) throw new TRPCError({ code: "NOT_FOUND" });
-      if (scan.userId !== ctx.user.id && (!["admin","ultra_admin"].includes(ctx.user.role))) {
+      // Owner can always update; admins must share same org as the scan owner
+      if (scan.userId === ctx.user.id) {
+        await updateLiabilityScanTierScores(input.scanId, input.scorePercent, input.defensibilityStatus);
+        return { success: true };
+      }
+      if (!["admin","ultra_admin"].includes(ctx.user.role)) {
         throw new TRPCError({ code: "FORBIDDEN" });
+      }
+      // Admin: verify same org membership as the scan owner
+      if (scan.orgId) {
+        const membership = await getOrgMemberRecord(scan.orgId, ctx.user.id);
+        if (!membership) throw new TRPCError({ code: "FORBIDDEN" });
+      } else {
+        // Scan has no org — only the owner or ultra_admin can access it
+        if (ctx.user.role !== "ultra_admin") throw new TRPCError({ code: "FORBIDDEN" });
       }
       await updateLiabilityScanTierScores(input.scanId, input.scorePercent, input.defensibilityStatus);
       return { success: true };
     }),
-  // Get a single scan by ID (must belong to the requesting user or be an admin)
+  // Get a single scan by ID (must belong to the requesting user or share same org)
   get: protectedProcedure
     .input(z.object({ scanId: z.number().int() }))
     .query(async ({ ctx, input }) => {
       const scan = await getLiabilityScanById(input.scanId);
       if (!scan) throw new TRPCError({ code: "NOT_FOUND" });
-      if (scan.userId !== ctx.user.id && (!["admin","ultra_admin"].includes(ctx.user.role))) {
+      // Owner can always view
+      if (scan.userId === ctx.user.id) return scan;
+      if (!["admin","ultra_admin"].includes(ctx.user.role)) {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+      // Admin: verify same org membership as the scan owner
+      if (scan.orgId) {
+        const membership = await getOrgMemberRecord(scan.orgId, ctx.user.id);
+        if (!membership) throw new TRPCError({ code: "FORBIDDEN" });
+      } else if (ctx.user.role !== "ultra_admin") {
         throw new TRPCError({ code: "FORBIDDEN" });
       }
       return scan;
     }),
-
   // List all scans for the current user
   list: protectedProcedure.query(async ({ ctx }) => {
     return getLiabilityScansForUser(ctx.user.id);

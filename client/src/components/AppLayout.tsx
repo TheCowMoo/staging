@@ -92,6 +92,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     reporting: false,
     behavioralThreat: false,
     communication: false,
+    mappingTracking: true,
     trainingDrills: false,
   });
 
@@ -286,6 +287,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       items: [
         { href: "/mass-notification", label: "Mass Notifications",         icon: <Megaphone size={15} />,   locked: isPaid ? undefined : "paid" },
         { href: "/staff-checkin", label: "Staff Check-In",             icon: <Users size={15} />,       locked: isPaid ? undefined : "paid" },
+      ],
+    },
+    {
+      id: "mappingTracking",
+      label: "Mapping & Tracking",
+      icon: <MapPin size={18} />,
+      defaultOpen: true,
+      items: [
+        { href: "/facility-mapping", label: "Facility Mapping",       icon: <MapPin size={15} />,        locked: isPaid ? undefined : "paid" },
         { href: "/personnel-tracking", label: "Personnel Tracking",       icon: <MapPin size={15} />,        locked: isPaid ? undefined : "paid" },
       ],
     },
