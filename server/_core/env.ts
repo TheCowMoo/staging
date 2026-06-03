@@ -22,6 +22,9 @@ export const ENV = {
   s3SecretAccessKey: process.env.S3_SECRET_ACCESS_KEY ?? "",
   s3Endpoint: process.env.S3_ENDPOINT ?? "", // optional: for S3-compatible services
 
+  // Database backup retention (in days)
+  backupRetentionDays: parseInt(process.env.BACKUP_RETENTION_DAYS ?? "14", 10),
+
   // RAS push notifications — VAPID keys
   // vapidPrivateKey is server-only and must NEVER be returned in API responses or logs
   vapidPublicKey: process.env.VAPID_PUBLIC_KEY ?? "",

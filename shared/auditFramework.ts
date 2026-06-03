@@ -273,15 +273,17 @@ export interface AuditCategory {
 export const AUDIT_SECTIONS = [
   {
     id: "cpted_physical",
-    name: "Section 1: CPTED / Physical Security Assessment",
+    name: "CPTED — Crime Prevention Through Environmental Design",
     color: "#3b82f6",
     description: "Evaluation of the physical environment, access controls, surveillance, and structural barriers that prevent or deter threats.",
+    menuLabel: "Menu A: CPTED",
   },
   {
     id: "eap_development",
-    name: "Section 2: Emergency Action Plan Development",
+    name: "Emergency Action Plan Development",
     color: "#ef4444",
     description: "Assessment of emergency response readiness, communication systems, staff training, and documented policies.",
+    menuLabel: "Menu B: Emergency Action Plan",
   },
 ] as const;
 
@@ -724,7 +726,7 @@ export const AUDIT_CATEGORIES: AuditCategory[] = [
   {
     id: "interior_layout",
     name: "Interior Layout & Visibility",
-    section: "cpted_physical",
+    section: "eap_development", // Moved from cpted_physical per May 31 Edits
     weight: 0.10,
     description: "Interior sightlines, blind spots, staff observation capability, and isolation risks.",
     standardsRef: "CPTED Principles; OSHA 3148",

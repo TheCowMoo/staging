@@ -7,6 +7,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { runDatabaseBackup } from "../../scripts/backup-db";
 import { attachmentRouter } from "../attachmentUpload";
 import { flaggedVisitorUploadRouter } from "../flaggedVisitorUpload";
 import { trainingModuleUploadRouter } from "../trainingModuleUpload";
@@ -181,6 +182,34 @@ async function startServer() {
     serveStatic(app);
   }
 
+  // ─── Daily Database Backup to S3 ────────────────────────────────────────────
+  // Runs immediately on startup, then every 24 hours thereafter.
+  // Backups are stored as db-backups/YYYY-MM-DD.sql.gz with 14-day retention.
+  // Safe no-op when DATABASE_URL or S3 credentials are not configured.
+  const BACKUP_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+  // Fire-and-forget on startup — intentional delay to let server init first
+  setTimeout(() => {
+    runDatabaseBackup().then((result) => {
+      if (result.success) {
+        console.log(`[Backup] Initial backup completed: ${result.key}`);
+      } else if (result.error !== "DATABASE_URL not set" && result.error !== "S3 not configured") {
+        console.error(`[Backup] Initial backup failed: ${result.error}`);
+      }
+    });
+  }, 10_000); // 10 seconds after startup
+
+  // Schedule recurring daily backup
+  setInterval(() => {
+    runDatabaseBackup().then((result) => {
+      if (result.success) {
+        console.log(`[Backup] Daily backup completed: ${result.key}`);
+      } else if (result.error !== "DATABASE_URL not set" && result.error !== "S3 not configured") {
+        console.error(`[Backup] Daily backup failed: ${result.error}`);
+      }
+    });
+  }, BACKUP_INTERVAL_MS);
+
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);
 
@@ -194,6 +223,7 @@ async function startServer() {
   server.headersTimeout = 310000;
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
+    console.log(`[Backup] Daily database backups enabled (24h interval, configured via BACKUP_RETENTION_DAYS)`);
   });
 }
 

@@ -160,9 +160,14 @@ export default function AuditWalkthrough() {
     return getQuestionsForFacility(facility.facilityType);
   }, [facility]);
 
-  // Total steps = categories + EAP contacts step
-  const totalSteps = categories.length + 1;
-  const isEapContactsStep = activeCategoryIdx === categories.length;
+  // Total steps = categories + EAP contacts step + admin step
+  const ADMIN_STEP_IDX = categories.length;
+  const EAP_CONTACTS_STEP_IDX = categories.length + 1;
+  const totalSteps = categories.length + 2;
+  const isAdminStep = activeCategoryIdx === ADMIN_STEP_IDX;
+  const isEapContactsStep = activeCategoryIdx === EAP_CONTACTS_STEP_IDX;
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [adminSaving, setAdminSaving] = useState(false);
 
   // Load existing responses — restores ALL decision-tree fields from DB on page load
   useEffect(() => {
@@ -531,7 +536,61 @@ export default function AuditWalkthrough() {
             </div>
           </div>
           <nav className="flex-1 p-2">
+            {/* Menu A: CPTED Section Header */}
+            {(() => {
+              const firstCptedIdx = categories.findIndex((c) => c.section === "cpted_physical");
+              const showCptedHeader = firstCptedIdx >= 0;
+              if (!showCptedHeader) return null;
+              return (
+                <div className="px-3 py-2 mt-1 mb-1">
+                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider flex items-center gap-1">
+                    <Shield size={10} className="text-blue-500" />
+                    Menu A: CPTED
+                  </p>
+                  <p className="text-[9px] text-muted-foreground leading-tight mt-0.5">
+                    Crime Prevention Through Environmental Design
+                  </p>
+                </div>
+              );
+            })()}
             {categories.map((cat, idx) => {
+              // Show Menu B header before first eap_development category
+              if (cat.section === "eap_development" && idx > 0 &&
+                  categories[idx - 1]?.section !== "eap_development") {
+                return (
+                  <React.Fragment key={`menu_b_${idx}`}>
+                    <div className="px-3 py-2 mt-2 mb-1 border-t border-border/40">
+                      <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider flex items-center gap-1">
+                        <AlertTriangle size={10} className="text-red-500" />
+                        Menu B: Emergency Action Plan
+                      </p>
+                      <p className="text-[9px] text-muted-foreground leading-tight mt-0.5">
+                        Primary data for EAP generation
+                      </p>
+                    </div>
+                    <button
+                      key={cat.id}
+                      onClick={() => handleCategoryChange(idx)}
+                      className={`w-full text-left flex items-center justify-between px-3 py-2.5 rounded-lg mb-0.5 transition-colors ${
+                        idx === activeCategoryIdx && !isEapContactsStep && !isAdminStep
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        {isGated ? (
+                          <SkipForward size={13} className="text-slate-400 flex-shrink-0" />
+                        ) : isComplete ? (
+                          <CheckCircle2 size={13} className="text-green-500 flex-shrink-0" />
+                        ) : (
+                          <Circle size={13} className="flex-shrink-0 opacity-40" />
+                        )}
+                        <span className="text-xs font-medium truncate">{cat.name}</span>
+                      </div>
+                    </button>
+                  </React.Fragment>
+                );
+              }
               // info-type questions (facility profile) are pre-populated from the facility record
               // and never stored in responses — treat the whole category as complete
               const isInfoCategory = cat.questions.every((q) => q.inputType === "info");

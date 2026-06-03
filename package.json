@@ -12,7 +12,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "db:push": "drizzle-kit generate && drizzle-kit migrate",
-    "migrate:apply": "node scripts/apply_sql_migrations.js"
+    "migrate:apply": "node scripts/apply_sql_migrations.js",
+    "backup:db": "tsx scripts/backup-db.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",
