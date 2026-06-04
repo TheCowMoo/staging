@@ -570,17 +570,43 @@ export default function AuditWalkthrough() {
                           Feeds into AI-generated Emergency Action Plan
                         </p>
                       </div>
-                      <button
-                        key={cat.id}
-                        onClick={() => handleCategoryChange(idx)}
-                        className={`w-full text-left flex items-center justify-between px-3 py-2.5 rounded-lg mb-0.5 transition-colors ${
-                          idx === activeCategoryIdx && !isEapContactsStep ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-xs font-medium truncate">{cat.name}</span>
-                        </div>
-                      </button>
+                      {(() => {
+                        const isInfoCategory = cat.questions.every((q) => q.inputType === "info");
+                        const scoredQuestions = cat.questions.filter((q) => q.inputType === "scored");
+                        const catAnswered = isInfoCategory
+                          ? cat.questions.length
+                          : scoredQuestions.filter((q) => responses[q.id]?.response).length;
+                        const catTotal = isInfoCategory ? cat.questions.length : scoredQuestions.length;
+                        const isActive = idx === activeCategoryIdx && !isEapContactsStep;
+                        const isComplete = isInfoCategory || catAnswered === catTotal;
+                        const gateRule = CATEGORY_GATE_RULES[cat.id];
+                        const isGated = gateRule ? isGateNegative(responses[gateRule.gateQuestionId]?.response) : false;
+                        return (
+                          <button
+                            key={cat.id}
+                            onClick={() => handleCategoryChange(idx)}
+                            className={`w-full text-left flex items-center justify-between px-3 py-2.5 rounded-lg mb-0.5 transition-colors ${
+                              isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              {isGated ? (
+                                <SkipForward size={13} className="text-slate-400 flex-shrink-0" />
+                              ) : isComplete ? (
+                                <CheckCircle2 size={13} className="text-green-500 flex-shrink-0" />
+                              ) : (
+                                <Circle size={13} className="flex-shrink-0 opacity-40" />
+                              )}
+                              <span className="text-xs font-medium truncate">{cat.name}</span>
+                            </div>
+                            {isGated ? (
+                              <span className="text-[10px] text-slate-400 flex-shrink-0 ml-1">N/A</span>
+                            ) : (
+                              <span className="text-[10px] text-muted-foreground flex-shrink-0 ml-1">{catAnswered}/{catTotal}</span>
+                            )}
+                          </button>
+                        );
+                      })()}
                     </React.Fragment>
                   );
                 }
