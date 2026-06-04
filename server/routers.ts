@@ -1623,6 +1623,27 @@ const orgRouter = router({
       return { id: org.id, name: org.name, slug: org.slug, logoUrl: org.logoUrl };
     }),
 
+  // Get org by ID (accessible to org members)
+  get: paidProcedure.input(z.object({ orgId: z.number() })).query(async ({ ctx, input }) => {
+    const member = await getOrgMemberRecord(input.orgId, ctx.user.id);
+    if (!member && (!["admin", "ultra_admin"].includes(ctx.user.role))) throw new TRPCError({ code: "FORBIDDEN" });
+    return getOrganizationById(input.orgId);
+  }),
+
+  // Update org website resource links (accessible to org super_admin/admin or platform admin)
+  updateResourceLinks: paidProcedure
+    .input(z.object({
+      orgId: z.number(),
+      websiteResourceLinks: z.array(z.string()),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const member = await getOrgMemberRecord(input.orgId, ctx.user.id);
+      const isOrgAdmin = member?.role === "super_admin" || member?.role === "admin";
+      if (!isOrgAdmin && (!["admin", "ultra_admin"].includes(ctx.user.role))) throw new TRPCError({ code: "FORBIDDEN" });
+      await updateOrganization(input.orgId, { websiteResourceLinks: JSON.stringify(input.websiteResourceLinks) } as any);
+      return { success: true };
+    }),
+
   // Get current user's org memberships
   myMemberships: paidProcedure.query(async ({ ctx }) => {
     return getOrgMembershipForUser(ctx.user.id);

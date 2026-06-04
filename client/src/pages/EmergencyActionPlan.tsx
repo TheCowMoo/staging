@@ -10,12 +10,13 @@ import {
   ArrowLeft, Shield, BookOpen, CheckCircle2, ChevronDown, ChevronRight,
   Pencil, Save, X, History, RefreshCw, Plus, Trash2, AlertTriangle,
   FileText, Clock, Users, Phone, MapPin, Lock, Eye, Megaphone,
-  Activity, ClipboardList, BookMarked, Building2, Loader2, Download,
+  Activity, ClipboardList, BookMarked, Building2, Loader2, Download, Globe,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 import { NewAuditButton } from "@/components/NewAuditButton";
 import { DuplicateAuditButton } from "@/components/DuplicateAuditButton";
+import { WebsiteResourceLinks } from "@/components/assessment/WebsiteResourceLinks";
 import { useLocation } from "wouter";
 
 // ── 17-Section EARP Framework ─────────────────────────────────────────────────
@@ -498,6 +499,90 @@ function EarpSection({
   );
 }
 
+// ── Website Resource Links Editor (inline on EAP page) ─────────────────────────
+function ResourceLinksEditor({ auditId }: { auditId: number }) {
+  const [open, setOpen] = useState(false);
+
+  // Get the orgId from the audit's facility
+  const { data: audit } = trpc.audit.get.useQuery({ id: auditId });
+  const facilityId = audit?.facilityId ?? 0;
+  const { data: facility } = trpc.facility.get.useQuery({ id: facilityId }, { enabled: facilityId > 0 });
+  const orgId = (facility as any)?.orgId ?? 0;
+
+  // Fetch org data to get current links
+  const { data: org, refetch: refetchOrg } = trpc.org.get.useQuery(
+    { orgId },
+    { enabled: orgId > 0 }
+  );
+
+  const [links, setLinks] = useState<string[]>([]);
+
+  // Sync links from org data when loaded
+  useEffect(() => {
+    if (org) {
+      const raw = (org as any).websiteResourceLinks;
+      if (raw) {
+        try {
+          const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+          if (Array.isArray(parsed)) setLinks(parsed);
+        } catch {
+          setLinks([]);
+        }
+      } else {
+        setLinks([]);
+      }
+    }
+  }, [org]);
+
+  const saveMutation = trpc.org.updateResourceLinks.useMutation({
+    onSuccess: () => {
+      toast.success("Resource links saved — will be used for next EAP generation.");
+      refetchOrg();
+    },
+    onError: (e) => toast.error("Failed to save: " + e.message),
+  });
+
+  if (orgId <= 0) return null;
+
+  return (
+    <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <button
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+        onClick={() => setOpen(!open)}
+      >
+        <div className="flex items-center gap-2">
+          <Globe size={14} className="text-primary" />
+          <span className="text-sm font-medium">AI Reference Links</span>
+          <span className="text-[10px] text-muted-foreground">
+            ({links.length} resource{links.length !== 1 ? "s" : ""})
+          </span>
+        </div>
+        {open ? <ChevronDown size={14} className="text-muted-foreground" /> : <ChevronRight size={14} className="text-muted-foreground" />}
+      </button>
+      {open && (
+        <div className="px-4 pb-4">
+          <p className="text-xs text-muted-foreground mb-3">
+            These links are provided to the AI when generating EAP content, giving it access
+            to your organization-specific policies, guidelines, and regulatory references.
+          </p>
+          <WebsiteResourceLinks links={links} onChange={setLinks} />
+          {links.length > 0 && (
+            <Button
+              size="sm"
+              className="mt-3"
+              onClick={() => saveMutation.mutate({ orgId, websiteResourceLinks: links })}
+              disabled={saveMutation.isPending}
+            >
+              {saveMutation.isPending ? <Loader2 size={12} className="animate-spin mr-1" /> : <Save size={12} className="mr-1" />}
+              Save Reference Links
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function EmergencyActionPlan() {
     const params = useParams<{ id: string }>();
@@ -715,6 +800,9 @@ export default function EmergencyActionPlan() {
             <p className="text-sm text-blue-800">Generating facility-specific Emergency Action Plan across all 17 sections. This may take 30–60 seconds...</p>
           </div>
         )}
+
+        {/* AI Reference Links (inline on EAP page) */}
+        <ResourceLinksEditor auditId={auditId} />
 
         {/* 17 Sections */}
         <div className="space-y-3">
