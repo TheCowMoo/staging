@@ -257,6 +257,78 @@ export const trainingModuleRouter = router({
       return results;
     }),
 
+  // Diagnose S3 course auto-discovery (ultra_admin only)
+  diagnose: ultraAdminProcedure
+    .query(async () => {
+      const results: {
+        directories: string[];
+        directoryDetails: { name: string; files: string[] }[];
+        dbModules: { id: number; courseTitle: string; storagePrefix: string }[];
+        errors: string[];
+      } = {
+        directories: [],
+        directoryDetails: [],
+        dbModules: [],
+        errors: [],
+      };
+
+      // 1. Check S3 directories
+      const s3Prefixes = process.env.S3_COURSES_PREFIX
+        ? process.env.S3_COURSES_PREFIX.split(",").map(s => s.trim())
+        : ["courses"];
+      for (const prefix of s3Prefixes) {
+        try {
+          console.log(`[TrainingModule-Diagnose] Listing S3: ${prefix}/`);
+          const dirs = await storageListDirectories(prefix);
+          results.directories = dirs;
+          for (const dirName of dirs) {
+            const sp = `${prefix}/${dirName}`;
+            const files: string[] = [];
+            // Check for key files
+            for (const file of ["story.html", "index.html", "course_link.txt", "course_thumbnail.webp", "course.webp"]) {
+              try {
+                const exists = await storageCheckFile(`${sp}/${file}`);
+                if (exists) files.push(file);
+              } catch (e: any) {
+                files.push(`${file}(err:${e.message})`);
+              }
+            }
+            results.directoryDetails.push({ name: dirName, files });
+          }
+        } catch (err: any) {
+          results.errors.push(`S3 list error for "${prefix}/": ${err?.message || String(err)}`);
+        }
+      }
+
+      // 2. Check training_modules in DB
+      const { getDb } = await import("./db");
+      try {
+        const db = await getDb();
+        if (db) {
+          const { trainingModules } = await import("../drizzle/schema");
+          const { desc } = await import("drizzle-orm");
+          const rows = await db.select({
+            id: trainingModules.id,
+            courseTitle: trainingModules.courseTitle,
+            storagePrefix: trainingModules.storagePrefix,
+            playerType: trainingModules.playerType,
+            thumbnailUrl: trainingModules.thumbnailUrl,
+          }).from(trainingModules).orderBy(desc(trainingModules.id)).limit(50);
+          results.dbModules = rows as any;
+        } else {
+          results.errors.push("DB not available");
+        }
+      } catch (err: any) {
+        results.errors.push(`DB query error: ${err?.message || String(err)}`);
+      }
+
+      // 3. Check S3 config
+      if (!process.env.S3_BUCKET_NAME) results.errors.push("S3_BUCKET_NAME not set");
+      if (!process.env.S3_ACCESS_KEY_ID) results.errors.push("S3_ACCESS_KEY_ID not set");
+
+      return results;
+    }),
+
   // Upload a course folder from the server's local filesystem to S3 (ultra_admin only)
   uploadFromLocal: ultraAdminProcedure
     .input(z.object({
