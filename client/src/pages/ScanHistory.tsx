@@ -16,6 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BackNavigation } from "@/components/BackNavigation";
 import { saveScanSession, clearScanSession } from "@/lib/scanSession";
 import { runAssessment } from "../../../shared/assessmentEngine";
 import type { AnswerValue } from "../../../shared/assessmentEngine";
@@ -150,6 +151,9 @@ export default function ScanHistory() {
   // ── Scan list ───────────────────────────────────────────────────────────────
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
+      {/* Back button */}
+      <BackNavigation to="/dashboard" label="Back to Dashboard" className="mb-2" />
+
       {/* Page header */}
       <div className="flex items-center gap-3 mb-6">
         <div

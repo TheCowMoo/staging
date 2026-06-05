@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
-  Building2, ArrowLeft, Plus, ClipboardList,
+  Building2, ArrowLeft, Plus, ClipboardList, Copy,
   MapPin, Clock, CheckCircle2, AlertCircle, Pencil, X, Save, ShieldAlert, HeartPulse
 } from "lucide-react";
 import { getRiskBadgeClass } from "@/lib/riskUtils";
@@ -47,6 +47,14 @@ export default function FacilityDetail() {
     onSuccess: (audit) => {
       toast.success("New audit started");
       navigate(`/audit/${audit?.id}`);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const duplicateFacility = trpc.facility.duplicate.useMutation({
+    onSuccess: (newFacility: any) => {
+      toast.success("Facility duplicated");
+      navigate(`/facilities/${newFacility?.id}`);
     },
     onError: (e) => toast.error(e.message),
   });
@@ -403,6 +411,15 @@ export default function FacilityDetail() {
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <Button variant="outline" size="sm" onClick={startEditing}>
                     <Pencil size={13} className="mr-1.5" /> Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => duplicateFacility.mutate({ id: facilityId })}
+                    disabled={duplicateFacility.isPending}
+                  >
+                    <Copy size={13} className="mr-1.5" />
+                    {duplicateFacility.isPending ? "Duplicating..." : "Duplicate"}
                   </Button>
                   <Button
                     onClick={() => createAudit.mutate({ facilityId })}

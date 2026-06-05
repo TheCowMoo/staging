@@ -5,7 +5,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, auditorProcedure, adminProcedure, ultraAdminProcedure, superAdminProcedure, orgAdminProcedure, paidProcedure, router } from "./_core/trpc";
 import {
-  createFacility, getFacilitiesByUser, getFacilityById, updateFacility, deleteFacility,
+  createFacility, getFacilitiesByUser, getFacilityById, updateFacility, duplicateFacility, deleteFacility,
   createAudit, getAuditsByFacility, getAuditsByUser, getAuditById, updateAudit, duplicateAuditResponses,
   upsertAuditResponse, getResponsesByAudit,
   createThreatFinding, getThreatFindingsByAudit, deleteThreatFindingsByAudit,
@@ -172,6 +172,23 @@ const facilityRouter = router({
       if (facility.userId !== ctx.user.id && (!["admin","ultra_admin"].includes(ctx.user.role))) throw new TRPCError({ code: "FORBIDDEN" });
       await updateFacility(id, data);
       return getFacilityById(id);
+    }),
+
+  duplicate: paidProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const facility = await getFacilityById(input.id);
+      if (!facility) throw new TRPCError({ code: "NOT_FOUND" });
+      if (facility.userId !== ctx.user.id && (!["admin","ultra_admin"].includes(ctx.user.role))) throw new TRPCError({ code: "FORBIDDEN" });
+      const newFacility = await duplicateFacility(input.id, ctx.user.id);
+      await writeAuditLog(buildLogContext({ user: ctx.user, req: ctx.req }), {
+        action: "create",
+        entityType: "facility",
+        entityId: String(newFacility?.id ?? ""),
+        description: `Duplicated facility "${facility.name}" as "${newFacility?.name}"`,
+        metadata: { sourceId: input.id, newName: newFacility?.name },
+      });
+      return newFacility;
     }),
 
   delete: paidProcedure

@@ -92,7 +92,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     reporting: false,
     behavioralThreat: false,
     communication: false,
-    mappingTracking: true, // ⚠️ PERMANENT — do not remove unless user explicitly requests it
+    mappingTracking: false, // ⚠️ PERMANENT — do not remove unless user explicitly requests it
     trainingDrills: false,
   });
 

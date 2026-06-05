@@ -162,6 +162,43 @@ export async function updateFacility(id: number, data: Partial<InsertFacility>) 
   return db.update(facilities).set(data).where(eq(facilities.id, id));
 }
 
+export async function duplicateFacility(id: number, newUserId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  const source = await getFacilityById(id);
+  if (!source) throw new Error("Facility not found");
+  const result = await db.insert(facilities).values({
+    userId: newUserId,
+    orgId: source.orgId,
+    name: `${source.name} (Copy)`,
+    facilityType: source.facilityType,
+    address: source.address,
+    city: source.city,
+    state: source.state,
+    jurisdiction: source.jurisdiction,
+    squareFootage: source.squareFootage,
+    floors: source.floors,
+    maxOccupancy: source.maxOccupancy,
+    operatingHours: source.operatingHours,
+    eveningOperations: source.eveningOperations,
+    multiTenant: source.multiTenant,
+    publicAccessWithoutScreening: source.publicAccessWithoutScreening,
+    publicEntrances: source.publicEntrances,
+    staffEntrances: source.staffEntrances,
+    hasAlleyways: source.hasAlleyways,
+    hasConcealedAreas: source.hasConcealedAreas,
+    usedAfterDark: source.usedAfterDark,
+    multiSite: source.multiSite,
+    emergencyCoordinator: source.emergencyCoordinator,
+    emergencyRoles: source.emergencyRoles,
+    aedOnSite: source.aedOnSite,
+    aedLocations: source.aedLocations,
+    notes: source.notes,
+  });
+  const newId = result.insertId;
+  return getFacilityById(newId);
+}
+
 export async function deleteFacility(id: number) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
