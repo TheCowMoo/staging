@@ -89,16 +89,22 @@ export const trainingModuleRouter = router({
       const memberships = await getOrgMembershipForUser(ctx.user.id);
       const orgId = memberships[0]?.orgId ?? 0;
 
-      // Auto-discover S3 courses on every visit
+      // Auto-discover S3 courses on every visit (each directory has its own try/catch)
       const s3Prefixes = process.env.S3_COURSES_PREFIX 
         ? process.env.S3_COURSES_PREFIX.split(",").map(s => s.trim())
         : ["courses"];
       console.log(`[TrainingModule] S3 auto-discovery start — prefixes: [${s3Prefixes.join(", ")}]`);
       for (const prefix of s3Prefixes) {
+        let dirs: string[] = [];
         try {
-          const dirs = await storageListDirectories(prefix);
+          dirs = await storageListDirectories(prefix);
           console.log(`[TrainingModule] Found ${dirs.length} directories under "${prefix}/": ${dirs.join(", ") || "(none)"}`);
-          for (const dirName of dirs) {
+        } catch (err: any) {
+          console.warn(`[TrainingModule] S3 list failed for prefix "${prefix}":`, err?.message ?? err);
+          continue;
+        }
+        for (const dirName of dirs) {
+          try {
             const storagePrefix = `${prefix}/${dirName}`;
             console.log(`[TrainingModule] Processing: ${storagePrefix}`);
             const existing = await getTrainingModuleByStoragePrefix(storagePrefix);
@@ -156,13 +162,13 @@ export const trainingModuleRouter = router({
                 console.log(`[TrainingModule] Already registered: "${parsed.courseTitle}" at ${storagePrefix}`);
               }
             }
+          } catch (err: any) {
+            console.warn(`[TrainingModule] S3 discovery failed for directory "${dirName}":`, err?.message ?? err);
           }
-        } catch (err: any) {
-          console.warn(`[TrainingModule] S3 auto-discovery failed for prefix "${prefix}":`, err?.message ?? err);
         }
       }
 
-      // Auto-discover local courses from LOCAL_COURSES_PATH
+      // Auto-discover local courses from LOCAL_COURSES_PATH (independent from S3)
       const localCoursesPath = process.env.LOCAL_COURSES_PATH;
       if (localCoursesPath) {
         console.log(`[TrainingModule] Local auto-discovery start — path: ${localCoursesPath}`);
