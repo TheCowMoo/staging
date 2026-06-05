@@ -68,7 +68,12 @@ async function startServer() {
           "ws:",  // WebSocket over plain HTTP
           "https://forge.butterfly-effect.dev",
         ],
-        frameSrc: ["'none'"],
+        frameSrc: [
+          "'self'",
+          "https://*.s3.amazonaws.com",
+          // Allow custom S3-compatible endpoints if configured
+          ...(process.env.S3_ENDPOINT ? [process.env.S3_ENDPOINT.replace(/\/+$/, "")] : []),
+        ],
         objectSrc: ["'none'"],
         // Only upgrade insecure requests when running behind HTTPS
         ...(isHttps ? { upgradeInsecureRequests: [] } : { upgradeInsecureRequests: null }),

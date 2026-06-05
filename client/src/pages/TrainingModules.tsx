@@ -4,13 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   BookOpen, ExternalLink, Trash2, RefreshCw,
-  Globe, FileText, Calendar, Hash, Cloud,
+  Globe, FileText, Calendar, Hash, Cloud, Play,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useLocation } from "wouter";
 
 export default function TrainingModules() {
   const { user } = useAuth();
+  const [, navigate] = useLocation();
 
   const { data: modules, refetch, isLoading } = trpc.trainingModule.list.useQuery(
     undefined,
@@ -22,16 +24,8 @@ export default function TrainingModules() {
     onError: (e) => toast.error(e.message),
   });
 
-  const launchMutation = trpc.trainingModule.getLaunchUrl.useMutation();
-
   const handleLaunch = (mod: any) => {
-    launchMutation.mutate(
-      { id: mod.id },
-      {
-        onSuccess: (data) => window.open(data.url, "_blank", "noopener,noreferrer"),
-        onError: (e) => toast.error(e.message),
-      }
-    );
+    navigate(`/training/${mod.id}`);
   };
 
   const canAdmin = user?.role === "admin" || user?.role === "ultra_admin" || user?.role === "super_admin";
@@ -128,11 +122,10 @@ export default function TrainingModules() {
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <button
                             onClick={() => handleLaunch(mod)}
-                            disabled={launchMutation.isPending}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors"
                           >
-                            <ExternalLink size={12} />
-                            {launchMutation.isPending ? "Loading..." : "Launch"}
+                            <Play size={12} />
+                            Launch
                           </button>
                           {canAdmin && (
                             <Button

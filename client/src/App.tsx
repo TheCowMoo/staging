@@ -49,6 +49,7 @@ import DrillAfterActionIndex from "@/pages/DrillAfterActionIndex";
 import EmergencyAlerts from "@/pages/EmergencyAlerts";
 import StaffCheckin from "@/pages/StaffCheckin";
 import TrainingModules from "@/pages/TrainingModules";
+import TrainingPlayer from "@/pages/TrainingPlayer";
 import BtamDashboard from "@/pages/BtamDashboard";
 import BtamIntake from "@/pages/BtamIntake";
 import BtamCaseDetail from "@/pages/BtamCaseDetail";
@@ -117,6 +118,7 @@ function Router() {
         <Route path="/ras/activate" component={RASActivation} />
         <Route path="/staff-checkin" component={StaffCheckin} />
         <Route path="/training-modules" component={TrainingModules} />
+        <Route path="/training/:id" component={TrainingPlayer} />
         <Route path="/personnel-tracking" component={PersonnelTracking} />
         <Route path="/btam" component={BtamDashboard} />
         <Route path="/btam/new" component={BtamIntake} />
