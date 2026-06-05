@@ -67,6 +67,7 @@ import MicroDrillTracking from "@/pages/MicroDrillTracking";
 import FacilityMapBuilder from "@/pages/FacilityMapBuilder";
 import ExtendedDrillRunner from "@/pages/ExtendedDrillRunner";
 import NotificationsPage from "@/pages/NotificationsPage";
+import ResourceLinks from "@/pages/ResourceLinks";
 
 function Router() {
   return (
@@ -137,6 +138,7 @@ function Router() {
         <Route path="/extended-drills/:drillId" component={ExtendedDrillRunner} />
         <Route path="/micro-drills/tracking" component={MicroDrillTracking} />
         <Route path="/notifications" component={NotificationsPage} />
+        <Route path="/admin/resource-links" component={ResourceLinks} />
         <Route path="/settings" component={Settings} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />

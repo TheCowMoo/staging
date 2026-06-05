@@ -1,4 +1,4 @@
-import { storageGet, storageGetText, storageListDirectories } from "./storage";
+import { storageGet, storageGetText, storageListDirectories, storageCheckFile } from "./storage";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure, paidProcedure, orgAdminProcedure } from "./_core/trpc";
@@ -11,6 +11,64 @@ import {
   deleteTrainingModule,
 } from "./db";
 
+/**
+ * Try to find a thumbnail file for a course in S3.
+ * Checks for course_thumbnail.webp first (uploaded folder thumbnail), 
+ * then falls back to course.webp (new-format upload thumbnail).
+ * Returns null if no thumbnail file is found.
+ */
+async function detectThumbnailUrl(storagePrefix: string): Promise<string | null> {
+  // Check course_thumbnail.webp first (common for manually uploaded Storyline folders)
+  const thumbExists = await storageCheckFile(`${storagePrefix}/course_thumbnail.webp`);
+  if (thumbExists) {
+    console.log(`[TrainingModule] Detected thumbnail: ${storagePrefix}/course_thumbnail.webp`);
+    return `${storagePrefix}/course_thumbnail.webp`;
+  }
+  // Fall back to course.webp (API upload format)
+  const webpExists = await storageCheckFile(`${storagePrefix}/course.webp`);
+  if (webpExists) {
+    console.log(`[TrainingModule] Detected thumbnail: ${storagePrefix}/course.webp`);
+    return `${storagePrefix}/course.webp`;
+  }
+  return null;
+}
+
+/**
+ * Parse course_link.txt content to extract URL and course name.
+ * Format:
+ *   Couse_link="https://..."
+ *   Course_name="Active Threat"
+ * Returns { launchPath, courseTitle, playerType } or null.
+ */
+function parseCourseLink(linkText: string | null, dirName: string): {
+  launchPath: string;
+  courseTitle: string;
+  playerType: "external_link" | "Articulate_Storyline_Web";
+} {
+  if (!linkText) {
+    return {
+      launchPath: "story.html",
+      courseTitle: dirName,
+      playerType: "Articulate_Storyline_Web",
+    };
+  }
+  // Extract URL from Couse_link or Course_link (both typo variants)
+  const linkMatch = linkText.match(/(?:Couse|Course)_link\s*=\s*"([^"]+)"/i);
+  if (linkMatch) {
+    const launchPath = linkMatch[1];
+    // Extract course name from Course_name
+    const nameMatch = linkText.match(/Course_name\s*=\s*"([^"]+)"/i);
+    const courseTitle = nameMatch ? nameMatch[1] : dirName;
+    return { launchPath, courseTitle, playerType: "external_link" };
+  }
+  // Has course_link.txt but no recognized link format — treat as Storyline
+  return {
+    launchPath: "story.html",
+    courseTitle: dirName,
+    playerType: "Articulate_Storyline_Web",
+  };
+}
+
 export const trainingModuleRouter = router({
   list: protectedProcedure
     .query(async ({ ctx }) => {
@@ -21,82 +79,69 @@ export const trainingModuleRouter = router({
       const s3Prefixes = process.env.S3_COURSES_PREFIX 
         ? process.env.S3_COURSES_PREFIX.split(",").map(s => s.trim())
         : ["courses"];
+      console.log(`[TrainingModule] S3 auto-discovery start — prefixes: [${s3Prefixes.join(", ")}]`);
       for (const prefix of s3Prefixes) {
         try {
           const dirs = await storageListDirectories(prefix);
+          console.log(`[TrainingModule] Found ${dirs.length} directories under "${prefix}/": ${dirs.join(", ") || "(none)"}`);
           for (const dirName of dirs) {
             const storagePrefix = `${prefix}/${dirName}`;
+            console.log(`[TrainingModule] Processing: ${storagePrefix}`);
             const existing = await getTrainingModuleByStoragePrefix(storagePrefix);
             
-            // Parse course_link.txt for URL and course name
-            // Format:
-            //   Couse_link="https://..."
-            //   Course_name="Active Threat Shooter"
             const linkText = await storageGetText(`${storagePrefix}/course_link.txt`);
-            let launchPath = "story.html";
-            let courseTitle = dirName;
-            let playerType: "external_link" | "Articulate_Storyline_Web" = "Articulate_Storyline_Web";
-
-            if (linkText) {
-              // Extract URL from Couse_link or Course_link
-              const linkMatch = linkText.match(/(?:Couse|Course)_link\s*=\s*"([^"]+)"/i);
-              if (linkMatch) {
-                launchPath = linkMatch[1];
-                playerType = "external_link";
-              }
-              // Extract course name from Course_name
-              const nameMatch = linkText.match(/Course_name\s*=\s*"([^"]+)"/i);
-              if (nameMatch) {
-                courseTitle = nameMatch[1];
-              }
-            }
-
-            const thumbnailUrl = playerType === "external_link" ? `${storagePrefix}/course.webp` : null;
+            const parsed = parseCourseLink(linkText, dirName);
+            
+            // Detect thumbnail for ALL course types (not just external_link)
+            const thumbnailUrl = await detectThumbnailUrl(storagePrefix);
 
             if (!existing) {
+              console.log(`[TrainingModule] Registering new course: "${parsed.courseTitle}" (type=${parsed.playerType}) at ${storagePrefix}`);
               await createTrainingModule({
                 orgId: null as any,
                 createdByUserId: ctx.user.id,
-                courseTitle,
-                launchPath,
+                courseTitle: parsed.courseTitle,
+                launchPath: parsed.launchPath,
                 thumbnailUrl,
-                playerType: playerType as any,
+                playerType: parsed.playerType as any,
                 trackingType: "None",
                 storagePrefix,
                 sourceFileName: null,
                 metaJson: JSON.stringify({
                   autoDiscovered: true,
                   discoveredAt: new Date().toISOString(),
-                  format: playerType === "external_link" ? "external_link" : "storyline",
+                  format: parsed.playerType === "external_link" ? "external_link" : "storyline",
                 }),
               });
             } else {
-              // Fix existing entries that may have been created with the old buggy code
-              // (where course_link.txt raw content was stored as launchPath and courseTitle is wrong)
-              const needsFix = linkText && (
-                existing.courseTitle !== courseTitle ||
-                (playerType === "external_link" && existing.launchPath !== launchPath) ||
-                existing.playerType !== playerType
+              // Fix existing entries that may have wrong metadata
+              const needsFix = (
+                existing.courseTitle !== parsed.courseTitle ||
+                existing.launchPath !== parsed.launchPath ||
+                existing.playerType !== parsed.playerType ||
+                existing.thumbnailUrl !== thumbnailUrl
               );
               if (needsFix) {
-                // Delete the stale entry so it gets re-created with correct data below
+                console.log(`[TrainingModule] Fixing existing entry for "${parsed.courseTitle}" (title/thumb/path changed)`);
                 await deleteTrainingModule(existing.id);
                 await createTrainingModule({
                   orgId: null as any,
                   createdByUserId: ctx.user.id,
-                  courseTitle,
-                  launchPath,
+                  courseTitle: parsed.courseTitle,
+                  launchPath: parsed.launchPath,
                   thumbnailUrl,
-                  playerType: playerType as any,
+                  playerType: parsed.playerType as any,
                   trackingType: "None",
                   storagePrefix,
                   sourceFileName: null,
                   metaJson: JSON.stringify({
                     autoDiscovered: true,
                     discoveredAt: new Date().toISOString(),
-                    format: playerType === "external_link" ? "external_link" : "storyline",
+                    format: parsed.playerType === "external_link" ? "external_link" : "storyline",
                   }),
                 });
+              } else {
+                console.log(`[TrainingModule] Already registered: "${parsed.courseTitle}" at ${storagePrefix}`);
               }
             }
           }
@@ -136,55 +181,65 @@ export const trainingModuleRouter = router({
       const s3Prefixes = process.env.S3_COURSES_PREFIX
         ? process.env.S3_COURSES_PREFIX.split(",").map(s => s.trim())
         : ["courses"];
+      console.log(`[TrainingModule] Manual syncS3 started — prefixes: [${s3Prefixes.join(", ")}]`);
       for (const prefix of s3Prefixes) {
         try {
           const dirs = await storageListDirectories(prefix);
+          console.log(`[TrainingModule] syncS3: Found ${dirs.length} directories under "${prefix}/": ${dirs.join(", ") || "(none)"}`);
           for (const dirName of dirs) {
             const storagePrefix = `${prefix}/${dirName}`;
             try {
               const existing = await getTrainingModuleByStoragePrefix(storagePrefix);
               if (existing) {
-                results.push({ dirName, status: "already_exists" });
-              } else {
-                // Parse course_link.txt for URL and course name
-                // Format:
-                //   Couse_link="https://..."
-                //   Course_name="Active Threat Shooter"
-                const linkText = await storageGetText(`${storagePrefix}/course_link.txt`);
-                let launchPath = "story.html";
-                let courseTitle = dirName;
-                let playerType: "external_link" | "Articulate_Storyline_Web" = "Articulate_Storyline_Web";
-                let thumbnailUrl: string | null = null;
-
-                if (linkText) {
-                  // Extract URL from Couse_link or Course_link
-                  const linkMatch = linkText.match(/(?:Couse|Course)_link\s*=\s*"([^"]+)"/i);
-                  if (linkMatch) {
-                    launchPath = linkMatch[1];
-                    playerType = "external_link";
-                    thumbnailUrl = `${storagePrefix}/course.webp`;
-                  }
-                  // Extract course name from Course_name
-                  const nameMatch = linkText.match(/Course_name\s*=\s*"([^"]+)"/i);
-                  if (nameMatch) {
-                    courseTitle = nameMatch[1];
-                  }
+                // Check if existing entry needs thumbnail update
+                const thumbnailUrl = await detectThumbnailUrl(storagePrefix);
+                if (thumbnailUrl && existing.thumbnailUrl !== thumbnailUrl) {
+                  console.log(`[TrainingModule] syncS3: Updating thumbnail for "${dirName}": ${thumbnailUrl}`);
+                  await deleteTrainingModule(existing.id);
+                  const parsed = parseCourseLink(
+                    await storageGetText(`${storagePrefix}/course_link.txt`),
+                    dirName
+                  );
+                  await createTrainingModule({
+                    orgId: null as any,
+                    createdByUserId: ctx.user.id,
+                    courseTitle: parsed.courseTitle,
+                    launchPath: parsed.launchPath,
+                    thumbnailUrl,
+                    playerType: parsed.playerType as any,
+                    trackingType: "None",
+                    storagePrefix,
+                    sourceFileName: null,
+                    metaJson: JSON.stringify({
+                      autoDiscovered: true,
+                      discoveredAt: new Date().toISOString(),
+                      format: parsed.playerType === "external_link" ? "external_link" : "storyline",
+                    }),
+                  });
+                  results.push({ dirName, status: "registered" });
+                } else {
+                  results.push({ dirName, status: "already_exists" });
                 }
+              } else {
+                const linkText = await storageGetText(`${storagePrefix}/course_link.txt`);
+                const parsed = parseCourseLink(linkText, dirName);
+                const thumbnailUrl = await detectThumbnailUrl(storagePrefix);
 
+                console.log(`[TrainingModule] syncS3: Registering "${parsed.courseTitle}" (type=${parsed.playerType}) at ${storagePrefix}`);
                 await createTrainingModule({
                   orgId: null as any,
                   createdByUserId: ctx.user.id,
-                  courseTitle,
-                  launchPath,
+                  courseTitle: parsed.courseTitle,
+                  launchPath: parsed.launchPath,
                   thumbnailUrl,
-                  playerType: playerType as any,
+                  playerType: parsed.playerType as any,
                   trackingType: "None",
                   storagePrefix,
                   sourceFileName: null,
                   metaJson: JSON.stringify({
                     autoDiscovered: true,
                     discoveredAt: new Date().toISOString(),
-                    format: playerType === "external_link" ? "external_link" : "storyline",
+                    format: parsed.playerType === "external_link" ? "external_link" : "storyline",
                   }),
                 });
                 results.push({ dirName, status: "registered" });

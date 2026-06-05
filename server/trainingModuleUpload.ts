@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import { storageCheckFile } from "./storage";
 import multer from "multer";
 import { Open } from "unzipper";
 import { nanoid } from "nanoid";
@@ -49,11 +50,14 @@ trainingModuleUploadRouter.post(
         return res.status(400).json({ error: "Archive contains invalid path segments" });
       }
 
-      // ✅ NEW FORMAT: Look for course_link.txt and course.webp
+      // Look for course_link.txt in the archive
       const linkEntry = zipArchive.files.find(
         (entry: any) => normalizeArchivePath(entry.path) === "course_link.txt"
       );
+      // Look for thumbnail — check course_thumbnail.webp first, then course.webp
       const thumbEntry = zipArchive.files.find(
+        (entry: any) => normalizeArchivePath(entry.path) === "course_thumbnail.webp"
+      ) || zipArchive.files.find(
         (entry: any) => normalizeArchivePath(entry.path) === "course.webp"
       );
 
@@ -76,12 +80,13 @@ trainingModuleUploadRouter.post(
       // Upload course_link.txt
       await storagePut(`${storagePrefix}/course_link.txt`, linkContent, "text/plain");
 
-      // Upload course.webp if present
+      // Upload thumbnail if present (keeps original filename in S3)
       let thumbnailKey: string | null = null;
       if (thumbEntry) {
         const thumbBuffer = await thumbEntry.buffer();
-        await storagePut(`${storagePrefix}/course.webp`, thumbBuffer, "image/webp");
-        thumbnailKey = `${storagePrefix}/course.webp`;
+        const originalName = normalizeArchivePath(thumbEntry.path);
+        await storagePut(`${storagePrefix}/${originalName}`, thumbBuffer, originalName.endsWith(".png") ? "image/png" : "image/webp");
+        thumbnailKey = `${storagePrefix}/${originalName}`;
       }
 
       // launchPath stores the URL read from course_link.txt

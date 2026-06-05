@@ -11,8 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { Users, Mail, Settings, Copy, Trash2, UserPlus, Building2, Shield, Eye, ClipboardList, Globe, Save } from "lucide-react";
-import { WebsiteResourceLinks } from "@/components/assessment/WebsiteResourceLinks";
+import { Users, Mail, Settings, Copy, Trash2, UserPlus, Building2, Shield, Eye, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 
 const ROLE_LABELS: Record<string, string> = {

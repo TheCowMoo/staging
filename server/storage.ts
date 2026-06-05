@@ -8,7 +8,7 @@
  *   S3_SECRET_ACCESS_KEY — AWS secret access key
  *   S3_ENDPOINT          — (optional) custom endpoint for S3-compatible services
  */
-import { S3Client, PutObjectCommand, GetObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand, HeadObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { ENV } from "./_core/env";
 
@@ -123,6 +123,25 @@ export async function storageGetText(relKey: string): Promise<string | null> {
     return await result.Body.transformToString("utf-8");
   } catch (err: any) {
     if (err?.name === "NoSuchKey") return null;
+    throw err;
+  }
+}
+
+/**
+ * Check if a file exists in S3 without downloading the body.
+ * Returns true if the file exists, false if it doesn't (NoSuchKey/NotFound).
+ */
+export async function storageCheckFile(relKey: string): Promise<boolean> {
+  assertStorageConfig();
+  const key = normalizeKey(relKey);
+  const client = getS3Client();
+  try {
+    await client.send(
+      new HeadObjectCommand({ Bucket: ENV.s3BucketName, Key: key })
+    );
+    return true;
+  } catch (err: any) {
+    if (err?.name === "NoSuchKey" || err?.name === "NotFound") return false;
     throw err;
   }
 }
