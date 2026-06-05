@@ -1,7 +1,9 @@
-import { storageGet, storageGetText, storageListDirectories, storageCheckFile } from "./storage";
+import fs from "fs";
+import path from "path";
+import { storageGet, storageGetText, storageListDirectories, storageCheckFile, storagePut } from "./storage";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { router, protectedProcedure, paidProcedure, orgAdminProcedure } from "./_core/trpc";
+import { router, protectedProcedure, paidProcedure, orgAdminProcedure, ultraAdminProcedure } from "./_core/trpc";
 import { getOrgMembershipForUser, getOrgMemberRecord } from "./db";
 import {
   getTrainingModulesByOrgOrGlobal,
@@ -253,6 +255,123 @@ export const trainingModuleRouter = router({
         }
       }
       return results;
+    }),
+
+  // Upload a course folder from the server's local filesystem to S3 (ultra_admin only)
+  uploadFromLocal: ultraAdminProcedure
+    .input(z.object({
+      localPath: z.string().min(1),
+      courseName: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const user = ctx.user!;
+      const resolvedPath = path.resolve(input.localPath);
+      
+      // Security: ensure the path exists and is a directory
+      let stat: fs.Stats;
+      try {
+        stat = fs.statSync(resolvedPath);
+      } catch (err: any) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Path not found: ${resolvedPath}`,
+        });
+      }
+      if (!stat.isDirectory()) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Provided path is not a directory",
+        });
+      }
+
+      // Derive course name from folder name or override
+      const courseTitle = input.courseName || path.basename(resolvedPath);
+      // Sanitize folder name for S3 prefix
+      const sanitizedDirName = path.basename(resolvedPath).replace(/[^a-zA-Z0-9 _-]/g, "").trim();
+      const storagePrefix = `courses/${sanitizedDirName}`;
+
+      console.log(`[TrainingModule] uploadFromLocal: "${resolvedPath}" → s3://${process.env.S3_BUCKET_NAME}/${storagePrefix}/ (user=${user.id})`);
+
+      // Recursively walk the directory and upload all files
+      const uploadedFiles: string[] = [];
+      const errors: { file: string; error: string }[] = [];
+
+      function walkDir(dir: string) {
+        let entries: string[];
+        try {
+          entries = fs.readdirSync(dir);
+        } catch {
+          return;
+        }
+        for (const entry of entries) {
+          const fullPath = path.join(dir, entry);
+          let entryStat: fs.Stats;
+          try {
+            entryStat = fs.statSync(fullPath);
+          } catch {
+            continue;
+          }
+          if (entryStat.isDirectory()) {
+            walkDir(fullPath);
+          } else if (entryStat.isFile()) {
+            // Compute S3 key relative to the root folder
+            const relativePath = path.relative(resolvedPath, fullPath).replace(/\\/g, "/");
+            if (!relativePath) continue;
+            const s3Key = `${storagePrefix}/${relativePath}`;
+            try {
+              const content = fs.readFileSync(fullPath);
+              // Determine content type from extension
+              const ext = path.extname(entry).toLowerCase();
+              const mimeMap: Record<string, string> = {
+                ".html": "text/html",
+                ".htm": "text/html",
+                ".js": "application/javascript",
+                ".json": "application/json",
+                ".css": "text/css",
+                ".xml": "text/xml",
+                ".webp": "image/webp",
+                ".png": "image/png",
+                ".jpg": "image/jpeg",
+                ".jpeg": "image/jpeg",
+                ".gif": "image/gif",
+                ".svg": "image/svg+xml",
+                ".mp4": "video/mp4",
+                ".webm": "video/webm",
+                ".mp3": "audio/mpeg",
+                ".wav": "audio/wav",
+                ".woff": "font/woff",
+                ".woff2": "font/woff2",
+                ".ttf": "font/ttf",
+                ".otf": "font/otf",
+                ".eot": "application/vnd.ms-fontobject",
+                ".ico": "image/x-icon",
+                ".txt": "text/plain",
+                ".pdf": "application/pdf",
+                ".zip": "application/zip",
+                ".swf": "application/x-shockwave-flash",
+              };
+              const contentType = mimeMap[ext] || "application/octet-stream";
+              storagePut(s3Key, content, contentType);
+              uploadedFiles.push(relativePath);
+            } catch (err: any) {
+              errors.push({ file: relativePath, error: err?.message || String(err) });
+            }
+          }
+        }
+      }
+
+      walkDir(resolvedPath);
+
+      return {
+        success: true,
+        courseTitle,
+        storagePrefix,
+        uploadedFiles: uploadedFiles.length,
+        totalBytes: "see details",
+        fileCount: uploadedFiles.length,
+        errorCount: errors.length,
+        errors: errors.length > 0 ? errors : undefined,
+      };
     }),
 
   // Get launch URL — for external links return the URL directly, for legacy Storyline return presigned S3 URL
