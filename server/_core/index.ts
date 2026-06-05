@@ -153,6 +153,17 @@ async function startServer() {
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
 
+  // Serve local courses from filesystem (for VPS local course hosting, no S3 needed)
+  if (process.env.LOCAL_COURSES_PATH) {
+    const localCoursesPath = path.resolve(process.env.LOCAL_COURSES_PATH);
+    if (fs.existsSync(localCoursesPath)) {
+      app.use("/courses", express.static(localCoursesPath));
+      console.log(`[Server] Serving local courses from: ${localCoursesPath}`);
+    } else {
+      console.warn(`[Server] LOCAL_COURSES_PATH set but not found: ${localCoursesPath}`);
+    }
+  }
+
   // File upload routes (multipart)
   app.use(attachmentRouter);
   app.use(flaggedVisitorUploadRouter);

@@ -36,11 +36,26 @@ async function detectThumbnailUrl(storagePrefix: string): Promise<string | null>
 }
 
 /**
+ * Find a thumbnail in a local course folder.
+ * Returns a URL path (served via Express static) or null.
+ */
+function detectLocalThumbnail(courseDir: string): string | null {
+  const thumbPath = path.join(courseDir, "course_thumbnail.webp");
+  if (fs.existsSync(thumbPath)) {
+    return `/courses/${path.basename(courseDir)}/course_thumbnail.webp`;
+  }
+  const webpPath = path.join(courseDir, "course.webp");
+  if (fs.existsSync(webpPath)) {
+    return `/courses/${path.basename(courseDir)}/course.webp`;
+  }
+  return null;
+}
+
+/**
  * Parse course_link.txt content to extract URL and course name.
  * Format:
  *   Couse_link="https://..."
  *   Course_name="Active Threat"
- * Returns { launchPath, courseTitle, playerType } or null.
  */
 function parseCourseLink(linkText: string | null, dirName: string): {
   launchPath: string;
@@ -54,16 +69,13 @@ function parseCourseLink(linkText: string | null, dirName: string): {
       playerType: "Articulate_Storyline_Web",
     };
   }
-  // Extract URL from Couse_link or Course_link (both typo variants)
   const linkMatch = linkText.match(/(?:Couse|Course)_link\s*=\s*"([^"]+)"/i);
   if (linkMatch) {
     const launchPath = linkMatch[1];
-    // Extract course name from Course_name
     const nameMatch = linkText.match(/Course_name\s*=\s*"([^"]+)"/i);
     const courseTitle = nameMatch ? nameMatch[1] : dirName;
     return { launchPath, courseTitle, playerType: "external_link" };
   }
-  // Has course_link.txt but no recognized link format — treat as Storyline
   return {
     launchPath: "story.html",
     courseTitle: dirName,
@@ -94,7 +106,6 @@ export const trainingModuleRouter = router({
             const linkText = await storageGetText(`${storagePrefix}/course_link.txt`);
             const parsed = parseCourseLink(linkText, dirName);
             
-            // Detect thumbnail for ALL course types (not just external_link)
             const thumbnailUrl = await detectThumbnailUrl(storagePrefix);
 
             if (!existing) {
@@ -116,7 +127,6 @@ export const trainingModuleRouter = router({
                 }),
               });
             } else {
-              // Fix existing entries that may have wrong metadata
               const needsFix = (
                 existing.courseTitle !== parsed.courseTitle ||
                 existing.launchPath !== parsed.launchPath ||
@@ -152,6 +162,86 @@ export const trainingModuleRouter = router({
         }
       }
 
+      // Auto-discover local courses from LOCAL_COURSES_PATH
+      const localCoursesPath = process.env.LOCAL_COURSES_PATH;
+      if (localCoursesPath) {
+        console.log(`[TrainingModule] Local auto-discovery start — path: ${localCoursesPath}`);
+        try {
+          const entries = fs.readdirSync(localCoursesPath, { withFileTypes: true });
+          for (const entry of entries) {
+            if (!entry.isDirectory()) continue;
+            const dirName = entry.name;
+            const dirPath = path.join(localCoursesPath, dirName);
+            const storagePrefix = `local:${dirName}`;
+            
+            console.log(`[TrainingModule] Local processing: ${dirPath}`);
+            const existing = await getTrainingModuleByStoragePrefix(storagePrefix);
+            
+            // Check for story.html to determine if it's a course
+            const storyPath = path.join(dirPath, "story.html");
+            const hasStoryHtml = fs.existsSync(storyPath);
+            if (!hasStoryHtml) {
+              console.log(`[TrainingModule] Local skip (no story.html): ${dirName}`);
+              continue;
+            }
+
+            const courseTitle = dirName;
+            const launchPath = "story.html";
+            const playerType: "Articulate_Storyline_Web" = "Articulate_Storyline_Web";
+            const thumbnailUrl = detectLocalThumbnail(dirPath);
+
+            if (!existing) {
+              console.log(`[TrainingModule] Registering local course: "${courseTitle}" at ${storagePrefix}`);
+              await createTrainingModule({
+                orgId: null as any,
+                createdByUserId: ctx.user.id,
+                courseTitle,
+                launchPath,
+                thumbnailUrl,
+                playerType,
+                trackingType: "None",
+                storagePrefix,
+                sourceFileName: null,
+                metaJson: JSON.stringify({
+                  autoDiscovered: true,
+                  discoveredAt: new Date().toISOString(),
+                  format: "storyline",
+                  localPath: dirPath,
+                }),
+              });
+            } else {
+              const needsFix = (
+                existing.courseTitle !== courseTitle ||
+                existing.thumbnailUrl !== thumbnailUrl
+              );
+              if (needsFix) {
+                console.log(`[TrainingModule] Fixing local entry: "${courseTitle}"`);
+                await deleteTrainingModule(existing.id);
+                await createTrainingModule({
+                  orgId: null as any,
+                  createdByUserId: ctx.user.id,
+                  courseTitle,
+                  launchPath,
+                  thumbnailUrl,
+                  playerType,
+                  trackingType: "None",
+                  storagePrefix,
+                  sourceFileName: null,
+                  metaJson: JSON.stringify({
+                    autoDiscovered: true,
+                    discoveredAt: new Date().toISOString(),
+                    format: "storyline",
+                    localPath: dirPath,
+                  }),
+                });
+              }
+            }
+          }
+        } catch (err: any) {
+          console.warn(`[TrainingModule] Local auto-discovery failed:`, err?.message ?? err);
+        }
+      }
+
       return getTrainingModulesByOrgOrGlobal(orgId);
     }),
 
@@ -176,7 +266,6 @@ export const trainingModuleRouter = router({
       return { success: true };
     }),
 
-  // Manual trigger to re-scan S3 for new courses
   syncS3: orgAdminProcedure
     .mutation(async ({ ctx }) => {
       const results: { dirName: string; status: "registered" | "already_exists" | "error"; error?: string }[] = [];
@@ -193,7 +282,6 @@ export const trainingModuleRouter = router({
             try {
               const existing = await getTrainingModuleByStoragePrefix(storagePrefix);
               if (existing) {
-                // Check if existing entry needs thumbnail update
                 const thumbnailUrl = await detectThumbnailUrl(storagePrefix);
                 if (thumbnailUrl && existing.thumbnailUrl !== thumbnailUrl) {
                   console.log(`[TrainingModule] syncS3: Updating thumbnail for "${dirName}": ${thumbnailUrl}`);
@@ -257,7 +345,6 @@ export const trainingModuleRouter = router({
       return results;
     }),
 
-  // Diagnose S3 course auto-discovery (ultra_admin only)
   diagnose: ultraAdminProcedure
     .query(async () => {
       const results: {
@@ -278,13 +365,11 @@ export const trainingModuleRouter = router({
         : ["courses"];
       for (const prefix of s3Prefixes) {
         try {
-          console.log(`[TrainingModule-Diagnose] Listing S3: ${prefix}/`);
           const dirs = await storageListDirectories(prefix);
           results.directories = dirs;
           for (const dirName of dirs) {
             const sp = `${prefix}/${dirName}`;
             const files: string[] = [];
-            // Check for key files
             for (const file of ["story.html", "index.html", "course_link.txt", "course_thumbnail.webp", "course.webp"]) {
               try {
                 const exists = await storageCheckFile(`${sp}/${file}`);
@@ -300,7 +385,26 @@ export const trainingModuleRouter = router({
         }
       }
 
-      // 2. Check training_modules in DB
+      // 2. Check local directories
+      const localCoursesPath = process.env.LOCAL_COURSES_PATH;
+      if (localCoursesPath) {
+        try {
+          const entries = fs.readdirSync(localCoursesPath, { withFileTypes: true });
+          for (const entry of entries) {
+            if (!entry.isDirectory()) continue;
+            const dirPath = path.join(localCoursesPath, entry.name);
+            const files: string[] = [];
+            for (const file of ["story.html", "index.html", "course_thumbnail.webp", "course.webp", "course_link.txt"]) {
+              if (fs.existsSync(path.join(dirPath, file))) files.push(file);
+            }
+            results.directoryDetails.push({ name: `[LOCAL] ${entry.name}`, files });
+          }
+        } catch (err: any) {
+          results.errors.push(`Local list error: ${err?.message || String(err)}`);
+        }
+      }
+
+      // 3. Check DB
       const { getDb } = await import("./db");
       try {
         const db = await getDb();
@@ -322,14 +426,12 @@ export const trainingModuleRouter = router({
         results.errors.push(`DB query error: ${err?.message || String(err)}`);
       }
 
-      // 3. Check S3 config
       if (!process.env.S3_BUCKET_NAME) results.errors.push("S3_BUCKET_NAME not set");
       if (!process.env.S3_ACCESS_KEY_ID) results.errors.push("S3_ACCESS_KEY_ID not set");
 
       return results;
     }),
 
-  // Upload a course folder from the server's local filesystem to S3 (ultra_admin only)
   uploadFromLocal: ultraAdminProcedure
     .input(z.object({
       localPath: z.string().min(1),
@@ -339,88 +441,51 @@ export const trainingModuleRouter = router({
       const user = ctx.user!;
       const resolvedPath = path.resolve(input.localPath);
       
-      // Security: ensure the path exists and is a directory
       let stat: fs.Stats;
       try {
         stat = fs.statSync(resolvedPath);
       } catch (err: any) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: `Path not found: ${resolvedPath}`,
-        });
+        throw new TRPCError({ code: "BAD_REQUEST", message: `Path not found: ${resolvedPath}` });
       }
       if (!stat.isDirectory()) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Provided path is not a directory",
-        });
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Provided path is not a directory" });
       }
 
-      // Derive course name from folder name or override
       const courseTitle = input.courseName || path.basename(resolvedPath);
-      // Sanitize folder name for S3 prefix
       const sanitizedDirName = path.basename(resolvedPath).replace(/[^a-zA-Z0-9 _-]/g, "").trim();
       const storagePrefix = `courses/${sanitizedDirName}`;
 
       console.log(`[TrainingModule] uploadFromLocal: "${resolvedPath}" → s3://${process.env.S3_BUCKET_NAME}/${storagePrefix}/ (user=${user.id})`);
 
-      // Recursively walk the directory and upload all files
       const uploadedFiles: string[] = [];
       const errors: { file: string; error: string }[] = [];
 
       function walkDir(dir: string) {
         let entries: string[];
-        try {
-          entries = fs.readdirSync(dir);
-        } catch {
-          return;
-        }
+        try { entries = fs.readdirSync(dir); } catch { return; }
         for (const entry of entries) {
           const fullPath = path.join(dir, entry);
           let entryStat: fs.Stats;
-          try {
-            entryStat = fs.statSync(fullPath);
-          } catch {
-            continue;
-          }
+          try { entryStat = fs.statSync(fullPath); } catch { continue; }
           if (entryStat.isDirectory()) {
             walkDir(fullPath);
           } else if (entryStat.isFile()) {
-            // Compute S3 key relative to the root folder
             const relativePath = path.relative(resolvedPath, fullPath).replace(/\\/g, "/");
             if (!relativePath) continue;
             const s3Key = `${storagePrefix}/${relativePath}`;
             try {
               const content = fs.readFileSync(fullPath);
-              // Determine content type from extension
               const ext = path.extname(entry).toLowerCase();
               const mimeMap: Record<string, string> = {
-                ".html": "text/html",
-                ".htm": "text/html",
-                ".js": "application/javascript",
-                ".json": "application/json",
-                ".css": "text/css",
-                ".xml": "text/xml",
-                ".webp": "image/webp",
-                ".png": "image/png",
-                ".jpg": "image/jpeg",
-                ".jpeg": "image/jpeg",
-                ".gif": "image/gif",
-                ".svg": "image/svg+xml",
-                ".mp4": "video/mp4",
-                ".webm": "video/webm",
-                ".mp3": "audio/mpeg",
-                ".wav": "audio/wav",
-                ".woff": "font/woff",
-                ".woff2": "font/woff2",
-                ".ttf": "font/ttf",
-                ".otf": "font/otf",
-                ".eot": "application/vnd.ms-fontobject",
-                ".ico": "image/x-icon",
-                ".txt": "text/plain",
-                ".pdf": "application/pdf",
-                ".zip": "application/zip",
-                ".swf": "application/x-shockwave-flash",
+                ".html": "text/html", ".htm": "text/html", ".js": "application/javascript",
+                ".json": "application/json", ".css": "text/css", ".xml": "text/xml",
+                ".webp": "image/webp", ".png": "image/png", ".jpg": "image/jpeg",
+                ".jpeg": "image/jpeg", ".gif": "image/gif", ".svg": "image/svg+xml",
+                ".mp4": "video/mp4", ".webm": "video/webm", ".mp3": "audio/mpeg",
+                ".wav": "audio/wav", ".woff": "font/woff", ".woff2": "font/woff2",
+                ".ttf": "font/ttf", ".otf": "font/otf", ".eot": "application/vnd.ms-fontobject",
+                ".ico": "image/x-icon", ".txt": "text/plain", ".pdf": "application/pdf",
+                ".zip": "application/zip", ".swf": "application/x-shockwave-flash",
               };
               const contentType = mimeMap[ext] || "application/octet-stream";
               storagePut(s3Key, content, contentType);
@@ -434,19 +499,9 @@ export const trainingModuleRouter = router({
 
       walkDir(resolvedPath);
 
-      return {
-        success: true,
-        courseTitle,
-        storagePrefix,
-        uploadedFiles: uploadedFiles.length,
-        totalBytes: "see details",
-        fileCount: uploadedFiles.length,
-        errorCount: errors.length,
-        errors: errors.length > 0 ? errors : undefined,
-      };
+      return { success: true, courseTitle, storagePrefix, uploadedFiles: uploadedFiles.length, fileCount: uploadedFiles.length, errorCount: errors.length, errors: errors.length > 0 ? errors : undefined };
     }),
 
-  // Get launch URL — for external links return the URL directly, for legacy Storyline return presigned S3 URL
   getLaunchUrl: paidProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
@@ -459,17 +514,27 @@ export const trainingModuleRouter = router({
         }
       }
 
-      // If launchPath is an external URL (http/https), return it directly
+      // If launchPath starts with http/https, return directly
       if (mod.launchPath.startsWith("http://") || mod.launchPath.startsWith("https://")) {
         return { url: mod.launchPath };
       }
 
-      // Also handle bare domain URLs without protocol prefix (e.g. "app.pursuitpathways.com/...")
+      // Handle bare domain URLs
       if (mod.launchPath.startsWith("//") || /^[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(mod.launchPath)) {
         return { url: mod.launchPath.startsWith("//") ? `https:${mod.launchPath}` : `https://${mod.launchPath}` };
       }
 
-      // Legacy Storyline modules: generate presigned URL for the story.html file
+      // Handle local filesystem courses (storagePrefix starts with "local:")
+      if (mod.storagePrefix && mod.storagePrefix.startsWith("local:")) {
+        const dirName = mod.storagePrefix.replace(/^local:/, "");
+        // Construct the URL path for the locally-served course
+        const baseUrl = (ctx.req as any)?.headers?.host 
+          ? `http://${(ctx.req as any).headers.host}`
+          : process.env.APP_BASE_URL || "http://localhost:3000";
+        return { url: `${baseUrl}/courses/${encodeURIComponent(dirName)}/${mod.launchPath}` };
+      }
+
+      // Legacy Storyline modules: generate presigned S3 URL
       const s3Key = mod.storagePrefix
         ? `${mod.storagePrefix}/${mod.launchPath}`
         : mod.launchPath;
