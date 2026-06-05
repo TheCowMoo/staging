@@ -3,12 +3,13 @@
  * Apply all pending Drizzle migrations.
  * Run this on the VPS: node scripts/apply-all-migrations.cjs
  */
+require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
 const mysql = require("mysql2/promise");
 const fs = require("fs");
 const path = require("path");
 
 // Parse DATABASE_URL
-const dbUrl = process.env.DATABASE_URL || "mysql://root:password@127.0.0.1:3306/safeguard";
+const dbUrl = process.env.DATABASE_URL || "mysql://root:Marketingcow1%21@127.0.0.1:3306/safeguard";
 const match = dbUrl.match(/mysql:\/\/([^:]+):([^@]+)@([^:/]+)(?::(\d+))?\/([^?]+)/);
 if (!match) {
   console.error("ERROR: Could not parse DATABASE_URL:", dbUrl);
