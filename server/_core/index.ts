@@ -46,44 +46,60 @@ async function startServer() {
   // HSTS and strict COOP are disabled when not behind HTTPS to allow plain HTTP
   // testing (e.g. IP-only access). Re-enable hsts once a TLS certificate is in place.
   const isHttps = process.env.HTTPS === "true";
+  const hasLocalCourses = !!process.env.LOCAL_COURSES_PATH;
+  // When serving local courses (Articulate Storyline), CSP must be relaxed
+  // because Storyline loads hundreds of inline scripts, blobs, and data URIs.
+  const cspDirectives = hasLocalCourses ? {
+    defaultSrc: ["*"],
+    scriptSrc: ["*", "'unsafe-inline'", "'unsafe-eval'", "blob:", "data:"],
+    styleSrc: ["*", "'unsafe-inline'", "blob:", "data:"],
+    fontSrc: ["*", "data:"],
+    imgSrc: ["*", "data:", "blob:"],
+    connectSrc: ["*"],
+    frameSrc: ["*"],
+    mediaSrc: ["*"],
+    childSrc: ["*"],
+    objectSrc: ["*"],
+    workerSrc: ["*", "blob:"],
+  } : {
+    defaultSrc: ["'self'"],
+    scriptSrc: [
+      "'self'",
+      "'unsafe-inline'",
+      "'unsafe-eval'",
+      "https://fonts.googleapis.com",
+      "https://maps.googleapis.com",
+      "https://forge.butterfly-effect.dev",
+    ],
+    styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+    fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+    imgSrc: ["'self'", "data:", "blob:", "https:", "https://maps.googleapis.com", "https://maps.gstatic.com"],
+    connectSrc: [
+      "'self'",
+      "https:",
+      "wss:",
+      "ws:",
+      "https://forge.butterfly-effect.dev",
+    ],
+    frameSrc: [
+      "'self'",
+      "https://*.s3.amazonaws.com",
+      ...(process.env.S3_ENDPOINT ? [process.env.S3_ENDPOINT.replace(/\/+$/, "")] : []),
+    ],
+    mediaSrc: ["'self'"],
+    childSrc: ["'self'"],
+    objectSrc: ["'none'"],
+    ...(isHttps ? { upgradeInsecureRequests: [] } : { upgradeInsecureRequests: null }),
+  };
   app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: [
-          "'self'",
-          "'unsafe-inline'",
-          "'unsafe-eval'",
-          "https://fonts.googleapis.com",
-          "https://maps.googleapis.com",
-          "https://forge.butterfly-effect.dev",
-        ],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
-        imgSrc: ["'self'", "data:", "blob:", "https:", "https://maps.googleapis.com", "https://maps.gstatic.com"],
-        connectSrc: [
-          "'self'",
-          "https:",
-          "wss:",
-          "ws:",  // WebSocket over plain HTTP
-          "https://forge.butterfly-effect.dev",
-        ],
-        frameSrc: [
-          "'self'",
-          "https://*.s3.amazonaws.com",
-          ...(process.env.S3_ENDPOINT ? [process.env.S3_ENDPOINT.replace(/\/+$/, "")] : []),
-        ],
-        mediaSrc: ["'self'"],
-        childSrc: ["'self'"],
-        objectSrc: ["'none'"],
-        // Only upgrade insecure requests when running behind HTTPS
-        ...(isHttps ? { upgradeInsecureRequests: [] } : { upgradeInsecureRequests: null }),
-      },
-    },
+    contentSecurityPolicy: hasLocalCourses ? false : { directives: cspDirectives },
     crossOriginEmbedderPolicy: false,
     crossOriginOpenerPolicy: isHttps ? { policy: "same-origin" } : false,
     hsts: isHttps ? { maxAge: 31536000, includeSubDomains: true, preload: true } : false,
   }));
+  if (hasLocalCourses) {
+    console.log("[Server] Local courses enabled — CSP disabled for Storyline compatibility");
+  }
 
   // ─── Trust Proxy ─────────────────────────────────────────────────────────────
   // Required when running behind a reverse proxy (Nginx, Caddy, etc.)

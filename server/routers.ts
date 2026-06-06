@@ -619,12 +619,15 @@ const reportRouter = router({
       if (!audit) throw new TRPCError({ code: "NOT_FOUND" });
       const facility = await getFacilityById(audit.facilityId);
       if (!facility) throw new TRPCError({ code: "NOT_FOUND" });
-      if (!(audit as any).eapJson) return null;
-      const eapData = (audit as any).eapJson as Record<string, any>;
+      const rawEapJson = (audit as any).eapJson;
+      if (!rawEapJson) return null;
+      // MySQL/mysql2 can return JSON columns as strings — parse if needed
+      const eapData: Record<string, any> =
+        typeof rawEapJson === "string" ? JSON.parse(rawEapJson) : rawEapJson;
       const categoryScores = (audit.categoryScores as Record<string, any>) ?? {};
       const highRiskCategories = Object.entries(categoryScores)
         .filter(([, d]: any) => ["Elevated", "High", "Critical"].includes(d.riskLevel))
-        .map(([name, d]: any) => `${name} (${d.riskLevel} â€” ${d.percentage}%)`);
+        .map(([name, d]: any) => `${name} (${d.riskLevel} — ${d.percentage}%)`);
       return {
         facilityName: facility.name,
         facilityType: facility.facilityType,
@@ -769,6 +772,10 @@ const reportRouter = router({
         // Non-blocking — don't fail EAP generation if org lookup errors
       }
 
+      const scoringContext = await (async () => {
+        const { buildScoringContext: sc } = await import("./_core/aiContext");
+        return sc();
+      })();
       // Build shared facility context string for all LLM calls
       const sharedContext = `FACILITY CONTEXT:
 ${facilityContext}${facilityNotesSection}${auditorNotesSection}${eapContactsSection}${unavoidableEAPSection}${attachmentSection}${sectionEapNotesSection}${eapFlaggedSection}${notedResponsesSection}${websiteResourceContext}
@@ -779,7 +786,9 @@ Critical Findings: ${criticalFindings.length > 0 ? criticalFindings.join("; ") :
 Threat Scenarios:
 ${threatSummary}
 ICS Roles: ${assignedRoles.join(", ")}
-Effective Date: ${effectiveDateStr} | Review Date: ${reviewDateStr}`;
+Effective Date: ${effectiveDateStr} | Review Date: ${reviewDateStr}
+
+${scoringContext}`;
 
       const systemMsg = [
         "You are a professional emergency preparedness consultant with expertise in FEMA NIMS/ICS, NFPA 3000 (PS), OSHA 29 CFR 1910.38, OSHA 29 CFR 1910.165, NFPA 1600, and the ACTD (Assess, Commit, Take Action, Debrief) framework aligned with CISA active threat preparedness principles.",
@@ -796,6 +805,7 @@ Effective Date: ${effectiveDateStr} | Review Date: ${reviewDateStr}`;
       ].join(" ");
 
       const { ENV } = await import("./_core/env");
+      const { buildScoringContext } = await import("./_core/aiContext");
       const llmBase = ENV.llmBaseUrl ? ENV.llmBaseUrl.replace(/\/$/, "") : "https://api.openai.com";
       const apiUrl = `${llmBase}/v1/chat/completions`;
       const headers = { "content-type": "application/json", authorization: `Bearer ${ENV.openAiApiKey}` };
@@ -918,8 +928,9 @@ Generate ${isHealthcare ? "4" : "3"} EAP sections. NEVER cite ACTD as a basis in
       };
 
       // Save the generated EAP to the database for fast retrieval
+      // Stringify explicitly to ensure mysql2 handles the nested JSON correctly
       await updateAudit(input.auditId, {
-        eapJson: eapData as any,
+        eapJson: JSON.parse(JSON.stringify(eapData)) as any,
         eapGeneratedAt: new Date(),
       });
 
@@ -982,8 +993,13 @@ Generate ${isHealthcare ? "4" : "3"} EAP sections. NEVER cite ACTD as a basis in
       const unavoidableSection = unavoidableItems.length > 0
         ? `\nPERMANENT / UNAVOIDABLE CONSTRAINTS (these CANNOT be changed â€” do NOT recommend corrective actions for these; instead, reference them as context when planning compensating controls for other findings):\n${unavoidableItems.join("\n")}\n`
         : "";
+      const { buildScoringContext: bsc } = await import("./_core/aiContext");
+      const scoringCtx = bsc();
       const prompt = `You are a professional workplace violence threat assessment expert and physical security consultant. Generate specific, actionable corrective action recommendations for the following audit findings.
 FACILITY: ${facilityContext}${unavoidableSection}
+SCORING METHODOLOGY TO USE:
+${scoringCtx}
+
 AUDIT FINDINGS REQUIRING CORRECTIVE ACTION:
 ${findingsText}
 For each finding, provide a recommendation that:
@@ -1926,6 +1942,7 @@ const eapRouter = router({
       }>;
 
       // Build a compact, data-grounded context for the LLM
+      const scoringContext = (await import("./_core/aiContext")).buildScoringContext();
       const overallRisk = audit.overallRiskLevel ?? "Unknown";
       const overallScore = audit.overallScore ?? 0;
 
