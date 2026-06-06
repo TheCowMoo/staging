@@ -71,9 +71,10 @@ async function startServer() {
         frameSrc: [
           "'self'",
           "https://*.s3.amazonaws.com",
-          // Allow custom S3-compatible endpoints if configured
           ...(process.env.S3_ENDPOINT ? [process.env.S3_ENDPOINT.replace(/\/+$/, "")] : []),
         ],
+        mediaSrc: ["'self'"],
+        childSrc: ["'self'"],
         objectSrc: ["'none'"],
         // Only upgrade insecure requests when running behind HTTPS
         ...(isHttps ? { upgradeInsecureRequests: [] } : { upgradeInsecureRequests: null }),
