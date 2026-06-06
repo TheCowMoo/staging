@@ -89,59 +89,34 @@ export const trainingModuleRouter = router({
       const memberships = await getOrgMembershipForUser(ctx.user.id);
       const orgId = memberships[0]?.orgId ?? 0;
 
-      // Auto-discover S3 courses on every visit (each directory has its own try/catch)
-      const s3Prefixes = process.env.S3_COURSES_PREFIX 
-        ? process.env.S3_COURSES_PREFIX.split(",").map(s => s.trim())
-        : ["courses"];
-      console.log(`[TrainingModule] S3 auto-discovery start — prefixes: [${s3Prefixes.join(", ")}]`);
-      for (const prefix of s3Prefixes) {
-        let dirs: string[] = [];
-        try {
-          dirs = await storageListDirectories(prefix);
-          console.log(`[TrainingModule] Found ${dirs.length} directories under "${prefix}/": ${dirs.join(", ") || "(none)"}`);
-        } catch (err: any) {
-          console.warn(`[TrainingModule] S3 list failed for prefix "${prefix}":`, err?.message ?? err);
-          continue;
-        }
-        for (const dirName of dirs) {
+      // Skip S3 discovery when local courses path is set (use filesystem instead)
+      if (!process.env.LOCAL_COURSES_PATH) {
+        const s3Prefixes = process.env.S3_COURSES_PREFIX 
+          ? process.env.S3_COURSES_PREFIX.split(",").map(s => s.trim())
+          : ["courses"];
+        console.log(`[TrainingModule] S3 auto-discovery start — prefixes: [${s3Prefixes.join(", ")}]`);
+        for (const prefix of s3Prefixes) {
+          let dirs: string[] = [];
           try {
-            const storagePrefix = `${prefix}/${dirName}`;
-            console.log(`[TrainingModule] Processing: ${storagePrefix}`);
-            const existing = await getTrainingModuleByStoragePrefix(storagePrefix);
-            
-            const linkText = await storageGetText(`${storagePrefix}/course_link.txt`);
-            const parsed = parseCourseLink(linkText, dirName);
-            
-            const thumbnailUrl = await detectThumbnailUrl(storagePrefix);
+            dirs = await storageListDirectories(prefix);
+            console.log(`[TrainingModule] Found ${dirs.length} directories under "${prefix}/": ${dirs.join(", ") || "(none)"}`);
+          } catch (err: any) {
+            console.warn(`[TrainingModule] S3 list failed for prefix "${prefix}":`, err?.message ?? err);
+            continue;
+          }
+          for (const dirName of dirs) {
+            try {
+              const storagePrefix = `${prefix}/${dirName}`;
+              console.log(`[TrainingModule] Processing: ${storagePrefix}`);
+              const existing = await getTrainingModuleByStoragePrefix(storagePrefix);
+              
+              const linkText = await storageGetText(`${storagePrefix}/course_link.txt`);
+              const parsed = parseCourseLink(linkText, dirName);
+              
+              const thumbnailUrl = await detectThumbnailUrl(storagePrefix);
 
-            if (!existing) {
-              console.log(`[TrainingModule] Registering new course: "${parsed.courseTitle}" (type=${parsed.playerType}) at ${storagePrefix}`);
-              await createTrainingModule({
-                orgId: null as any,
-                createdByUserId: ctx.user.id,
-                courseTitle: parsed.courseTitle,
-                launchPath: parsed.launchPath,
-                thumbnailUrl,
-                playerType: parsed.playerType as any,
-                trackingType: "None",
-                storagePrefix,
-                sourceFileName: null,
-                metaJson: JSON.stringify({
-                  autoDiscovered: true,
-                  discoveredAt: new Date().toISOString(),
-                  format: parsed.playerType === "external_link" ? "external_link" : "storyline",
-                }),
-              });
-            } else {
-              const needsFix = (
-                existing.courseTitle !== parsed.courseTitle ||
-                existing.launchPath !== parsed.launchPath ||
-                existing.playerType !== parsed.playerType ||
-                existing.thumbnailUrl !== thumbnailUrl
-              );
-              if (needsFix) {
-                console.log(`[TrainingModule] Fixing existing entry for "${parsed.courseTitle}" (title/thumb/path changed)`);
-                await deleteTrainingModule(existing.id);
+              if (!existing) {
+                console.log(`[TrainingModule] Registering new course: "${parsed.courseTitle}" (type=${parsed.playerType}) at ${storagePrefix}`);
                 await createTrainingModule({
                   orgId: null as any,
                   createdByUserId: ctx.user.id,
@@ -159,16 +134,43 @@ export const trainingModuleRouter = router({
                   }),
                 });
               } else {
-                console.log(`[TrainingModule] Already registered: "${parsed.courseTitle}" at ${storagePrefix}`);
+                const needsFix = (
+                  existing.courseTitle !== parsed.courseTitle ||
+                  existing.launchPath !== parsed.launchPath ||
+                  existing.playerType !== parsed.playerType ||
+                  existing.thumbnailUrl !== thumbnailUrl
+                );
+                if (needsFix) {
+                  console.log(`[TrainingModule] Fixing existing entry for "${parsed.courseTitle}" (title/thumb/path changed)`);
+                  await deleteTrainingModule(existing.id);
+                  await createTrainingModule({
+                    orgId: null as any,
+                    createdByUserId: ctx.user.id,
+                    courseTitle: parsed.courseTitle,
+                    launchPath: parsed.launchPath,
+                    thumbnailUrl,
+                    playerType: parsed.playerType as any,
+                    trackingType: "None",
+                    storagePrefix,
+                    sourceFileName: null,
+                    metaJson: JSON.stringify({
+                      autoDiscovered: true,
+                      discoveredAt: new Date().toISOString(),
+                      format: parsed.playerType === "external_link" ? "external_link" : "storyline",
+                    }),
+                  });
+                } else {
+                  console.log(`[TrainingModule] Already registered: "${parsed.courseTitle}" at ${storagePrefix}`);
+                }
               }
+            } catch (err: any) {
+              console.warn(`[TrainingModule] S3 discovery failed for directory "${dirName}":`, err?.message ?? err);
             }
-          } catch (err: any) {
-            console.warn(`[TrainingModule] S3 discovery failed for directory "${dirName}":`, err?.message ?? err);
           }
         }
       }
 
-      // Auto-discover local courses from LOCAL_COURSES_PATH (independent from S3)
+      // Auto-discover local courses from LOCAL_COURSES_PATH
       const localCoursesPath = process.env.LOCAL_COURSES_PATH;
       if (localCoursesPath) {
         console.log(`[TrainingModule] Local auto-discovery start — path: ${localCoursesPath}`);
