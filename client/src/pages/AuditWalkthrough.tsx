@@ -243,6 +243,19 @@ export default function AuditWalkthrough() {
 
   const activeCategory = isEapContactsStep ? null : categories[activeCategoryIdx];
 
+  // Determine which menu section the user is currently in (for mutual exclusion)
+  const activeMenu = (() => {
+    if (!activeCategory) return null;
+    if (activeCategory.section === "cpted_physical") return "a" as const;
+    if (activeCategory.section === "eap_development") return "b" as const;
+    return null;
+  })();
+  const isCategoryInMenuA = (cat: typeof categories[0]) => cat.section === "cpted_physical";
+  const isCategoryInMenuB = (cat: typeof categories[0]) => cat.section === "eap_development";
+  const isCategoryInOppositeMenu = (cat: typeof categories[0]) =>
+    (activeMenu === "a" && isCategoryInMenuB(cat)) ||
+    (activeMenu === "b" && isCategoryInMenuA(cat));
+
   const categoryGateRule = activeCategory ? CATEGORY_GATE_RULES[activeCategory.id] : undefined;
   const isCategoryGated = useMemo(() => {
     if (!categoryGateRule) return false;
@@ -581,12 +594,17 @@ export default function AuditWalkthrough() {
                         const isComplete = isInfoCategory || catAnswered === catTotal;
                         const gateRule = CATEGORY_GATE_RULES[cat.id];
                         const isGated = gateRule ? isGateNegative(responses[gateRule.gateQuestionId]?.response) : false;
+                        const isOpposite = isCategoryInOppositeMenu(cat);
                         return (
                           <button
                             key={cat.id}
-                            onClick={() => handleCategoryChange(idx)}
+                            onClick={() => { if (!isOpposite) handleCategoryChange(idx); }}
                             className={`w-full text-left flex items-center justify-between px-3 py-2.5 rounded-lg mb-0.5 transition-colors ${
-                              isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                              isOpposite
+                                ? "opacity-40 pointer-events-none cursor-not-allowed text-muted-foreground"
+                                : isActive
+                                  ? "bg-primary/10 text-primary"
+                                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                             }`}
                           >
                             <div className="flex items-center gap-2 min-w-0">
@@ -623,12 +641,17 @@ export default function AuditWalkthrough() {
               const isComplete = isInfoCategory || catAnswered === catTotal;
               const gateRule = CATEGORY_GATE_RULES[cat.id];
               const isGated = gateRule ? isGateNegative(responses[gateRule.gateQuestionId]?.response) : false;
+              const isOpposite = isCategoryInOppositeMenu(cat);
               return (
                 <button
                   key={cat.id}
-                  onClick={() => handleCategoryChange(idx)}
+                  onClick={() => { if (!isOpposite) handleCategoryChange(idx); }}
                   className={`w-full text-left flex items-center justify-between px-3 py-2.5 rounded-lg mb-0.5 transition-colors ${
-                    isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    isOpposite
+                      ? "opacity-40 pointer-events-none cursor-not-allowed text-muted-foreground"
+                      : isActive
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   }`}
                 >
                   <div className="flex items-center gap-2 min-w-0">

@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
   Building2, ArrowLeft, Plus, ClipboardList, Copy,
-  MapPin, Clock, CheckCircle2, AlertCircle, Pencil, X, Save, ShieldAlert, HeartPulse
+  MapPin, Clock, CheckCircle2, AlertCircle, Pencil, X, Save, ShieldAlert, HeartPulse,
+  Map as MapIcon, Image, Upload, Trash2, ChevronDown, ChevronRight
 } from "lucide-react";
 import { getRiskBadgeClass } from "@/lib/riskUtils";
 import { FACILITY_TYPES } from "../../../shared/auditFramework";
@@ -97,6 +98,9 @@ export default function FacilityDetail() {
       emergencyRoles: facility.emergencyRoles ?? "",
       aedOnSite: facility.aedOnSite ?? false,
       aedLocations: facility.aedLocations ?? "",
+      operationalPolicies: facility.operationalPolicies ?? "",
+      coordinatorContacts: facility.coordinatorContacts ?? "",
+      emergencyContacts: facility.emergencyContacts ?? "",
       notes: facility.notes ?? "",
     });
     setIsEditing(true);
@@ -132,6 +136,9 @@ export default function FacilityDetail() {
       emergencyRoles: editForm.emergencyRoles || undefined,
       aedOnSite: editForm.aedOnSite,
       aedLocations: editForm.aedLocations || undefined,
+      operationalPolicies: editForm.operationalPolicies || undefined,
+      coordinatorContacts: editForm.coordinatorContacts || undefined,
+      emergencyContacts: editForm.emergencyContacts || undefined,
       notes: editForm.notes || undefined,
     });
   };
@@ -339,6 +346,46 @@ export default function FacilityDetail() {
                 })}
               </div>
 
+              {/* ── Administration ── */}
+              <div className="space-y-4 pt-2 border-t border-border">
+                <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="text-primary">🛡️</span> Administration
+                </h3>
+                <div>
+                  <Label htmlFor="edit-operationalPolicies">Operational Policies</Label>
+                  <Textarea
+                    id="edit-operationalPolicies"
+                    value={editForm.operationalPolicies as string}
+                    onChange={(e) => setEditForm({ ...editForm, operationalPolicies: e.target.value })}
+                    className="mt-1"
+                    rows={3}
+                    placeholder="Enter operational policies..."
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-coordinatorContacts">Coordinator Contacts</Label>
+                  <Textarea
+                    id="edit-coordinatorContacts"
+                    value={editForm.coordinatorContacts as string}
+                    onChange={(e) => setEditForm({ ...editForm, coordinatorContacts: e.target.value })}
+                    className="mt-1"
+                    rows={3}
+                    placeholder="Enter coordinator contact information..."
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-emergencyContacts">Emergency Contacts</Label>
+                  <Textarea
+                    id="edit-emergencyContacts"
+                    value={editForm.emergencyContacts as string}
+                    onChange={(e) => setEditForm({ ...editForm, emergencyContacts: e.target.value })}
+                    className="mt-1"
+                    rows={3}
+                    placeholder="Enter emergency contact information..."
+                  />
+                </div>
+              </div>
+
               {/* AED */}
               <div className="space-y-3 pt-2 border-t border-border">
                 <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
@@ -527,6 +574,142 @@ export default function FacilityDetail() {
                         );
                       })}
                     </div>
+                  </div>
+                );
+              })()}
+
+              {/* ── Administration display ── */}
+              {(facility.operationalPolicies || facility.coordinatorContacts || facility.emergencyContacts) && (
+                <div className="mt-3 border border-border rounded-lg overflow-hidden">
+                  <div className="px-3 py-2 bg-muted/40 border-b border-border flex items-center gap-1.5">
+                    <span className="text-base">🛡️</span>
+                    <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Administration</span>
+                  </div>
+                  <div className="divide-y divide-border">
+                    {facility.operationalPolicies && (
+                      <div className="px-3 py-2">
+                        <p className="text-xs font-medium text-foreground">Operational Policies</p>
+                        <p className="text-xs text-muted-foreground whitespace-pre-wrap mt-1">{facility.operationalPolicies}</p>
+                      </div>
+                    )}
+                    {facility.coordinatorContacts && (
+                      <div className="px-3 py-2">
+                        <p className="text-xs font-medium text-foreground">Coordinator Contacts</p>
+                        <p className="text-xs text-muted-foreground whitespace-pre-wrap mt-1">{facility.coordinatorContacts}</p>
+                      </div>
+                    )}
+                    {facility.emergencyContacts && (
+                      <div className="px-3 py-2">
+                        <p className="text-xs font-medium text-foreground">Emergency Contacts</p>
+                        <p className="text-xs text-muted-foreground whitespace-pre-wrap mt-1">{facility.emergencyContacts}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Facility Mapping (inline) ── */}
+              {(() => {
+                const [open, setOpen] = useState(false);
+                return (
+                  <div className="mt-3 border border-border rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => setOpen(!open)}
+                      className="w-full px-3 py-2 bg-muted/40 border-b border-border flex items-center gap-1.5 hover:bg-muted/60 transition-colors text-left"
+                    >
+                      {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                      <MapIcon size={13} className="text-primary" />
+                      <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Facility Mapping</span>
+                    </button>
+                    {open && (
+                      <div className="p-3">
+                        <p className="text-xs text-muted-foreground mb-2">Facility location on map (based on address).</p>
+                        <div className="rounded-lg overflow-hidden border border-border">
+                          <iframe
+                            title="Facility Map"
+                            width="100%"
+                            height="250"
+                            style={{ border: 0 }}
+                            loading="lazy"
+                            allowFullScreen
+                            src={`https://www.google.com/maps?q=${encodeURIComponent(
+                              [facility.address, facility.city, facility.state].filter(Boolean).join(", ")
+                            )}&output=embed`}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* ── Photos & Documents (inline uploader) ── */}
+              {(() => {
+                const [open, setOpen] = useState(false);
+                return (
+                  <div className="mt-3 border border-border rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => setOpen(!open)}
+                      className="w-full px-3 py-2 bg-muted/40 border-b border-border flex items-center gap-1.5 hover:bg-muted/60 transition-colors text-left"
+                    >
+                      {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                      <Image size={13} className="text-primary" />
+                      <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Photos & Documents</span>
+                    </button>
+                    {open && (
+                      <div className="p-3">
+                        <p className="text-xs text-muted-foreground mb-3">
+                          Upload photos and documents related to this facility. Accepted: JPEG, PNG, PDF, DOC, DOCX (max 20MB each).
+                        </p>
+                        <div className="flex items-center gap-2 mb-3">
+                          <Input
+                            type="file"
+                            accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                            className="text-sm flex-1"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              // Read file as base64
+                              const reader = new FileReader();
+                              reader.onload = async (ev) => {
+                                const base64 = (ev.target?.result as string)?.split(",")[1];
+                                if (!base64) { toast.error("Failed to read file"); return; }
+                                // Show uploading state
+                                toast.loading("Uploading...");
+                                try {
+                                  const resp = await fetch("/api/upload/attachment", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                      auditId: 0,
+                                      facilityId,
+                                      base64Data: base64,
+                                      mimeType: file.type,
+                                      filename: file.name,
+                                    }),
+                                  });
+                                  const result = await resp.json();
+                                  if (result.success) {
+                                    toast.dismiss();
+                                    toast.success("File uploaded");
+                                  } else {
+                                    toast.dismiss();
+                                    toast.error(result.error || "Upload failed");
+                                  }
+                                } catch {
+                                  toast.dismiss();
+                                  toast.error("Upload failed");
+                                }
+                              };
+                              reader.readAsDataURL(file);
+                            }}
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Uploaded files are stored securely and linked to this facility.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 );
               })()}

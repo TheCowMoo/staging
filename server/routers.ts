@@ -121,6 +121,9 @@ const facilityRouter = router({
       usedAfterDark: z.boolean().optional(),
       multiSite: z.boolean().optional(),
       emergencyCoordinator: z.string().optional(),
+      operationalPolicies: z.string().optional(),
+      coordinatorContacts: z.string().optional(),
+      emergencyContacts: z.string().optional(),
       notes: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
@@ -163,6 +166,9 @@ const facilityRouter = router({
       emergencyRoles: z.string().optional(),
       aedOnSite: z.boolean().optional(),
       aedLocations: z.string().optional(),
+      operationalPolicies: z.string().optional(),
+      coordinatorContacts: z.string().optional(),
+      emergencyContacts: z.string().optional(),
       notes: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {

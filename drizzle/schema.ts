@@ -213,6 +213,10 @@ export const facilities = mysqlTable("facilities", {
   // AED on-site
   aedOnSite: boolean("aedOnSite").default(false),
   aedLocations: text("aedLocations"),
+  // Administration section
+  operationalPolicies: text("operationalPolicies"),
+  coordinatorContacts: text("coordinatorContacts"),
+  emergencyContacts: text("emergencyContacts"),
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
