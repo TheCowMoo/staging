@@ -620,10 +620,16 @@ const reportRouter = router({
       const facility = await getFacilityById(audit.facilityId);
       if (!facility) throw new TRPCError({ code: "NOT_FOUND" });
       const rawEapJson = (audit as any).eapJson;
+      console.log("[getEAP] audit", input.auditId, "eapJson type:", typeof rawEapJson, "value:", rawEapJson ? (typeof rawEapJson === 'string' ? rawEapJson.substring(0,100) : Object.keys(rawEapJson).slice(0,5).join(',')) : "null");
       if (!rawEapJson) return null;
+      if (typeof rawEapJson === "string" && rawEapJson.trim() === "") return null;
       // MySQL/mysql2 can return JSON columns as strings — parse if needed
-      const eapData: Record<string, any> =
-        typeof rawEapJson === "string" ? JSON.parse(rawEapJson) : rawEapJson;
+      let eapData: Record<string, any>;
+      if (typeof rawEapJson === "string") {
+        try { eapData = JSON.parse(rawEapJson); } catch { console.error("[getEAP] JSON parse error"); return null; }
+      } else {
+        eapData = rawEapJson;
+      }
       const categoryScores = (audit.categoryScores as Record<string, any>) ?? {};
       const highRiskCategories = Object.entries(categoryScores)
         .filter(([, d]: any) => ["Elevated", "High", "Critical"].includes(d.riskLevel))
@@ -928,11 +934,22 @@ Generate ${isHealthcare ? "4" : "3"} EAP sections. NEVER cite ACTD as a basis in
       };
 
       // Save the generated EAP to the database for fast retrieval
-      // Stringify explicitly to ensure mysql2 handles the nested JSON correctly
+      // Drizzle json() column expects a plain JS object, not a string
+      const plainEapData = JSON.parse(JSON.stringify(eapData));
       await updateAudit(input.auditId, {
-        eapJson: JSON.parse(JSON.stringify(eapData)) as any,
+        eapJson: plainEapData as any,
         eapGeneratedAt: new Date(),
       });
+
+      // Verify the save worked by reading back
+      const verify = await getAuditById(input.auditId);
+      const saved = (verify as any)?.eapJson;
+      if (!saved) {
+        console.error("[EAP] Save verification failed — eapJson is empty/truthy after updateAudit for audit", input.auditId);
+        console.error("[EAP] saved value type:", typeof saved, "saved keys:", saved ? Object.keys(saved).slice(0,5) : "null");
+      } else {
+        console.log("[EAP] Save success for audit", input.auditId, "type:", typeof saved, "sections:", Array.isArray((saved as any)?.sections) ? (saved as any).sections.length : "N/A");
+      }
 
       return {
         facilityName: facility.name,
