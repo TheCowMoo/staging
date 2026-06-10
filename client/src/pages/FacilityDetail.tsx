@@ -39,6 +39,8 @@ export default function FacilityDetail() {
   const facilityId = isNaN(rawId) ? 0 : rawId;
   const [, navigate] = useLocation();
   const [isEditing, setIsEditing] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
+  const [photosOpen, setPhotosOpen] = useState(false);
 
   // Guard: don't query DB when id is invalid (e.g., 0 from parse failure)
   const skipQuery = facilityId === 0;
@@ -621,110 +623,100 @@ export default function FacilityDetail() {
               )}
 
               {/* ── Facility Mapping (inline) ── */}
-              {(() => {
-                const [open, setOpen] = useState(false);
-                return (
-                  <div className="mt-3 border border-border rounded-lg overflow-hidden">
-                    <button
-                      onClick={() => setOpen(!open)}
-                      className="w-full px-3 py-2 bg-muted/40 border-b border-border flex items-center gap-1.5 hover:bg-muted/60 transition-colors text-left"
-                    >
-                      {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-                      <MapIcon size={13} className="text-primary" />
-                      <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Facility Mapping</span>
-                    </button>
-                    {open && (
-                      <div className="p-3">
-                        <p className="text-xs text-muted-foreground mb-2">Facility location on map (based on address).</p>
-                        <div className="rounded-lg overflow-hidden border border-border">
-                          <iframe
-                            title="Facility Map"
-                            width="100%"
-                            height="250"
-                            style={{ border: 0 }}
-                            loading="lazy"
-                            allowFullScreen
-                            src={`https://www.google.com/maps?q=${encodeURIComponent(
-                              [facility.address, facility.city, facility.state].filter(Boolean).join(", ")
-                            )}&output=embed`}
-                          />
-                        </div>
-                      </div>
-                    )}
+              <div className="mt-3 border border-border rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setMapOpen(!mapOpen)}
+                  className="w-full px-3 py-2 bg-muted/40 border-b border-border flex items-center gap-1.5 hover:bg-muted/60 transition-colors text-left"
+                >
+                  {mapOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                  <MapIcon size={13} className="text-primary" />
+                  <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Facility Mapping</span>
+                </button>
+                {mapOpen && (
+                  <div className="p-3">
+                    <p className="text-xs text-muted-foreground mb-2">Facility location on map (based on address).</p>
+                    <div className="rounded-lg overflow-hidden border border-border">
+                      <iframe
+                        title="Facility Map"
+                        width="100%"
+                        height="250"
+                        style={{ border: 0 }}
+                        loading="lazy"
+                        allowFullScreen
+                        src={`https://www.google.com/maps?q=${encodeURIComponent(
+                          [facility.address, facility.city, facility.state].filter(Boolean).join(", ")
+                        )}&output=embed`}
+                      />
+                    </div>
                   </div>
-                );
-              })()}
+                )}
+              </div>
 
               {/* ── Photos & Documents (inline uploader) ── */}
-              {(() => {
-                const [open, setOpen] = useState(false);
-                return (
-                  <div className="mt-3 border border-border rounded-lg overflow-hidden">
-                    <button
-                      onClick={() => setOpen(!open)}
-                      className="w-full px-3 py-2 bg-muted/40 border-b border-border flex items-center gap-1.5 hover:bg-muted/60 transition-colors text-left"
-                    >
-                      {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-                      <Image size={13} className="text-primary" />
-                      <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Photos & Documents</span>
-                    </button>
-                    {open && (
-                      <div className="p-3">
-                        <p className="text-xs text-muted-foreground mb-3">
-                          Upload photos and documents related to this facility. Accepted: JPEG, PNG, PDF, DOC, DOCX (max 20MB each).
-                        </p>
-                        <div className="flex items-center gap-2 mb-3">
-                          <Input
-                            type="file"
-                            accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                            className="text-sm flex-1"
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0];
-                              if (!file) return;
-                              // Read file as base64
-                              const reader = new FileReader();
-                              reader.onload = async (ev) => {
-                                const base64 = (ev.target?.result as string)?.split(",")[1];
-                                if (!base64) { toast.error("Failed to read file"); return; }
-                                // Show uploading state
-                                toast.loading("Uploading...");
-                                try {
-                                  const resp = await fetch("/api/upload/attachment", {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({
-                                      auditId: 0,
-                                      facilityId,
-                                      base64Data: base64,
-                                      mimeType: file.type,
-                                      filename: file.name,
-                                    }),
-                                  });
-                                  const result = await resp.json();
-                                  if (result.success) {
-                                    toast.dismiss();
-                                    toast.success("File uploaded");
-                                  } else {
-                                    toast.dismiss();
-                                    toast.error(result.error || "Upload failed");
-                                  }
-                                } catch {
-                                  toast.dismiss();
-                                  toast.error("Upload failed");
-                                }
-                              };
-                              reader.readAsDataURL(file);
-                            }}
-                          />
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          Uploaded files are stored securely and linked to this facility.
-                        </p>
-                      </div>
-                    )}
+              <div className="mt-3 border border-border rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setPhotosOpen(!photosOpen)}
+                  className="w-full px-3 py-2 bg-muted/40 border-b border-border flex items-center gap-1.5 hover:bg-muted/60 transition-colors text-left"
+                >
+                  {photosOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                  <Image size={13} className="text-primary" />
+                  <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Photos & Documents</span>
+                </button>
+                {photosOpen && (
+                  <div className="p-3">
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Upload photos and documents related to this facility. Accepted: JPEG, PNG, PDF, DOC, DOCX (max 20MB each).
+                    </p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Input
+                        type="file"
+                        accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        className="text-sm flex-1"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          // Read file as base64
+                          const reader = new FileReader();
+                          reader.onload = async (ev) => {
+                            const base64 = (ev.target?.result as string)?.split(",")[1];
+                            if (!base64) { toast.error("Failed to read file"); return; }
+                            // Show uploading state
+                            toast.loading("Uploading...");
+                            try {
+                              const resp = await fetch("/api/upload/attachment", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  auditId: 0,
+                                  facilityId,
+                                  base64Data: base64,
+                                  mimeType: file.type,
+                                  filename: file.name,
+                                }),
+                              });
+                              const result = await resp.json();
+                              if (result.success) {
+                                toast.dismiss();
+                                toast.success("File uploaded");
+                              } else {
+                                toast.dismiss();
+                                toast.error(result.error || "Upload failed");
+                              }
+                            } catch {
+                              toast.dismiss();
+                              toast.error("Upload failed");
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Uploaded files are stored securely and linked to this facility.
+                    </p>
                   </div>
-                );
-              })()}
+                )}
+              </div>
 
               {/* AED display */}
               {facility.aedOnSite && (
