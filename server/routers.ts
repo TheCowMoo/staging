@@ -6,7 +6,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, auditorProcedure, adminProcedure, ultraAdminProcedure, superAdminProcedure, orgAdminProcedure, paidProcedure, router } from "./_core/trpc";
 import {
   createFacility, getFacilitiesByUser, getFacilityById, updateFacility, duplicateFacility, deleteFacility,
-  createAudit, getAuditsByFacility, getAuditsByUser, getAuditById, updateAudit, duplicateAuditResponses,
+  createAudit, getAuditsByFacility, getAuditsByUser, getAuditById, updateAudit, duplicateAuditResponses, deleteAudit,
   upsertAuditResponse, getResponsesByAudit,
   createThreatFinding, getThreatFindingsByAudit, deleteThreatFindingsByAudit,
   createAuditPhoto, getPhotosByAudit, deletePhoto,
@@ -430,6 +430,26 @@ const auditRouter = router({
         entityType: "audit",
         entityId: String(input.auditId),
         description: `Reopened audit for editing`,
+      });
+      return { success: true };
+    }),
+
+  // Delete an audit and all its related data (facility owner or platform admin only)
+  delete: paidProcedure
+    .input(z.object({ auditId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const audit = await getAuditById(input.auditId);
+      if (!audit) throw new TRPCError({ code: "NOT_FOUND" });
+      const facility = await getFacilityById(audit.facilityId);
+      if (!facility) throw new TRPCError({ code: "NOT_FOUND" });
+      if (facility.userId !== ctx.user.id && (!["admin","ultra_admin"].includes(ctx.user.role))) throw new TRPCError({ code: "FORBIDDEN" });
+      await deleteAudit(input.auditId);
+      await writeAuditLog(buildLogContext({ user: ctx.user, req: ctx.req }), {
+        action: "delete",
+        entityType: "audit",
+        entityId: String(input.auditId),
+        description: `Deleted audit #${input.auditId} for facility "${facility.name}"`,
+        metadata: { facilityId: audit.facilityId },
       });
       return { success: true };
     }),

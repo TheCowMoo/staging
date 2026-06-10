@@ -64,6 +64,14 @@ export default function FacilityDetail() {
     onError: (e) => toast.error(e.message),
   });
 
+  const deleteAudit = trpc.audit.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Assessment deleted");
+      utils.audit.listByFacility.invalidate({ facilityId });
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   const updateFacility = trpc.facility.update.useMutation({
     onSuccess: () => {
       toast.success("Facility updated successfully");
@@ -762,11 +770,14 @@ export default function FacilityDetail() {
           ) : (
             <div className="space-y-2">
               {audits.map((audit) => (
-                <Link
+                <div
                   key={audit.id}
-                  href={audit.status === "completed" ? `/audit/${audit.id}/report` : `/audit/${audit.id}`}
-                  className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors group"
                 >
+                  <Link
+                    href={audit.status === "completed" ? `/audit/${audit.id}/report` : `/audit/${audit.id}`}
+                    className="flex items-center gap-3 flex-1 min-w-0"
+                  >
                     <div className="flex items-center gap-3">
                       {audit.status === "completed" ? (
                         <CheckCircle2 size={16} className="text-green-500" />
@@ -780,7 +791,7 @@ export default function FacilityDetail() {
                         <p className="text-xs text-muted-foreground capitalize">{audit.status.replace("_", " ")}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 ml-auto">
                       {audit.overallRiskLevel && (
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getRiskBadgeClass(audit.overallRiskLevel)}`}>
                           {audit.overallRiskLevel} — {audit.overallScore?.toFixed(0)}%
@@ -790,7 +801,23 @@ export default function FacilityDetail() {
                         {audit.status === "completed" ? "View Report" : "Resume"}
                       </span>
                     </div>
-                </Link>
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="ml-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all"
+                    disabled={deleteAudit.isPending}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (window.confirm("Delete this assessment? This action cannot be undone. All responses, findings, photos, and EAP data will be permanently removed.")) {
+                        deleteAudit.mutate({ auditId: audit.id });
+                      }
+                    }}
+                  >
+                    <Trash2 size={14} />
+                  </Button>
+                </div>
               ))}
             </div>
           )}

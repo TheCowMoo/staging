@@ -265,6 +265,28 @@ export async function updateAudit(id: number, data: Partial<InsertAudit>) {
   return db.update(audits).set(data).where(eq(audits.id, id));
 }
 
+export async function deleteAudit(auditId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+
+  // Cascade-delete all related data
+  await deleteResponsesByAudit(auditId);
+  await deleteThreatFindingsByAudit(auditId);
+  await db.delete(auditPhotos).where(eq(auditPhotos.auditId, auditId));
+  await db.delete(testerFeedback).where(eq(testerFeedback.auditId, auditId));
+  await db.delete(questionFlags).where(eq(questionFlags.auditId, auditId));
+  await db.delete(correctiveActionChecks).where(eq(correctiveActionChecks.auditId, auditId));
+  await db.delete(eapSections).where(eq(eapSections.auditId, auditId));
+  await db.delete(eapSectionVersions).where(eq(eapSectionVersions.auditId, auditId));
+  await db.delete(facilityAttachments).where(eq(facilityAttachments.auditId, auditId));
+  await db.delete(auditLogs).where(
+    and(eq(auditLogs.entityType, "audit"), eq(auditLogs.entityId, String(auditId)))
+  );
+
+  // Finally delete the audit record itself
+  await db.delete(audits).where(eq(audits.id, auditId));
+}
+
 // ─── Audit Responses ──────────────────────────────────────────────────────────
 export async function upsertAuditResponse(data: InsertAuditResponse) {
   const db = await getDb();
