@@ -139,7 +139,8 @@ export async function revokeApiKey(id: number) {
 export async function createFacility(data: InsertFacility) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
-  const result = await db.insert(facilities).values(data);
+  const now = new Date();
+  const result = await db.insert(facilities).values({ ...data, createdAt: now, updatedAt: now });
   return getFacilityById(result.insertId);
 }
 
@@ -167,6 +168,7 @@ export async function duplicateFacility(id: number, newUserId: number) {
   if (!db) throw new Error("DB unavailable");
   const source = await getFacilityById(id);
   if (!source) throw new Error("Facility not found");
+  const now = new Date();
   const result = await db.insert(facilities).values({
     userId: newUserId,
     orgId: source.orgId,
@@ -194,6 +196,8 @@ export async function duplicateFacility(id: number, newUserId: number) {
     aedOnSite: source.aedOnSite,
     aedLocations: source.aedLocations,
     notes: source.notes,
+    createdAt: now,
+    updatedAt: now,
   });
   const newId = result.insertId;
   return getFacilityById(newId);
