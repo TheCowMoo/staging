@@ -183,6 +183,8 @@ export async function duplicateFacility(id: number, newUserId: number) {
     city: source.city,
     state: source.state,
     jurisdiction: source.jurisdiction,
+    latitude: source.latitude,
+    longitude: source.longitude,
     squareFootage: source.squareFootage,
     floors: source.floors,
     maxOccupancy: source.maxOccupancy,
