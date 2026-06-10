@@ -169,6 +169,7 @@ function EarpSection({
   llmContent,
   onSaved,
   canEdit,
+  eapGenerated,
 }: {
   auditId: number;
   sectionDef: typeof EARP_SECTIONS[0];
@@ -176,6 +177,7 @@ function EarpSection({
   llmContent: string | null;
   onSaved: () => void;
   canEdit: boolean;
+  eapGenerated?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -426,7 +428,16 @@ function EarpSection({
                 </div>
               ) : (
                 <div className="flex items-center gap-2 p-4 rounded-lg bg-muted/30 border border-dashed border-border">
-                  <p className="text-xs text-muted-foreground">No AI content for this section yet. Click <strong>Edit Section</strong> above to add your own content, or use the <strong>Generate EAP</strong> button at the top of the page to auto-populate all sections.</p>
+                  {eapGenerated ? (
+                    <p className="text-xs text-muted-foreground">
+                      {canEdit
+                        ? "No content generated for this section. Click <strong>Edit Section</strong> above to add manually, or <strong>Regenerate EAP</strong> to try again. Ensure facility profile and audit data are complete for best results."
+                        : "No content was generated for this section. A super-admin can edit this section manually, or you can <strong>Regenerate EAP</strong> above to try again."
+                      }
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">No EAP has been generated for this audit yet. Use the <strong>Generate EAP</strong> button above to auto-populate all sections based on facility and audit data.</p>
+                  )}
                 </div>
               )}
               {/* Auditor notes (read mode) */}
@@ -825,6 +836,7 @@ export default function EmergencyActionPlan() {
               llmContent={llmMap[sectionDef.id] ?? null}
               onSaved={refetchSections}
               canEdit={isSuperAdmin}
+              eapGenerated={!!eapData}
             />
           ))}
         </div>
