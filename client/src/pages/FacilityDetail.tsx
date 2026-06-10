@@ -39,11 +39,14 @@ export default function FacilityDetail() {
   const facilityId = isNaN(rawId) ? 0 : rawId;
   const [, navigate] = useLocation();
   const [isEditing, setIsEditing] = useState(false);
+
+  // Guard: don't query DB when id is invalid (e.g., 0 from parse failure)
+  const skipQuery = facilityId === 0;
+  const { data: facility, isLoading: facilityLoading } = trpc.facility.get.useQuery({ id: facilityId }, { enabled: !skipQuery });
+  const { data: audits, isLoading: auditsLoading } = trpc.audit.listByFacility.useQuery({ facilityId }, { enabled: !skipQuery });
   const [editForm, setEditForm] = useState<Record<string, any>>({});
 
   const utils = trpc.useUtils();
-  const { data: facility, isLoading: facilityLoading } = trpc.facility.get.useQuery({ id: facilityId });
-  const { data: audits, isLoading: auditsLoading } = trpc.audit.listByFacility.useQuery({ facilityId });
 
   const createAudit = trpc.audit.create.useMutation({
     onSuccess: (audit) => {

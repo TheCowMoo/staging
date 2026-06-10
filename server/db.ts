@@ -140,7 +140,7 @@ export async function createFacility(data: InsertFacility) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
   const result = await db.insert(facilities).values(data);
-  return result;
+  return getFacilityById(result.insertId);
 }
 
 export async function getFacilitiesByUser(userId: number) {
@@ -210,7 +210,7 @@ export async function createAudit(data: InsertAudit) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
   const result = await db.insert(audits).values(data);
-  return result;
+  return getAuditById(result.insertId);
 }
 
 export async function duplicateAuditResponses(sourceAuditId: number, targetAuditId: number) {

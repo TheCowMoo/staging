@@ -127,9 +127,7 @@ const facilityRouter = router({
       notes: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      await createFacility({ ...input, userId: ctx.user.id });
-      const facilities = await getFacilitiesByUser(ctx.user.id);
-      const newFacility = facilities[0];
+      const newFacility = await createFacility({ ...input, userId: ctx.user.id });
       await writeAuditLog(buildLogContext({ user: ctx.user, req: ctx.req }), {
         action: "create",
         entityType: "facility",
@@ -253,14 +251,13 @@ const auditRouter = router({
     .mutation(async ({ ctx, input }) => {
       const facility = await getFacilityById(input.facilityId);
       if (!facility) throw new TRPCError({ code: "NOT_FOUND" });
-      await createAudit({
+      const newAudit = await createAudit({
         facilityId: input.facilityId,
         auditorId: ctx.user.id,
         status: "in_progress",
         auditorNotes: input.auditorNotes,
       });
-      const audits = await getAuditsByFacility(input.facilityId);
-      return audits[0];
+      return newAudit;
     }),
 
   saveResponse: paidProcedure
@@ -401,14 +398,12 @@ const auditRouter = router({
       const facility = await getFacilityById(sourceAudit.facilityId);
       if (!facility) throw new TRPCError({ code: "NOT_FOUND" });
       // Create new in_progress audit for same facility
-      await createAudit({
+      const newAudit = await createAudit({
         facilityId: sourceAudit.facilityId,
         auditorId: ctx.user.id,
         status: "in_progress",
         auditorNotes: `Duplicated from audit #${input.auditId}`,
       });
-      const audits = await getAuditsByFacility(sourceAudit.facilityId);
-      const newAudit = audits[0];
       if (!newAudit) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create new audit" });
       // Copy all responses from source to new audit
       await duplicateAuditResponses(input.auditId, newAudit.id);
@@ -2786,9 +2781,7 @@ const onboardingRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { createAudit: shouldCreateAudit, orgId, ...facilityData } = input;
       // 1. Create the facility record
-      await createFacility({ ...facilityData, userId: ctx.user.id, orgId: orgId ?? undefined });
-      const userFacilities = await getFacilitiesByUser(ctx.user.id);
-      const newFacility = userFacilities[0];
+      const newFacility = await createFacility({ ...facilityData, userId: ctx.user.id, orgId: orgId ?? undefined });
       if (!newFacility) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Facility creation failed" });
       await writeAuditLog(buildLogContext({ user: ctx.user, req: ctx.req }), {
         action: "create",
@@ -2800,14 +2793,13 @@ const onboardingRouter = router({
       // 2. Optionally create an in-progress audit pre-linked to the facility
       let auditId: number | null = null;
       if (shouldCreateAudit) {
-        await createAudit({
+        const newAudit = await createAudit({
           facilityId: newFacility.id,
           auditorId: ctx.user.id,
           status: "in_progress",
           auditorNotes: `Initial audit created during facility onboarding for ${newFacility.name}.`,
         });
-        const audits = await getAuditsByFacility(newFacility.id);
-        auditId = audits[0]?.id ?? null;
+        auditId = newAudit?.id ?? null;
         await writeAuditLog(buildLogContext({ user: ctx.user, req: ctx.req }), {
           action: "create",
           entityType: "audit",
