@@ -537,14 +537,24 @@ export const trainingModuleRouter = router({
         return { url: mod.launchPath.startsWith("//") ? `https:${mod.launchPath}` : `https://${mod.launchPath}` };
       }
 
+      // Helper to determine the correct protocol (http vs https)
+      const getBaseUrl = () => {
+        const host = (ctx.req as any)?.headers?.host;
+        if (host) {
+          const isHttps =
+            ((ctx.req as any)?.headers?.["x-forwarded-proto"] === "https") ||
+            process.env.APP_BASE_URL?.startsWith("https://") ||
+            process.env.HTTPS === "true";
+          return `${isHttps ? "https" : "http"}://${host}`;
+        }
+        return process.env.APP_BASE_URL || "http://localhost:3000";
+      };
+
       // Handle local filesystem courses (storagePrefix starts with "local:")
       if (mod.storagePrefix && mod.storagePrefix.startsWith("local:")) {
         const dirName = mod.storagePrefix.replace(/^local:/, "");
         // Construct the URL path for the locally-served course
-        const baseUrl = (ctx.req as any)?.headers?.host 
-          ? `http://${(ctx.req as any).headers.host}`
-          : process.env.APP_BASE_URL || "http://localhost:3000";
-        return { url: `${baseUrl}/courses/${encodeURIComponent(dirName)}/${mod.launchPath}` };
+        return { url: `${getBaseUrl()}/courses/${encodeURIComponent(dirName)}/${mod.launchPath}` };
       }
 
       // Legacy Storyline modules: generate presigned S3 URL
@@ -554,10 +564,7 @@ export const trainingModuleRouter = router({
         const dirName = mod.storagePrefix
           ? mod.storagePrefix.replace(/^courses\//, "").replace(/^local:/, "")
           : mod.courseTitle;
-        const baseUrl = (ctx.req as any)?.headers?.host
-          ? `http://${(ctx.req as any).headers.host}`
-          : process.env.APP_BASE_URL || "http://localhost:3000";
-        return { url: `${baseUrl}/courses/${encodeURIComponent(dirName)}/${mod.launchPath}` };
+        return { url: `${getBaseUrl()}/courses/${encodeURIComponent(dirName)}/${mod.launchPath}` };
       }
       const s3Key = mod.storagePrefix
         ? `${mod.storagePrefix}/${mod.launchPath}`

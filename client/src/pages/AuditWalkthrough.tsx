@@ -242,18 +242,13 @@ export default function AuditWalkthrough() {
 
   const activeCategory = isEapContactsStep ? null : categories[activeCategoryIdx];
 
-  // Determine which menu section the user is currently in (for mutual exclusion)
-  const activeMenu = (() => {
-    if (!activeCategory) return null;
-    if (activeCategory.section === "cpted_physical") return "a" as const;
-    if (activeCategory.section === "eap_development") return "b" as const;
-    return null;
-  })();
+  // Determine which menu was selected at audit creation (permanent choice)
+  const selectedMenu = (audit as any)?.selectedMenu as "a" | "b" | null | undefined;
   const isCategoryInMenuA = (cat: typeof categories[0]) => cat.section === "cpted_physical";
   const isCategoryInMenuB = (cat: typeof categories[0]) => cat.section === "eap_development";
   const isCategoryInOppositeMenu = (cat: typeof categories[0]) =>
-    (activeMenu === "a" && isCategoryInMenuB(cat)) ||
-    (activeMenu === "b" && isCategoryInMenuA(cat));
+    (selectedMenu === "a" && isCategoryInMenuB(cat)) ||
+    (selectedMenu === "b" && isCategoryInMenuA(cat));
 
   const categoryGateRule = activeCategory ? CATEGORY_GATE_RULES[activeCategory.id] : undefined;
   const isCategoryGated = useMemo(() => {

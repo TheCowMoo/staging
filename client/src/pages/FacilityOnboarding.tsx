@@ -19,12 +19,26 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, ChevronRight, ChevronLeft, Building2, Layers, Clock, Users, HeartPulse, ShieldAlert } from "lucide-react";
+import { CheckCircle2, ChevronRight, ChevronLeft, Building2, Layers, Clock, Users, HeartPulse, ShieldAlert, Upload, X, Image as ImageIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { FACILITY_TYPES } from "@shared/auditFramework";
 import { ALL_STATE_PROVINCES } from "@shared/stateProvinces";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+interface FloorPlanEntry {
+  file: File;
+  name: string;
+  floor: string;
+  base64Data: string;
+  mimeType: string;
+  previewUrl: string;
+  width?: number;
+  height?: number;
+  uploading?: boolean;
+  uploaded?: boolean;
+  error?: string;
+}
+
 interface FormData {
   // Step 1 — Identity
   name: string;
@@ -106,17 +120,121 @@ export default function FacilityOnboarding() {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormData>(empty());
   const [submitted, setSubmitted] = useState<{ facilityId: number; facilityName: string; auditId: number | null } | null>(null);
+  const [floorPlans, setFloorPlans] = useState<FloorPlanEntry[]>([]);
+  const [newMapName, setNewMapName] = useState("");
+  const [newMapFloor, setNewMapFloor] = useState("");
+  const [uploadMapsPending, setUploadMapsPending] = useState(false);
 
   const set = <K extends keyof FormData>(k: K, v: FormData[K]) =>
     setForm(f => ({ ...f, [k]: v }));
 
   const submit = trpc.onboarding.submitProfile.useMutation({
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
+      // Upload any pending floor plans using the newly created facility ID
+      const pending = floorPlans.filter(p => !p.uploaded && !p.uploading);
+      if (pending.length > 0) {
+        setUploadMapsPending(true);
+        for (const plan of pending) {
+          plan.uploading = true;
+          setFloorPlans([...floorPlans]);
+          try {
+            await uploadFloorMap.mutateAsync({
+              facilityId: result.facilityId,
+              name: plan.name,
+              floor: plan.floor || undefined,
+              base64Data: plan.base64Data,
+              mimeType: plan.mimeType,
+              width: plan.width,
+              height: plan.height,
+            });
+            plan.uploaded = true;
+            plan.uploading = false;
+            setFloorPlans([...floorPlans]);
+          } catch (err: any) {
+            plan.uploading = false;
+            plan.error = err?.message || "Upload failed";
+            setFloorPlans([...floorPlans]);
+          }
+        }
+        setUploadMapsPending(false);
+      }
+
       setSubmitted(result);
       toast.success(`"${result.facilityName}" profile created successfully`);
     },
     onError: (e) => toast.error(e.message),
   });
+
+  const uploadFloorMap = trpc.facilityMap.upload.useMutation();
+
+  // ── Floor plan file handler ──
+  const handleFloorPlanFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const validTypes = ["image/png", "image/jpeg", "application/pdf"];
+    const newEntries: FloorPlanEntry[] = [];
+
+    for (const file of Array.from(files)) {
+      if (!validTypes.includes(file.type)) {
+        toast.error(`${file.name}: Only PNG, JPEG, and PDF files are supported`);
+        continue;
+      }
+
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const data = (reader.result as string).split(",")[1];
+          if (data) resolve(data);
+          else reject(new Error("Failed to read file"));
+        };
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsDataURL(file);
+      });
+
+      const name = newMapName.trim() || file.name.replace(/\.[^/.]+$/, "");
+      const previewUrl = file.type.startsWith("image/")
+        ? URL.createObjectURL(file)
+        : "";
+
+      // Try to get image dimensions
+      let width: number | undefined;
+      let height: number | undefined;
+      if (file.type.startsWith("image/")) {
+        try {
+          const img = new Image();
+          img.src = previewUrl;
+          await new Promise<void>((resolve, reject) => {
+            img.onload = () => { width = img.width; height = img.height; resolve(); };
+            img.onerror = () => resolve(); // ignore dimension errors
+          });
+        } catch { /* ignore */ }
+      }
+
+      newEntries.push({
+        file,
+        name,
+        floor: newMapFloor,
+        base64Data: base64,
+        mimeType: file.type,
+        previewUrl,
+        width,
+        height,
+      });
+    }
+
+    setFloorPlans(prev => [...prev, ...newEntries]);
+    setNewMapName("");
+    setNewMapFloor("");
+    // Reset the file input
+    e.target.value = "";
+  };
+
+  const removeFloorPlan = (index: number) => {
+    const plan = floorPlans[index];
+    if (plan.previewUrl) URL.revokeObjectURL(plan.previewUrl);
+    setFloorPlans(prev => prev.filter((_, i) => i !== index));
+  };
 
   // ── Validation per step ──
   const canAdvance = () => {
@@ -126,6 +244,9 @@ export default function FacilityOnboarding() {
 
   // ── Success screen ──
   if (submitted) {
+    const uploadedCount = floorPlans.filter(p => p.uploaded).length;
+    const failedCount = floorPlans.filter(p => p.error).length;
+
     return (
 
         <div className="container max-w-2xl py-16 text-center space-y-6">
@@ -134,6 +255,13 @@ export default function FacilityOnboarding() {
           <p className="text-muted-foreground">
             <strong>{submitted.facilityName}</strong> has been added to your facilities. All profile data has been saved and is ready to drive your audit, EAP, and reporting.
           </p>
+          {floorPlans.length > 0 && (
+            <p className="text-sm text-muted-foreground">
+              {uploadedCount} floor plan{uploadedCount !== 1 ? "s" : ""} uploaded
+              {failedCount > 0 && ` (${failedCount} failed)`}.
+              {uploadMapsPending && " Uploading remaining plans..."}
+            </p>
+          )}
           <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
             {submitted.auditId && (
               <Button onClick={() => navigate(`/audit/${submitted.auditId}`)}>
@@ -143,7 +271,7 @@ export default function FacilityOnboarding() {
             <Button variant="outline" onClick={() => navigate(`/facilities`)}>
               View All Facilities
             </Button>
-            <Button variant="ghost" onClick={() => { setSubmitted(null); setForm(empty()); setStep(1); }}>
+            <Button variant="ghost" onClick={() => { setSubmitted(null); setForm(empty()); setStep(1); setFloorPlans([]); }}>
               Add Another Facility
             </Button>
           </div>
@@ -284,6 +412,102 @@ export default function FacilityOnboarding() {
                       <Switch checked={form[key] as boolean} onCheckedChange={v => set(key, v)} />
                     </div>
                   ))}
+                </div>
+
+                {/* ── Floor Plan Upload Section ── */}
+                <div className="pt-4 border-t border-border space-y-4">
+                  <div className="flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4 text-primary" />
+                    <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Floor Plans</h3>
+                    <span className="text-[10px] text-muted-foreground">(uploaded after facility is created)</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Upload floor plans for this facility. Supports PNG, JPEG, and PDF. These will be uploaded once the facility profile is created.
+                  </p>
+
+                  {/* Add new floor plan form */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg bg-muted/30">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Map Name</Label>
+                      <Input
+                        placeholder="e.g. First Floor"
+                        value={newMapName}
+                        onChange={e => setNewMapName(e.target.value)}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Floor (optional)</Label>
+                      <Input
+                        placeholder="e.g. Floor 1, Basement"
+                        value={newMapFloor}
+                        onChange={e => setNewMapFloor(e.target.value)}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <div className="mt-1 flex justify-center px-4 pt-4 pb-4 border-2 border-dashed rounded-lg hover:border-primary/50 transition-colors cursor-pointer"
+                        onClick={() => document.getElementById("fp-file-upload")?.click()}
+                      >
+                        <div className="text-center">
+                          <Upload className="mx-auto h-6 w-6 text-muted-foreground" />
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Click to upload or drag and drop
+                          </p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            PNG, JPEG, or PDF up to 50MB
+                          </p>
+                        </div>
+                      </div>
+                      <input
+                        id="fp-file-upload"
+                        type="file"
+                        accept=".png,.jpg,.jpeg,.pdf,image/png,image/jpeg,application/pdf"
+                        className="hidden"
+                        multiple
+                        onChange={handleFloorPlanFile}
+                        disabled={submit.isPending}
+                      />
+                    </div>
+                  </div>
+
+                  {/* List of pending floor plans */}
+                  {floorPlans.length > 0 && (
+                    <div className="space-y-2">
+                      {floorPlans.map((plan, idx) => (
+                        <div key={idx} className="flex items-center gap-3 p-2 rounded-lg border border-border bg-card">
+                          {/* Thumbnail */}
+                          <div className="w-12 h-12 rounded-md bg-muted overflow-hidden flex-shrink-0 flex items-center justify-center">
+                            {plan.previewUrl ? (
+                              <img src={plan.previewUrl} alt={plan.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                            )}
+                          </div>
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium truncate">{plan.name}</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {plan.floor ? `${plan.floor} · ` : ""}
+                              {(plan.file.size / 1024).toFixed(0)} KB
+                              {plan.width && plan.height ? ` · ${plan.width}×${plan.height}` : ""}
+                            </p>
+                          </div>
+                          {/* Status / Remove */}
+                          <div className="flex items-center gap-1">
+                            {plan.uploading && <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />}
+                            {plan.uploaded && <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />}
+                            {plan.error && <span className="text-[10px] text-red-500 max-w-[120px] truncate" title={plan.error}>Error</span>}
+                            {!plan.uploading && !plan.uploaded && (
+                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeFloorPlan(idx)}>
+                                <X className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -428,6 +652,14 @@ export default function FacilityOnboarding() {
                         </button>
                       </span>
                     </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className={`h-4 w-4 mt-0.5 shrink-0 ${floorPlans.length > 0 ? "text-green-500" : "text-muted-foreground"}`} />
+                      <span>
+                        {floorPlans.length > 0
+                          ? `${floorPlans.length} floor plan${floorPlans.length !== 1 ? "s" : ""} will be uploaded after submission.`
+                          : "No floor plans selected for upload."}
+                      </span>
+                    </div>
                   </div>
                 </div>
                 {form.facilityType && (
@@ -487,10 +719,10 @@ export default function FacilityOnboarding() {
                 notes: form.notes.trim() || undefined,
                 createAudit: form.createAudit,
               })}
-              disabled={submit.isPending}
+              disabled={submit.isPending || uploadMapsPending}
             >
-              {submit.isPending ? "Creating…" : "Create Facility Profile"}
-              {!submit.isPending && <CheckCircle2 className="h-4 w-4 ml-1" />}
+              {(submit.isPending || uploadMapsPending) ? "Creating…" : "Create Facility Profile"}
+              {!(submit.isPending || uploadMapsPending) && <CheckCircle2 className="h-4 w-4 ml-1" />}
             </Button>
           )}
         </div>

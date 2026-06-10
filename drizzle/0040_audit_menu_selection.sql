@@ -1,0 +1,1 @@
+ALTER TABLE audits ADD COLUMN selectedMenu ENUM('a','b') NULL;

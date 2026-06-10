@@ -243,6 +243,7 @@ export const audits = mysqlTable("audits", {
   eapGeneratedAt: timestamp("eapGeneratedAt"),
   executiveSummaryJson: json("executiveSummaryJson"),
   executiveSummaryGeneratedAt: timestamp("executiveSummaryGeneratedAt"),
+  selectedMenu: mysqlEnum("selectedMenu", ["a", "b"]),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
