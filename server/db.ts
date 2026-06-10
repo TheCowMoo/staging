@@ -140,22 +140,12 @@ export async function createFacility(data: InsertFacility) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
   const now = new Date();
-  console.log("[createFacility] Inserting facility with data:", { ...data, createdAt: now, updatedAt: now });
-  try {
-    const result = await db.insert(facilities).values({ ...data, createdAt: now, updatedAt: now });
-    console.log("[createFacility] Insert result:", JSON.stringify(result), "insertId type:", typeof result.insertId, "value:", result.insertId);
-    const id = Number(result.insertId);
-    if (!id || isNaN(id)) {
-      console.error("[createFacility] Invalid insertId:", result.insertId);
-      throw new Error("Invalid insertId after facility insert");
-    }
-    const facility = await getFacilityById(id);
-    console.log("[createFacility] Retrieved facility:", facility?.id ?? "undefined");
-    return facility;
-  } catch (err) {
-    console.error("[createFacility] ERROR:", err);
-    throw err;
+  const [result] = await db.insert(facilities).values({ ...data, createdAt: now, updatedAt: now });
+  const id = Number(result.insertId);
+  if (!id || isNaN(id)) {
+    throw new Error("Invalid insertId after facility insert");
   }
+  return getFacilityById(id);
 }
 
 export async function getFacilitiesByUser(userId: number) {
@@ -183,7 +173,7 @@ export async function duplicateFacility(id: number, newUserId: number) {
   const source = await getFacilityById(id);
   if (!source) throw new Error("Facility not found");
   const now = new Date();
-  const result = await db.insert(facilities).values({
+  const [result] = await db.insert(facilities).values({
     userId: newUserId,
     orgId: source.orgId,
     name: `${source.name} (Copy)`,
@@ -227,7 +217,7 @@ export async function deleteFacility(id: number) {
 export async function createAudit(data: InsertAudit) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
-  const result = await db.insert(audits).values(data);
+  const [result] = await db.insert(audits).values(data);
   return getAuditById(result.insertId);
 }
 
