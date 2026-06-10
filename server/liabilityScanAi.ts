@@ -417,6 +417,31 @@ const normalizeAnswers = (answers: Record<string, string | boolean>): Record<str
   ) as Record<string, AnswerValue>;
 };
 
+/**
+ * Normalize the LLM's recommended_next_actions to a flat string[].
+ * The Layer-2 interpreter sometimes returns an array of objects like
+ * { priority: "Immediate", action: "..." } instead of plain strings.
+ * This helper converts any such objects to readable strings so they
+ * can be safely stored and rendered as React children.
+ */
+function normalizeActionPlan(raw: unknown): string[] | null {
+  if (!Array.isArray(raw) || raw.length === 0) return null;
+  return raw.map((item) => {
+    if (typeof item === "string") return item;
+    if (item && typeof item === "object") {
+      const obj = item as Record<string, unknown>;
+      // Handle {priority, action} shape returned by some LLM responses
+      if (typeof obj.action === "string") {
+        return obj.priority ? `${obj.priority}: ${obj.action}` : obj.action;
+      }
+      // Fallback: join all string values
+      const values = Object.values(obj).filter((v) => typeof v === "string");
+      if (values.length > 0) return values.join(" — ");
+    }
+    return String(item ?? "");
+  }).filter(Boolean);
+}
+
 const validateAiResult: (candidate: any) => asserts candidate is AssessmentOutput = (candidate) => {
   if (typeof candidate !== "object" || candidate === null) {
     throw new Error("AI response did not return a valid object");
@@ -593,7 +618,7 @@ export async function generateLiabilityScanResult(
     categoryScores: engineResult.categoryScores,
     interpretation: (interpParsed?.executive_summary as string) || engineResult.interpretation,
     advisorSummary: (interpParsed?.defensibility_risk_statement as string) || engineResult.advisorSummary,
-    immediateActionPlan: (interpParsed?.recommended_next_actions as string[]) || engineResult.immediateActionPlan,
+    immediateActionPlan: normalizeActionPlan(interpParsed?.recommended_next_actions) || engineResult.immediateActionPlan,
     ctaBlock: (outParsed?.CTA_block as string[]) || engineResult.ctaBlock,
     crmPayload: engineResult.crmPayload,
     escalationFlags: engineResult.escalationFlags,

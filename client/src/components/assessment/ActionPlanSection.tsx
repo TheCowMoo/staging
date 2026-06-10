@@ -34,8 +34,22 @@ interface ActionCardProps {
   onToggle: () => void;
 }
 
+/** Safely convert an action item to a string, handling legacy {priority, action} objects stored in DB */
+function normalizeAction(item: unknown): string {
+  if (typeof item === "string") return item;
+  if (item && typeof item === "object") {
+    const obj = item as Record<string, unknown>;
+    if (typeof obj.action === "string") {
+      return obj.priority ? `${obj.priority}: ${obj.action}` : obj.action;
+    }
+    const vals = Object.values(obj).filter((v) => typeof v === "string");
+    if (vals.length > 0) return vals.join(" — ");
+  }
+  return String(item ?? "");
+}
+
 function ActionCard({ action, index, checked, onToggle }: ActionCardProps) {
-  const actionStr = typeof action === "string" ? action : String(action ?? "");
+  const actionStr = normalizeAction(action);
   const dashIdx = actionStr.indexOf(" — ");
   const title = dashIdx > -1 ? actionStr.slice(0, dashIdx) : actionStr;
   const body = dashIdx > -1 ? actionStr.slice(dashIdx + 3) : "";
