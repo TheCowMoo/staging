@@ -214,6 +214,9 @@ export const facilities = mysqlTable("facilities", {
   aedOnSite: boolean("aedOnSite").default(false),
   aedLocations: text("aedLocations"),
   // Administration section
+  latitude: float("latitude"),
+  longitude: float("longitude"),
+  // Administration section
   operationalPolicies: text("operationalPolicies"),
   coordinatorContacts: text("coordinatorContacts"),
   emergencyContacts: text("emergencyContacts"),
