@@ -1,4 +1,3 @@
-import AppLayout from "@/components/AppLayout";
 import { trpc } from "@/lib/trpc";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,7 @@ export default function EAPList() {
   const inProgressAudits = (audits ?? []).filter((a: any) => a.status === "in_progress");
 
   return (
-    <AppLayout>
+
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         {/* Header */}
         <div className="bg-gradient-to-r from-red-900 to-slate-900 rounded-2xl p-6 text-white">
@@ -86,7 +85,7 @@ export default function EAPList() {
           </>
         )}
       </div>
-    </AppLayout>
+
   );
 }
 

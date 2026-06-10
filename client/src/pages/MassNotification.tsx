@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
-import AppLayout from "@/components/AppLayout";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -54,18 +54,18 @@ export default function MassNotification() {
 
   if (!isAdmin) {
     return (
-      <AppLayout>
+
         <div className="max-w-2xl mx-auto px-6 py-12 text-center">
           <Bell className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
           <h1 className="text-2xl font-bold mb-2">Admin Access Required</h1>
           <p className="text-muted-foreground">Only administrators can send mass notifications.</p>
         </div>
-      </AppLayout>
+
     );
   }
 
   return (
-    <AppLayout>
+
       <div className="max-w-3xl mx-auto px-6 py-8 space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -209,6 +209,6 @@ export default function MassNotification() {
           </Card>
         )}
       </div>
-    </AppLayout>
+
   );
 }

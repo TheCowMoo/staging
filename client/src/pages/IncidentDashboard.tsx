@@ -1,7 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
 import { useLocation } from "wouter";
-import AppLayout from "@/components/AppLayout";
+
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -418,7 +418,7 @@ export default function IncidentDashboard() {
   };
 
   return (
-    <AppLayout>
+
       <div className="p-6 max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -877,6 +877,6 @@ export default function IncidentDashboard() {
           </div>
         )}
       </div>
-    </AppLayout>
+
   );
 }

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Crosshair, MapPin, Users } from "lucide-react";
 import { useLocation } from "wouter";
-import AppLayout from "@/components/AppLayout";
+
 import { MapView } from "@/components/Map";
 import { trpc } from "@/lib/trpc";
 import { Badge } from "@/components/ui/badge";
@@ -250,7 +250,7 @@ export default function PersonnelTracking() {
   }, [selectedMember]);
 
   return (
-    <AppLayout>
+
       <div className="p-6 max-w-7xl mx-auto space-y-6">
                 <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
@@ -417,6 +417,6 @@ export default function PersonnelTracking() {
           </aside>
         </div>
       </div>
-    </AppLayout>
+
   );
 }

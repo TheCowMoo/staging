@@ -32,6 +32,7 @@ import {
   trainingModules, InsertTrainingModule,
   microDrillAssignments, InsertMicroDrillAssignment,
   facilityFloorMaps, InsertFacilityFloorMap,
+  alertEvents,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -210,7 +211,38 @@ export async function duplicateFacility(id: number, newUserId: number) {
 export async function deleteFacility(id: number) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
-  return db.delete(facilities).where(eq(facilities.id, id));
+
+  // Cascade delete all audits for this facility
+  const auditsForFacility = await db.select({ id: audits.id }).from(audits).where(eq(audits.facilityId, id));
+  for (const audit of auditsForFacility) {
+    await deleteAudit(audit.id);
+  }
+
+  // Delete incident reports linked to this facility
+  await db.delete(incidentReports).where(eq(incidentReports.facilityId, id));
+
+  // Delete facility attachments not tied to a specific audit
+  await db.delete(facilityAttachments).where(
+    and(eq(facilityAttachments.facilityId, id), isNull(facilityAttachments.auditId))
+  );
+
+  // Delete floor maps for this facility
+  await db.delete(facilityFloorMaps).where(eq(facilityFloorMaps.facilityId, id));
+
+  // Delete related entities
+  await db.delete(liabilityScans).where(eq(liabilityScans.facilityId, id));
+  await db.delete(drillSessions).where(eq(drillSessions.facilityId, id));
+  await db.delete(drillTemplates).where(eq(drillTemplates.facilityId, id));
+  await db.delete(staffCheckins).where(eq(staffCheckins.facilityId, id));
+  await db.delete(alertEvents).where(eq(alertEvents.facilityId, id));
+
+  // Delete facility-level audit logs
+  await db.delete(auditLogs).where(
+    and(eq(auditLogs.entityType, "facility"), eq(auditLogs.entityId, String(id)))
+  );
+
+  // Finally delete the facility itself
+  await db.delete(facilities).where(eq(facilities.id, id));
 }
 
 // ─── Audits ───────────────────────────────────────────────────────────────────

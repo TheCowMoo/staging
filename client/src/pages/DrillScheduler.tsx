@@ -10,7 +10,7 @@
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import AppLayout from "@/components/AppLayout";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -1616,7 +1616,7 @@ export default function DrillScheduler() {
     : [];
 
   return (
-    <AppLayout>
+
       <div className="container max-w-5xl py-8 space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -2459,6 +2459,6 @@ export default function DrillScheduler() {
           </DialogContent>
         </Dialog>
       )}
-    </AppLayout>
+
   );
 }

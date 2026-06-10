@@ -25,19 +25,19 @@ import {
 } from "lucide-react";
 
 const CONCERN_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  low: { label: "Low", color: "text-green-700", bg: "bg-green-100" },
-  moderate: { label: "Moderate", color: "text-yellow-700", bg: "bg-yellow-100" },
-  elevated: { label: "Elevated", color: "text-orange-700", bg: "bg-orange-100" },
-  high: { label: "High", color: "text-red-700", bg: "bg-red-100" },
-  critical: { label: "Critical", color: "text-red-900", bg: "bg-red-200" },
+  low: { label: "Low", color: "text-green-700 dark:text-green-300", bg: "bg-green-100 dark:bg-green-900/30" },
+  moderate: { label: "Moderate", color: "text-yellow-700 dark:text-yellow-300", bg: "bg-yellow-100 dark:bg-yellow-900/30" },
+  elevated: { label: "Elevated", color: "text-orange-700 dark:text-orange-300", bg: "bg-orange-100 dark:bg-orange-900/30" },
+  high: { label: "High", color: "text-red-700 dark:text-red-300", bg: "bg-red-100 dark:bg-red-900/30" },
+  critical: { label: "Critical", color: "text-red-900 dark:text-red-200", bg: "bg-red-200 dark:bg-red-900/40" },
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  open: { label: "Open", color: "text-blue-700 bg-blue-100" },
-  monitoring: { label: "Monitoring", color: "text-purple-700 bg-purple-100" },
-  intervention: { label: "Intervention", color: "text-orange-700 bg-orange-100" },
-  closed: { label: "Closed", color: "text-slate-600 bg-slate-100" },
-  referred: { label: "Referred", color: "text-teal-700 bg-teal-100" },
+  open: { label: "Open", color: "text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-900/30" },
+  monitoring: { label: "Monitoring", color: "text-purple-700 bg-purple-100 dark:text-purple-300 dark:bg-purple-900/30" },
+  intervention: { label: "Intervention", color: "text-orange-700 bg-orange-100 dark:text-orange-300 dark:bg-orange-900/30" },
+  closed: { label: "Closed", color: "text-slate-600 bg-slate-100 dark:text-slate-300 dark:bg-slate-800" },
+  referred: { label: "Referred", color: "text-teal-700 bg-teal-100 dark:text-teal-300 dark:bg-teal-900/30" },
 };
 
 type BtamCase = {
@@ -87,25 +87,25 @@ export default function BtamDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-indigo-100 rounded-lg">
-            <Shield className="w-6 h-6 text-indigo-700" />
+          <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+            <Shield className="w-6 h-6 text-indigo-700 dark:text-indigo-300" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-foreground">
               Behavioral Threat Assessment
             </h1>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-muted-foreground">
               Confidential — Authorized Personnel Only
             </p>
           </div>
-          <div className="flex items-center gap-1 ml-2 px-2 py-1 bg-slate-100 rounded text-xs text-slate-600">
+          <div className="flex items-center gap-1 ml-2 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs text-slate-600 dark:text-slate-300">
             <Lock className="w-3 h-3" />
             <span>Restricted Access</span>
           </div>
         </div>
         {isAdmin && (
           <Link href="/btam/new">
-            <Button className="gap-2 bg-indigo-700 hover:bg-indigo-800">
+            <Button className="gap-2 bg-indigo-700 hover:bg-indigo-800 dark:bg-indigo-600 dark:hover:bg-indigo-700">
               <Plus className="w-4 h-4" />
               New Referral
             </Button>
@@ -115,39 +115,39 @@ export default function BtamDashboard() {
 
       {/* Stats Row */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-white border border-slate-200 rounded-xl p-4">
+        <div className="bg-white dark:bg-card border border-slate-200 dark:border-border rounded-xl p-4">
           <div className="flex items-center gap-2 mb-1">
-            <FileText className="w-4 h-4 text-blue-600" />
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+            <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span className="text-xs font-semibold text-slate-500 dark:text-muted-foreground uppercase tracking-wide">
               Open Cases
             </span>
           </div>
-          <p className="text-3xl font-bold text-slate-900">{openCount}</p>
+          <p className="text-3xl font-bold text-slate-900 dark:text-foreground">{openCount}</p>
         </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-4">
+        <div className="bg-white dark:bg-card border border-slate-200 dark:border-border rounded-xl p-4">
           <div className="flex items-center gap-2 mb-1">
-            <AlertTriangle className="w-4 h-4 text-red-600" />
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+            <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
+            <span className="text-xs font-semibold text-slate-500 dark:text-muted-foreground uppercase tracking-wide">
               High / Critical
             </span>
           </div>
-          <p className="text-3xl font-bold text-red-700">{highCount}</p>
+          <p className="text-3xl font-bold text-red-700 dark:text-red-400">{highCount}</p>
         </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-4">
+        <div className="bg-white dark:bg-card border border-slate-200 dark:border-border rounded-xl p-4">
           <div className="flex items-center gap-2 mb-1">
-            <Clock className="w-4 h-4 text-orange-600" />
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+            <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+            <span className="text-xs font-semibold text-slate-500 dark:text-muted-foreground uppercase tracking-wide">
               In Intervention
             </span>
           </div>
-          <p className="text-3xl font-bold text-orange-700">{interventionCount}</p>
+          <p className="text-3xl font-bold text-orange-700 dark:text-orange-400">{interventionCount}</p>
         </div>
       </div>
 
       {/* Filters */}
       <div className="flex gap-3 mb-4">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-muted-foreground" />
           <Input
             placeholder="Search case number..."
             value={search}
@@ -184,14 +184,14 @@ export default function BtamDashboard() {
       </div>
 
       {/* Case List */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+      <div className="bg-white dark:bg-card border border-slate-200 dark:border-border rounded-xl overflow-hidden">
         {isLoading ? (
-          <div className="p-12 text-center text-slate-400">
+          <div className="p-12 text-center text-slate-400 dark:text-muted-foreground">
             <Shield className="w-8 h-8 mx-auto mb-3 opacity-40" />
             <p>Loading cases...</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="p-12 text-center text-slate-400">
+          <div className="p-12 text-center text-slate-400 dark:text-muted-foreground">
             <Shield className="w-8 h-8 mx-auto mb-3 opacity-40" />
             <p className="font-medium">No cases found</p>
             <p className="text-sm mt-1">
@@ -203,23 +203,23 @@ export default function BtamDashboard() {
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50">
-                <th className="text-left px-4 py-3 font-semibold text-slate-600">
+              <tr className="border-b border-slate-100 dark:border-border bg-slate-50 dark:bg-muted">
+                <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-muted-foreground">
                   Case #
                 </th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-600">
+                <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-muted-foreground">
                   Status
                 </th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-600">
+                <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-muted-foreground">
                   Concern Level
                 </th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-600">
+                <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-muted-foreground">
                   Violence Type
                 </th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-600">
+                <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-muted-foreground">
                   Opened
                 </th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-600">
+                <th className="text-left px-4 py-3 font-semibold text-slate-600 dark:text-muted-foreground">
                   Last Updated
                 </th>
                 <th className="px-4 py-3" />
@@ -232,17 +232,17 @@ export default function BtamDashboard() {
                   : null;
                 const status = STATUS_CONFIG[c.status] ?? {
                   label: c.status,
-                  color: "text-slate-600 bg-slate-100",
+                  color: "text-slate-600 bg-slate-100 dark:text-slate-300 dark:bg-slate-800",
                 };
                 return (
                   <tr
                     key={c.id}
-                    className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+                    className="border-b border-slate-100 dark:border-border hover:bg-slate-50 dark:hover:bg-muted transition-colors"
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-slate-400" />
-                        <span className="font-mono font-semibold text-indigo-700">
+                        <User className="w-4 h-4 text-slate-400 dark:text-muted-foreground" />
+                        <span className="font-mono font-semibold text-indigo-700 dark:text-indigo-300">
                           {c.caseNumber}
                         </span>
                       </div>
@@ -260,18 +260,18 @@ export default function BtamDashboard() {
                           {concern.label}
                         </Badge>
                       ) : (
-                        <span className="text-slate-400 text-xs">Pending</span>
+                        <span className="text-slate-400 dark:text-muted-foreground text-xs">Pending</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="capitalize text-slate-700">
+                      <span className="capitalize text-slate-700 dark:text-foreground/80">
                         {c.violenceType?.replace(/_/g, " ") ?? "—"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-500">
+                    <td className="px-4 py-3 text-slate-500 dark:text-muted-foreground">
                       {new Date(c.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-4 py-3 text-slate-500">
+                    <td className="px-4 py-3 text-slate-500 dark:text-muted-foreground">
                       {new Date(c.updatedAt).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-3">
@@ -290,9 +290,9 @@ export default function BtamDashboard() {
       </div>
 
       {/* Confidentiality Notice */}
-      <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
-        <Lock className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-        <p className="text-xs text-amber-800">
+      <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 rounded-lg flex items-start gap-2">
+        <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+        <p className="text-xs text-amber-800 dark:text-amber-300">
           <strong>Confidentiality Notice:</strong> All BTAM case information is
           strictly confidential and protected under applicable privacy laws. Access
           is limited to authorized TAT members. Unauthorized disclosure is

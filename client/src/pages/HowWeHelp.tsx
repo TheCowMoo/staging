@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import AppLayout from "@/components/AppLayout";
+
 import { ProtectedLayout } from "@/components/ProtectedLayout";
 import { AssessmentCTAButton } from "@/components/assessment";
 import { BRAND, HEADING_FONT } from "@/components/assessment/brandUtils";
@@ -331,11 +331,11 @@ function HowWeHelpContent() {
 export default function HowWeHelp() {
   return (
     <ProtectedLayout>
-      <AppLayout>
+
         <div className="p-6 max-w-6xl mx-auto">
           <HowWeHelpContent />
         </div>
-      </AppLayout>
+
     </ProtectedLayout>
   );
 }

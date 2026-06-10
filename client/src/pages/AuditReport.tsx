@@ -1,5 +1,3 @@
-
-import AppLayout from "@/components/AppLayout";
 import { trpc } from "@/lib/trpc";
 import { useParams, Link } from "wouter";
 import { useState, useEffect } from "react";
@@ -424,24 +422,24 @@ export default function AuditReport() {
 
   if (isLoading) {
     return (
-      <AppLayout>
+
         <div className="p-6 flex items-center justify-center min-h-64">
           <div className="text-center">
             <Shield className="text-primary animate-pulse mx-auto mb-3" size={40} />
             <p className="text-muted-foreground text-sm">Generating report...</p>
           </div>
         </div>
-      </AppLayout>
+
     );
   }
 
   if (!reportData) {
     return (
-      <AppLayout>
+
         <div className="p-6 text-center">
           <p className="text-muted-foreground">Report data not available.</p>
         </div>
-      </AppLayout>
+
     );
   }
 
@@ -488,7 +486,7 @@ export default function AuditReport() {
   const categoryToRecMap = getCategoryToRecommendationMap(recommendedActions);
 
   return (
-    <AppLayout>
+
       <div className="p-6 max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -1432,6 +1430,6 @@ export default function AuditReport() {
           </TabsContent>
         </Tabs>
       </div>
-    </AppLayout>
+
   );
 }

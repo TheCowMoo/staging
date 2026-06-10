@@ -13,7 +13,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import AppLayout from "@/components/AppLayout";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -143,18 +143,18 @@ export default function MicroDrillRunner() {
   // Loading state
   if (assignmentQuery.isLoading) {
     return (
-      <AppLayout>
+
         <div className="flex items-center justify-center min-h-[60vh]">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
-      </AppLayout>
+
     );
   }
 
   // Assignment not found
   if (!assignment || !drill) {
     return (
-      <AppLayout>
+
         <div className="container max-w-2xl py-16 text-center text-muted-foreground">
           <AlertTriangle className="h-10 w-10 mx-auto mb-3 opacity-30" />
           <p className="font-medium">Drill assignment not found</p>
@@ -163,12 +163,12 @@ export default function MicroDrillRunner() {
             Back to Drills
           </Button>
         </div>
-      </AppLayout>
+
     );
   }
 
   return (
-    <AppLayout>
+
       <div className="container max-w-3xl py-8 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
@@ -517,6 +517,6 @@ export default function MicroDrillRunner() {
           </div>
         )}
       </div>
-    </AppLayout>
+
   );
 }

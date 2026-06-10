@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import AppLayout from "@/components/AppLayout";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -62,7 +62,7 @@ export default function FlaggedVisitors() {
   };
 
   return (
-    <AppLayout>
+
       <div className="container max-w-4xl py-8 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
@@ -373,6 +373,6 @@ export default function FlaggedVisitors() {
           </Card>
         )}
       </div>
-    </AppLayout>
+
   );
 }

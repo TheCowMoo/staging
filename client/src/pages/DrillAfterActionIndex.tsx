@@ -4,7 +4,7 @@
  */
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import AppLayout from "@/components/AppLayout";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,7 +26,7 @@ export default function DrillAfterActionIndex() {
   const all = [...inProgress, ...completed];
 
   return (
-    <AppLayout>
+
       <div className="container max-w-3xl py-8 space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
@@ -102,6 +102,6 @@ export default function DrillAfterActionIndex() {
           </Button>
         </div>
       </div>
-    </AppLayout>
+
   );
 }

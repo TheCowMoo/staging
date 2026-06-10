@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import AppLayout from "@/components/AppLayout";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -148,7 +148,7 @@ export default function FeedbackDashboard() {
   };
 
   return (
-    <AppLayout>
+
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between">
@@ -446,6 +446,6 @@ export default function FeedbackDashboard() {
           </div>
         )}
       </div>
-    </AppLayout>
+
   );
 }

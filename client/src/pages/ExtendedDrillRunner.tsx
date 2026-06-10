@@ -11,7 +11,7 @@
  */
 import { useState, useRef, useEffect } from "react";
 import { useLocation, useParams } from "wouter";
-import AppLayout from "@/components/AppLayout";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -99,7 +99,7 @@ export default function ExtendedDrillRunner() {
 
   if (!selectedDrill) {
     return (
-      <AppLayout>
+
         <div className="container max-w-3xl py-8 space-y-6">
           <div className="flex items-center justify-between">
             <div>
@@ -136,14 +136,14 @@ export default function ExtendedDrillRunner() {
             </div>
           )}
         </div>
-      </AppLayout>
+
     );
   }
 
   const d = selectedDrill;
 
   return (
-    <AppLayout>
+
       <div className="container max-w-3xl py-8 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
@@ -417,6 +417,6 @@ export default function ExtendedDrillRunner() {
           </div>
         )}
       </div>
-    </AppLayout>
+
   );
 }

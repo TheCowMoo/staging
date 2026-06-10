@@ -1,5 +1,5 @@
 import { useState } from "react";
-import AppLayout from "@/components/AppLayout";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -255,7 +255,7 @@ export default function OshaReference() {
   const formsByName = Object.fromEntries(OSHA_FORMS.forms.map((f) => [f.name, f]));
 
   return (
-    <AppLayout>
+
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-10">
 
         {/* ── Page Header ─────────────────────────────────────────────────── */}
@@ -633,6 +633,6 @@ export default function OshaReference() {
         </Section>
 
       </div>
-    </AppLayout>
+
   );
 }

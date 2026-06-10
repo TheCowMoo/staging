@@ -1,4 +1,3 @@
-import AppLayout from "@/components/AppLayout";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +30,7 @@ export default function TrainingModules() {
   const canAdmin = user?.role === "admin" || user?.role === "ultra_admin" || user?.role === "super_admin";
 
   return (
-    <AppLayout>
+
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -151,6 +150,6 @@ export default function TrainingModules() {
           </>
         )}
       </div>
-    </AppLayout>
+
   );
 }

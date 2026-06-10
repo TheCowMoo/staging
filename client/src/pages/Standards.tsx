@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { Input } from "@/components/ui/input";
 import { useLocation } from "wouter";
-import AppLayout from "@/components/AppLayout";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -1553,7 +1553,7 @@ export default function Standards() {
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <AppLayout>
+
        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-8">
         {/* Back button */}
         <button
@@ -1939,6 +1939,6 @@ export default function Standards() {
         </Card>
 
       </div>
-    </AppLayout>
+
   );
 }

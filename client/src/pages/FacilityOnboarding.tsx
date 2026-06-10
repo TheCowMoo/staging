@@ -9,7 +9,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import AppLayout from "@/components/AppLayout";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { OperatingHoursSelector } from "@/components/OperatingHoursSelector";
@@ -127,7 +127,7 @@ export default function FacilityOnboarding() {
   // ── Success screen ──
   if (submitted) {
     return (
-      <AppLayout>
+
         <div className="container max-w-2xl py-16 text-center space-y-6">
           <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto" />
           <h1 className="text-2xl font-bold">Facility Profile Created</h1>
@@ -148,12 +148,12 @@ export default function FacilityOnboarding() {
             </Button>
           </div>
         </div>
-      </AppLayout>
+
     );
   }
 
   return (
-    <AppLayout>
+
       <div className="container max-w-2xl py-8 space-y-6">
         {/* Page header */}
         <div>
@@ -495,6 +495,6 @@ export default function FacilityOnboarding() {
           )}
         </div>
       </div>
-    </AppLayout>
+
   );
 }

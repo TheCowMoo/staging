@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import AppLayout from "@/components/AppLayout";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,7 +52,7 @@ export default function MicroDrillTracking() {
   const inProgressCount = assignments.filter(a => a.status === "in_progress").length;
 
   return (
-    <AppLayout>
+
       <div className="container max-w-6xl py-8 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
@@ -281,6 +281,6 @@ export default function MicroDrillTracking() {
           </div>
         )}
       </div>
-    </AppLayout>
+
   );
 }

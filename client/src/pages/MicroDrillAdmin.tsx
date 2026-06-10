@@ -12,7 +12,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import AppLayout from "@/components/AppLayout";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -172,7 +172,7 @@ export default function MicroDrillAdmin() {
   };
 
   return (
-    <AppLayout>
+
       <div className="container max-w-5xl py-8 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-3">
@@ -572,6 +572,6 @@ export default function MicroDrillAdmin() {
           </TabsContent>
         </Tabs>
       </div>
-    </AppLayout>
+
   );
 }

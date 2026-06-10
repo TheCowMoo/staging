@@ -42,20 +42,20 @@ import { toast } from "sonner";
 
 // ── Concern level helpers ──────────────────────────────────────────────────
 const CONCERN_COLORS: Record<string, string> = {
-  pending: "bg-slate-100 text-slate-700",
-  low: "bg-green-100 text-green-800",
-  moderate: "bg-yellow-100 text-yellow-800",
-  elevated: "bg-orange-100 text-orange-800",
-  high: "bg-red-100 text-red-800",
-  imminent: "bg-red-600 text-white",
+  pending: "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200",
+  low: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+  moderate: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
+  elevated: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
+  high: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+  imminent: "bg-red-600 text-white dark:bg-red-700",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  open: "bg-blue-100 text-blue-800",
-  active: "bg-indigo-100 text-indigo-800",
-  monitoring: "bg-yellow-100 text-yellow-800",
-  closed: "bg-slate-100 text-slate-600",
-  archived: "bg-slate-100 text-slate-400",
+  open: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+  active: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300",
+  monitoring: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
+  closed: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
+  archived: "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500",
 };
 
 // ── WAVR-21 factor definitions ─────────────────────────────────────────────
@@ -121,7 +121,7 @@ function renderTopFactors(json: string): React.ReactNode {
   try {
     const factors = JSON.parse(json) as string[];
     return factors.slice(0, 3).map((f: string) => (
-      <Badge key={f} variant="outline" className="text-xs">{f.replace(/_/g, " ")}</Badge>
+      <Badge key={f} variant="outline" className="text-xs dark:border-slate-500">{f.replace(/_/g, " ")}</Badge>
     ));
   } catch {
     return null;
@@ -207,7 +207,7 @@ export default function BtamCaseDetail() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 dark:border-indigo-400" />
         </div>
       </DashboardLayout>
     );
@@ -217,7 +217,7 @@ export default function BtamCaseDetail() {
     return (
       <DashboardLayout>
         <div className="max-w-2xl mx-auto p-6 text-center">
-          <p className="text-slate-500">Case not found.</p>
+          <p className="text-slate-500 dark:text-muted-foreground">Case not found.</p>
           <Button variant="outline" className="mt-4" onClick={() => navigate("/btam")}>
             Back to BTAM Cases
           </Button>
@@ -254,11 +254,11 @@ export default function BtamCaseDetail() {
 
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-              <Shield className="w-6 h-6 text-indigo-600" />
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-foreground flex items-center gap-2">
+              <Shield className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
               Case {c.caseNumber}
             </h1>
-            <p className="text-sm text-slate-500 mt-0.5">
+            <p className="text-sm text-slate-500 dark:text-muted-foreground mt-0.5">
               Opened {new Date(c.createdAt).toLocaleDateString()} ·{" "}
               {c.violenceType ? c.violenceType.replace(/_/g, " ") : "Type not specified"}
             </p>
@@ -284,17 +284,17 @@ export default function BtamCaseDetail() {
 
         {/* Tabs */}
         <Tabs defaultValue="summary" className="space-y-4">
-          <TabsList className="bg-slate-100">
-            <TabsTrigger value="summary" className="gap-1.5">
+          <TabsList className="bg-slate-100 dark:bg-muted">
+            <TabsTrigger value="summary" className="gap-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-card">
               <User className="w-3.5 h-3.5" /> Summary
             </TabsTrigger>
-            <TabsTrigger value="assessment" className="gap-1.5">
+            <TabsTrigger value="assessment" className="gap-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-card">
               <ClipboardList className="w-3.5 h-3.5" /> Assessment
             </TabsTrigger>
-            <TabsTrigger value="plan" className="gap-1.5">
+            <TabsTrigger value="plan" className="gap-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-card">
               <FileText className="w-3.5 h-3.5" /> Management Plan
             </TabsTrigger>
-            <TabsTrigger value="notes" className="gap-1.5">
+            <TabsTrigger value="notes" className="gap-1.5 data-[state=active]:bg-white dark:data-[state=active]:bg-card">
               <MessageSquare className="w-3.5 h-3.5" /> Notes
             </TabsTrigger>
           </TabsList>
@@ -305,7 +305,7 @@ export default function BtamCaseDetail() {
               {/* Subject */}
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold text-slate-700">Subject</CardTitle>
+                  <CardTitle className="text-sm font-semibold text-slate-700 dark:text-foreground">Subject</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
                   {subject ? (
@@ -328,7 +328,7 @@ export default function BtamCaseDetail() {
                       </div>
                     </>
                   ) : (
-                    <p className="text-slate-400 italic">No subject information recorded.</p>
+                    <p className="text-slate-400 dark:text-muted-foreground italic">No subject information recorded.</p>
                   )}
                 </CardContent>
               </Card>
@@ -336,7 +336,7 @@ export default function BtamCaseDetail() {
               {/* Intake */}
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold text-slate-700">Referral Intake</CardTitle>
+                  <CardTitle className="text-sm font-semibold text-slate-700 dark:text-foreground">Referral Intake</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
                   {intake ? (
@@ -351,12 +351,12 @@ export default function BtamCaseDetail() {
                         {intake.witnessesPresent && <FlagBadge label="Witnesses Present" />}
                         {intake.priorIncidentsKnown && <FlagBadge label="Prior Incidents" />}
                       </div>
-                      <div className="mt-2 p-2 bg-slate-50 rounded text-slate-700 text-xs leading-relaxed">
+                      <div className="mt-2 p-2 bg-slate-50 dark:bg-muted rounded text-slate-700 dark:text-foreground/80 text-xs leading-relaxed">
                         {intake.concernDescription ?? "No description provided."}
                       </div>
                     </>
                   ) : (
-                    <p className="text-slate-400 italic">No intake information recorded.</p>
+                    <p className="text-slate-400 dark:text-muted-foreground italic">No intake information recorded.</p>
                   )}
                 </CardContent>
               </Card>
@@ -364,9 +364,9 @@ export default function BtamCaseDetail() {
 
             {/* Linked Incident Card */}
             {c.linkedIncidentId && (
-              <Card className="border-amber-200 bg-amber-50">
+              <Card className="border-amber-200 dark:border-amber-700/30 bg-amber-50 dark:bg-amber-900/15">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold text-amber-800 flex items-center gap-1.5">
+                  <CardTitle className="text-sm font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
                     <Link2 className="w-3.5 h-3.5" /> Linked Incident Report
                   </CardTitle>
                 </CardHeader>
@@ -384,21 +384,21 @@ export default function BtamCaseDetail() {
                         <Row label="Reported" value={new Date(linkedIncident.createdAt).toLocaleDateString()} />
                       </div>
                       {linkedIncident.description && (
-                        <div className="mt-2 p-2 bg-white rounded border border-amber-100 text-xs text-slate-700 leading-relaxed line-clamp-3">
+                        <div className="mt-2 p-2 bg-white dark:bg-card rounded border border-amber-100 dark:border-amber-700/20 text-xs text-slate-700 dark:text-foreground/80 leading-relaxed line-clamp-3">
                           {linkedIncident.description}
                         </div>
                       )}
                       <Button
                         variant="outline"
                         size="sm"
-                        className="mt-1 gap-1.5 text-amber-700 border-amber-300 hover:bg-amber-100"
+                        className="mt-1 gap-1.5 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700/30 hover:bg-amber-100 dark:hover:bg-amber-900/20"
                         onClick={() => navigate(`/incidents`)}
                       >
                         <ExternalLink className="w-3.5 h-3.5" /> View in Incident Dashboard
                       </Button>
                     </div>
                   ) : (
-                    <p className="text-amber-700 text-xs">Incident #{c.linkedIncidentId} — loading or not accessible.</p>
+                    <p className="text-amber-700 dark:text-amber-300 text-xs">Incident #{c.linkedIncidentId} — loading or not accessible.</p>
                   )}
                 </CardContent>
               </Card>
@@ -408,24 +408,24 @@ export default function BtamCaseDetail() {
             {history && history.length > 0 && (
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+                  <CardTitle className="text-sm font-semibold text-slate-700 dark:text-foreground flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5" /> Status History
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ol className="relative border-l border-slate-200 ml-2 space-y-3">
+                  <ol className="relative border-l border-slate-200 dark:border-border ml-2 space-y-3">
                     {history.map((h: any) => (
                       <li key={h.id} className="ml-4">
-                        <div className="absolute -left-1.5 mt-1.5 w-3 h-3 rounded-full bg-indigo-400 border-2 border-white" />
-                        <p className="text-xs text-slate-500">{new Date(h.changedAt).toLocaleString()}</p>
-                        <p className="text-sm text-slate-700">
+                        <div className="absolute -left-1.5 mt-1.5 w-3 h-3 rounded-full bg-indigo-400 dark:bg-indigo-500 border-2 border-white dark:border-card" />
+                        <p className="text-xs text-slate-500 dark:text-muted-foreground">{new Date(h.changedAt).toLocaleString()}</p>
+                        <p className="text-sm text-slate-700 dark:text-foreground/80">
                           {h.previousStatus !== h.newStatus && (
                             <span>Status: <strong>{h.previousStatus}</strong> → <strong>{h.newStatus}</strong> · </span>
                           )}
                           {h.previousConcernLevel !== h.newConcernLevel && (
                             <span>Concern: <strong>{h.previousConcernLevel}</strong> → <strong>{h.newConcernLevel}</strong> · </span>
                           )}
-                          {h.reason && <span className="text-slate-500">{h.reason}</span>}
+                          {h.reason && <span className="text-slate-500 dark:text-muted-foreground">{h.reason}</span>}
                         </p>
                       </li>
                     ))}
@@ -438,18 +438,18 @@ export default function BtamCaseDetail() {
           {/* ── Assessment Tab ── */}
           <TabsContent value="assessment" className="space-y-4">
             {latestAssessment && (
-              <Card className="border-indigo-200 bg-indigo-50">
+              <Card className="border-indigo-200 dark:border-indigo-700/30 bg-indigo-50 dark:bg-indigo-900/15">
                 <CardContent className="pt-4">
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <p className="text-xs text-indigo-600 font-semibold uppercase tracking-wide">Latest Assessment</p>
-                      <p className="text-sm text-slate-600">
+                      <p className="text-xs text-indigo-600 dark:text-indigo-300 font-semibold uppercase tracking-wide">Latest Assessment</p>
+                      <p className="text-sm text-slate-600 dark:text-muted-foreground">
                         {new Date(latestAssessment.assessedAt).toLocaleString()}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-indigo-700">{latestAssessment.totalWeightedScore}</p>
-                      <p className="text-xs text-indigo-500">Weighted Score</p>
+                      <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-300">{latestAssessment.totalWeightedScore}</p>
+                      <p className="text-xs text-indigo-500 dark:text-indigo-400">Weighted Score</p>
                     </div>
                   </div>
                   <div className="flex gap-2 flex-wrap">
@@ -459,7 +459,7 @@ export default function BtamCaseDetail() {
                     {latestAssessment.topContributingFactors != null && renderTopFactors(JSON.stringify(latestAssessment.topContributingFactors))}
                   </div>
                   {latestAssessment.assessorNotes && (
-                    <p className="mt-2 text-sm text-slate-600 italic">{latestAssessment.assessorNotes}</p>
+                    <p className="mt-2 text-sm text-slate-600 dark:text-muted-foreground italic">{latestAssessment.assessorNotes}</p>
                   )}
                 </CardContent>
               </Card>
@@ -467,7 +467,7 @@ export default function BtamCaseDetail() {
 
             <Dialog open={assessmentOpen} onOpenChange={setAssessmentOpen}>
               <DialogTrigger asChild>
-                <Button className="gap-2 bg-indigo-700 hover:bg-indigo-800">
+                <Button className="gap-2 bg-indigo-700 hover:bg-indigo-800 dark:bg-indigo-600 dark:hover:bg-indigo-700">
                   <Plus className="w-4 h-4" /> New WAVR-21 Assessment
                 </Button>
               </DialogTrigger>
@@ -476,13 +476,13 @@ export default function BtamCaseDetail() {
                   <DialogTitle>WAVR-21 Assessment — Case {c.caseNumber}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-2">
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-muted-foreground">
                     Rate each factor: <strong>0</strong> = Not present, <strong>1</strong> = Present/Mild, <strong>2</strong> = Significant/Severe.
                     Protective factors (Help Seeking, Social Support, Future Orientation) are scored inversely.
                   </p>
                   {(["Grievance", "Psychological", "Behavioral", "History", "Contextual", "Protective", "Imminent"] as const).map((cat) => (
                     <div key={cat}>
-                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">{cat}</p>
+                      <p className="text-xs font-semibold text-slate-500 dark:text-muted-foreground uppercase tracking-wide mb-2">{cat}</p>
                       <div className="space-y-2">
                         {WAVR_FACTORS.filter((f) => f.category === cat).map((f) => (
                           <div key={f.key} className="flex items-center justify-between gap-4">
@@ -496,11 +496,11 @@ export default function BtamCaseDetail() {
                                   className={`w-8 h-8 rounded text-sm font-medium border transition-colors ${
                                     factors[f.key] === v
                                       ? v === 0
-                                        ? "bg-slate-200 border-slate-400 text-slate-700"
+                                        ? "bg-slate-200 dark:bg-slate-600 border-slate-400 dark:border-slate-500 text-slate-700 dark:text-slate-200"
                                         : v === 1
-                                        ? "bg-yellow-200 border-yellow-500 text-yellow-800"
-                                        : "bg-red-200 border-red-500 text-red-800"
-                                      : "bg-white border-slate-200 text-slate-400 hover:border-slate-300"
+                                        ? "bg-yellow-200 dark:bg-yellow-700 border-yellow-500 dark:border-yellow-500 text-yellow-800 dark:text-yellow-200"
+                                        : "bg-red-200 dark:bg-red-700 border-red-500 dark:border-red-500 text-red-800 dark:text-red-200"
+                                      : "bg-white dark:bg-card border-slate-200 dark:border-slate-600 text-slate-400 dark:text-slate-500 hover:border-slate-300 dark:hover:border-slate-400"
                                   }`}
                                 >
                                   {v}
@@ -522,7 +522,7 @@ export default function BtamCaseDetail() {
                       className="mt-1 resize-none"
                     />
                   </div>
-                  <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 rounded-lg">
                     <input
                       type="checkbox"
                       id="attestation"
@@ -530,12 +530,12 @@ export default function BtamCaseDetail() {
                       onChange={(e) => setAttestation(e.target.checked)}
                       className="w-4 h-4 accent-indigo-600 mt-0.5"
                     />
-                    <label htmlFor="attestation" className="text-xs text-amber-800">
+                    <label htmlFor="attestation" className="text-xs text-amber-800 dark:text-amber-300">
                       I attest that this assessment reflects my professional judgment based on available information and is subject to revision as new information emerges.
                     </label>
                   </div>
                   <Button
-                    className="w-full bg-indigo-700 hover:bg-indigo-800"
+                    className="w-full bg-indigo-700 hover:bg-indigo-800 dark:bg-indigo-600 dark:hover:bg-indigo-700"
                     disabled={!attestation || submitAssessment.isPending}
                     onClick={() =>
                       submitAssessment.mutate({
@@ -556,12 +556,12 @@ export default function BtamCaseDetail() {
           {/* ── Management Plan Tab ── */}
           <TabsContent value="plan" className="space-y-4">
             <div className="flex justify-between items-center">
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-slate-500 dark:text-muted-foreground">
                 {plan?.length ?? 0} intervention{(plan?.length ?? 0) !== 1 ? "s" : ""} recorded
               </p>
               <Dialog open={planOpen} onOpenChange={setPlanOpen}>
                 <DialogTrigger asChild>
-                  <Button size="sm" className="gap-1.5 bg-indigo-700 hover:bg-indigo-800">
+                  <Button size="sm" className="gap-1.5 bg-indigo-700 hover:bg-indigo-800 dark:bg-indigo-600 dark:hover:bg-indigo-700">
                     <Plus className="w-3.5 h-3.5" /> Add Intervention
                   </Button>
                 </DialogTrigger>
@@ -603,7 +603,7 @@ export default function BtamCaseDetail() {
                       />
                     </div>
                     <Button
-                      className="w-full bg-indigo-700 hover:bg-indigo-800"
+                      className="w-full bg-indigo-700 hover:bg-indigo-800 dark:bg-indigo-600 dark:hover:bg-indigo-700"
                       disabled={!interventionType || actionDescription.length < 5 || addPlanItem.isPending}
                       onClick={() =>
                         addPlanItem.mutate({
@@ -629,23 +629,23 @@ export default function BtamCaseDetail() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs dark:border-slate-500">
                               {INTERVENTION_LABELS[item.interventionType] ?? item.interventionType}
                             </Badge>
                             {item.completed && (
-                              <Badge className="bg-green-100 text-green-700 text-xs">
+                              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 text-xs">
                                 <CheckCircle className="w-3 h-3 mr-1" /> Complete
                               </Badge>
                             )}
                             {item.dueDate && (
-                              <span className="text-xs text-slate-400">
+                              <span className="text-xs text-slate-400 dark:text-muted-foreground">
                                 Due: {new Date(item.dueDate).toLocaleDateString()}
                               </span>
                             )}
                           </div>
-                          <p className="text-sm text-slate-700">{item.actionDescription}</p>
+                          <p className="text-sm text-slate-700 dark:text-foreground/80">{item.actionDescription}</p>
                           {item.completionNotes && (
-                            <p className="text-xs text-slate-500 mt-1 italic">{item.completionNotes}</p>
+                            <p className="text-xs text-slate-500 dark:text-muted-foreground mt-1 italic">{item.completionNotes}</p>
                           )}
                         </div>
                         {!item.completed && (
@@ -664,7 +664,7 @@ export default function BtamCaseDetail() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-10 text-slate-400">
+              <div className="text-center py-10 text-slate-400 dark:text-muted-foreground">
                 <FileText className="w-8 h-8 mx-auto mb-2 opacity-40" />
                 <p className="text-sm">No management plan items yet.</p>
               </div>
@@ -674,12 +674,12 @@ export default function BtamCaseDetail() {
           {/* ── Notes Tab ── */}
           <TabsContent value="notes" className="space-y-4">
             <div className="flex justify-between items-center">
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-slate-500 dark:text-muted-foreground">
                 {notes?.length ?? 0} note{(notes?.length ?? 0) !== 1 ? "s" : ""}
               </p>
               <Dialog open={noteOpen} onOpenChange={setNoteOpen}>
                 <DialogTrigger asChild>
-                  <Button size="sm" className="gap-1.5 bg-indigo-700 hover:bg-indigo-800">
+                  <Button size="sm" className="gap-1.5 bg-indigo-700 hover:bg-indigo-800 dark:bg-indigo-600 dark:hover:bg-indigo-700">
                     <Plus className="w-3.5 h-3.5" /> Add Note
                   </Button>
                 </DialogTrigger>
@@ -719,13 +719,13 @@ export default function BtamCaseDetail() {
                         onChange={(e) => setNotePrivileged(e.target.checked)}
                         className="w-4 h-4 accent-indigo-600"
                       />
-                      <label htmlFor="privileged" className="text-sm text-slate-700 flex items-center gap-1">
+                      <label htmlFor="privileged" className="text-sm text-slate-700 dark:text-foreground/80 flex items-center gap-1">
                         <Lock className="w-3.5 h-3.5 text-amber-500" />
                         Mark as privileged (TAT Admin only)
                       </label>
                     </div>
                     <Button
-                      className="w-full bg-indigo-700 hover:bg-indigo-800"
+                      className="w-full bg-indigo-700 hover:bg-indigo-800 dark:bg-indigo-600 dark:hover:bg-indigo-700"
                       disabled={noteContent.length < 5 || addNote.isPending}
                       onClick={() =>
                         addNote.mutate({
@@ -749,25 +749,25 @@ export default function BtamCaseDetail() {
                   <Card key={note.id}>
                     <CardContent className="pt-3 pb-3">
                       <div className="flex items-center gap-2 mb-1">
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs dark:border-slate-500">
                           {NOTE_TYPE_LABELS[note.noteType] ?? note.noteType}
                         </Badge>
                         {note.isPrivileged && (
-                          <Badge className="bg-amber-100 text-amber-700 text-xs gap-1">
+                          <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-xs gap-1">
                             <Lock className="w-2.5 h-2.5" /> Privileged
                           </Badge>
                         )}
-                        <span className="text-xs text-slate-400 ml-auto">
+                        <span className="text-xs text-slate-400 dark:text-muted-foreground ml-auto">
                           {new Date(note.createdAt).toLocaleString()}
                         </span>
                       </div>
-                      <p className="text-sm text-slate-700 whitespace-pre-wrap">{note.content}</p>
+                      <p className="text-sm text-slate-700 dark:text-foreground/80 whitespace-pre-wrap">{note.content}</p>
                     </CardContent>
                   </Card>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-10 text-slate-400">
+              <div className="text-center py-10 text-slate-400 dark:text-muted-foreground">
                 <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-40" />
                 <p className="text-sm">No notes yet.</p>
               </div>
@@ -783,8 +783,8 @@ export default function BtamCaseDetail() {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-2">
-      <span className="text-slate-500 shrink-0">{label}</span>
-      <span className="text-slate-800 text-right capitalize">{value}</span>
+      <span className="text-slate-500 dark:text-muted-foreground shrink-0">{label}</span>
+      <span className="text-slate-800 dark:text-foreground text-right capitalize">{value}</span>
     </div>
   );
 }
@@ -793,7 +793,9 @@ function FlagBadge({ label, color = "slate" }: { label: string; color?: "slate" 
   return (
     <span
       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-        color === "red" ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-600"
+        color === "red"
+          ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+          : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
       }`}
     >
       {color === "red" && <AlertTriangle className="w-2.5 h-2.5" />}

@@ -1,4 +1,3 @@
-import AppLayout from "@/components/AppLayout";
 import { ProtectedLayout } from "@/components/ProtectedLayout";
 import { trpc } from "@/lib/trpc";
 import { Link } from "wouter";
@@ -71,7 +70,7 @@ export default function Dashboard() {
 
   return (
     <ProtectedLayout>
-      <AppLayout>
+
         <div className="p-6 max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between mb-8">
@@ -295,7 +294,7 @@ export default function Dashboard() {
           </>
         )}
         </div>
-      </AppLayout>
+
     </ProtectedLayout>
   );
 }

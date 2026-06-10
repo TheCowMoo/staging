@@ -1,4 +1,3 @@
-import AppLayout from "@/components/AppLayout";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -100,7 +99,7 @@ export default function StaffCheckin() {
   };
 
   return (
-    <AppLayout>
+
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
         {/* Header */}
         <div>
@@ -273,6 +272,6 @@ export default function StaffCheckin() {
           )}
         </div>
       </div>
-    </AppLayout>
+
   );
 }

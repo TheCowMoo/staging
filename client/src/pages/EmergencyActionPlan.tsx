@@ -1,4 +1,3 @@
-import AppLayout from "@/components/AppLayout";
 import { trpc } from "@/lib/trpc";
 import { useParams, Link } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -650,7 +649,7 @@ export default function EmergencyActionPlan() {
   const naCount = EARP_SECTIONS.filter((s) => overrideMap[s.id]?.applicable === false).length;
 
   return (
-    <AppLayout>
+
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -837,6 +836,6 @@ export default function EmergencyActionPlan() {
           </p>
         </div>
       </div>
-    </AppLayout>
+
   );
 }

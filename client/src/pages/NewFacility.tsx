@@ -1,4 +1,3 @@
-import AppLayout from "@/components/AppLayout";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -81,7 +80,7 @@ export default function NewFacility() {
   };
 
   return (
-    <AppLayout>
+
       <div className="p-6 max-w-2xl mx-auto">
         <div className="flex items-center gap-3 mb-8">
           <Button variant="ghost" size="sm" asChild>
@@ -253,6 +252,6 @@ export default function NewFacility() {
           </form>
         </div>
       </div>
-    </AppLayout>
+
   );
 }

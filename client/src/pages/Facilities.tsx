@@ -1,4 +1,3 @@
-import AppLayout from "@/components/AppLayout";
 import { ProtectedLayout } from "@/components/ProtectedLayout";
 import { trpc } from "@/lib/trpc";
 import { Link } from "wouter";
@@ -14,7 +13,7 @@ export default function Facilities() {
 
   return (
     <ProtectedLayout>
-      <AppLayout>
+
         <div className="p-6 max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -74,7 +73,7 @@ export default function Facilities() {
           </div>
         )}
         </div>
-      </AppLayout>
+
     </ProtectedLayout>
   );
 }

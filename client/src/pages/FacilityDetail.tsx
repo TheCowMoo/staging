@@ -1,4 +1,3 @@
-import AppLayout from "@/components/AppLayout";
 import { trpc } from "@/lib/trpc";
 import { Link, useLocation, useParams } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -62,6 +61,14 @@ export default function FacilityDetail() {
     onSuccess: (newFacility: any) => {
       toast.success("Facility duplicated");
       navigate(`/facilities/${newFacility?.id}`);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const deleteFacility = trpc.facility.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Facility deleted");
+      navigate("/facilities");
     },
     onError: (e) => toast.error(e.message),
   });
@@ -159,29 +166,29 @@ export default function FacilityDetail() {
 
   if (facilityLoading) {
     return (
-      <AppLayout>
+
         <div className="p-6 max-w-4xl mx-auto">
           <div className="h-48 bg-card border border-border rounded-xl animate-pulse" />
         </div>
-      </AppLayout>
+
     );
   }
 
   if (!facility) {
     return (
-      <AppLayout>
+
         <div className="p-6 text-center">
           <p className="text-muted-foreground">Facility not found.</p>
           <Button asChild variant="outline" className="mt-4">
             <Link href="/facilities">Back to Facilities</Link>
           </Button>
         </div>
-      </AppLayout>
+
     );
   }
 
   return (
-    <AppLayout>
+
       <div className="p-6 max-w-4xl mx-auto">
         {/* Back */}
         <Button variant="ghost" size="sm" asChild className="mb-6">
@@ -488,6 +495,21 @@ export default function FacilityDetail() {
                   >
                     <Plus size={15} className="mr-1.5" />
                     {createAudit.isPending ? "Starting..." : "New Audit"}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      if (window.confirm(
+                        `Delete facility "${facility.name}"?\n\nThis will permanently delete this facility and ALL associated audits, incident reports, floor maps, drill sessions, staff check-ins, liability scans, and alert events. This action cannot be undone.`
+                      )) {
+                        deleteFacility.mutate({ id: facilityId });
+                      }
+                    }}
+                    disabled={deleteFacility.isPending}
+                  >
+                    <Trash2 size={13} className="mr-1.5" />
+                    {deleteFacility.isPending ? "Deleting..." : "Delete"}
                   </Button>
                 </div>
               </div>
@@ -815,6 +837,6 @@ export default function FacilityDetail() {
           )}
         </div>
       </div>
-    </AppLayout>
+
   );
 }

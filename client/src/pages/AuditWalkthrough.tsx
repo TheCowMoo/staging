@@ -1,4 +1,3 @@
-import AppLayout from "@/components/AppLayout";
 import { trpc } from "@/lib/trpc";
 import { useParams, useLocation, Link } from "wouter";
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
@@ -506,17 +505,17 @@ export default function AuditWalkthrough() {
 
   if (auditLoading) {
     return (
-      <AppLayout>
+
         <div className="p-6 flex items-center justify-center min-h-64">
           <Shield className="text-primary animate-pulse" size={36} />
         </div>
-      </AppLayout>
+
     );
   }
 
   if (audit?.status === "completed") {
     return (
-      <AppLayout>
+
         <div className="p-6 text-center max-w-md mx-auto mt-20">
           <CheckCircle2 size={48} className="mx-auto mb-4 text-green-500" />
           <h2 className="text-xl font-bold mb-2">Audit Completed</h2>
@@ -525,12 +524,12 @@ export default function AuditWalkthrough() {
             <Link href={`/audit/${auditId}/report`}>View Report</Link>
           </Button>
         </div>
-      </AppLayout>
+
     );
   }
 
   return (
-    <AppLayout>
+
       <div className="flex h-[calc(100vh-0px)] overflow-hidden">
         {/* Category Sidebar */}
         <div className="w-64 flex-shrink-0 border-r border-border bg-card overflow-y-auto hidden md:flex flex-col">
@@ -1369,6 +1368,6 @@ export default function AuditWalkthrough() {
           </div>
         </div>
       </div>
-    </AppLayout>
+
   );
 }

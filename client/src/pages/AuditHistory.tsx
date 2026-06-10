@@ -1,4 +1,3 @@
-import AppLayout from "@/components/AppLayout";
 import { trpc } from "@/lib/trpc";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,7 @@ export default function AuditHistory() {
     facilities?.find((f) => f.id === id)?.name ?? `Facility #${id}`;
 
   return (
-    <AppLayout>
+
       <div className="p-6 max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-foreground">Audit History</h1>
@@ -75,6 +74,6 @@ export default function AuditHistory() {
           </div>
         )}
       </div>
-    </AppLayout>
+
   );
 }

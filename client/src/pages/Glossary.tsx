@@ -1,4 +1,3 @@
-import AppLayout from "@/components/AppLayout";
 import { BookOpen, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -257,7 +256,7 @@ export default function Glossary() {
   };
 
   return (
-    <AppLayout>
+
       <div className="p-6 max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
@@ -340,6 +339,6 @@ export default function Glossary() {
           )}
         </div>
       </div>
-    </AppLayout>
+
   );
 }

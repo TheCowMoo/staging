@@ -8,7 +8,7 @@
  * Supports managing links for one org at a time (uses the user's primary org).
  */
 import { useState, useEffect } from "react";
-import AppLayout from "@/components/AppLayout";
+
 import { trpc } from "@/lib/trpc";
 import { WebsiteResourceLinks } from "@/components/assessment/WebsiteResourceLinks";
 import { Button } from "@/components/ui/button";
@@ -68,7 +68,7 @@ export default function ResourceLinks() {
   const selectedOrgName = memberships?.find((m) => m.orgId === selectedOrgId)?.orgName ?? "Organization";
 
   return (
-    <AppLayout>
+
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
@@ -177,6 +177,6 @@ export default function ResourceLinks() {
           </Card>
         )}
       </div>
-    </AppLayout>
+
   );
 }

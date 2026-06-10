@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import AppLayout from "@/components/AppLayout";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -168,7 +168,7 @@ export default function VisitorManagement() {
   };
 
   return (
-    <AppLayout>
+
       <div className="p-6 max-w-6xl mx-auto space-y-6">
         {/* Back + Header */}
         <div className="flex items-center gap-3 mb-1">
@@ -521,6 +521,6 @@ export default function VisitorManagement() {
           </div>
         )}
       </div>
-    </AppLayout>
+
   );
 }

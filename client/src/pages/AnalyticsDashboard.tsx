@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
-import AppLayout from "@/components/AppLayout";
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -274,7 +274,7 @@ export default function AnalyticsDashboard() {
   };
 
   return (
-    <AppLayout>
+
       <div className="space-y-6 px-6">
         {/* Header */}
         <div className="flex items-start justify-between flex-wrap gap-4">
@@ -1004,6 +1004,6 @@ export default function AnalyticsDashboard() {
           </div>
         )}
       </div>
-    </AppLayout>
+
   );
 }

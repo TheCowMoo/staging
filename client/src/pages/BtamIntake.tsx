@@ -13,6 +13,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Shield,
   AlertTriangle,
   ChevronRight,
@@ -107,6 +117,7 @@ export default function BtamIntake() {
   const [form, setForm] = useState<FormData>({ ...defaultForm, linkedIncidentId: prefilledIncidentId });
   const [submitted, setSubmitted] = useState(false);
   const [newCaseId, setNewCaseId] = useState<number | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const createReferral = trpc.btam.createReferral.useMutation({
     onSuccess: (data) => {
@@ -118,7 +129,8 @@ export default function BtamIntake() {
   const update = (field: keyof FormData, value: unknown) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
-  const handleSubmit = () => {
+  const handleConfirmSubmit = () => {
+    setShowConfirm(false);
     createReferral.mutate({
       reporterRole: (form.isAnonymous ? "anonymous" : form.reporterRole || "anonymous") as any,
       concernDescription: form.concernDescription,
@@ -153,14 +165,14 @@ export default function BtamIntake() {
   if (submitted) {
     return (
       <div className="p-6 max-w-2xl mx-auto">
-        <div className="bg-white border border-slate-200 rounded-2xl p-10 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="w-8 h-8 text-green-600" />
+        <div className="bg-white dark:bg-card border border-slate-200 dark:border-border rounded-2xl p-10 text-center">
+          <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-foreground mb-2">
             Referral Submitted
           </h2>
-          <p className="text-slate-500 mb-6">
+          <p className="text-slate-500 dark:text-muted-foreground mb-6">
             The case has been created and assigned a confidential case number. The
             TAT will review this referral and take appropriate action.
           </p>
@@ -173,7 +185,7 @@ export default function BtamIntake() {
             </Button>
             {newCaseId && (
               <Button
-                className="bg-indigo-700 hover:bg-indigo-800"
+                className="bg-indigo-700 hover:bg-indigo-800 dark:bg-indigo-600 dark:hover:bg-indigo-700"
                 onClick={() => navigate(`/btam/${newCaseId}`)}
               >
                 View Case
@@ -189,16 +201,16 @@ export default function BtamIntake() {
     <div className="p-6 max-w-3xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-indigo-100 rounded-lg">
-          <Shield className="w-6 h-6 text-indigo-700" />
+        <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+          <Shield className="w-6 h-6 text-indigo-700 dark:text-indigo-300" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-slate-900">New BTAM Referral</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-xl font-bold text-slate-900 dark:text-foreground">New BTAM Referral</h1>
+          <p className="text-sm text-slate-500 dark:text-muted-foreground">
             Confidential — Authorized Personnel Only
           </p>
         </div>
-        <div className="flex items-center gap-1 ml-2 px-2 py-1 bg-slate-100 rounded text-xs text-slate-600">
+        <div className="flex items-center gap-1 ml-2 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs text-slate-600 dark:text-slate-300">
           <Lock className="w-3 h-3" />
           <span>Restricted</span>
         </div>
@@ -211,10 +223,10 @@ export default function BtamIntake() {
             <div
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 i === step
-                  ? "bg-indigo-700 text-white"
+                  ? "bg-indigo-700 dark:bg-indigo-600 text-white"
                   : i < step
-                  ? "bg-indigo-100 text-indigo-700"
-                  : "bg-slate-100 text-slate-500"
+                  ? "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
               }`}
             >
               <span className="w-4 h-4 rounded-full bg-current/20 flex items-center justify-center text-[10px]">
@@ -223,31 +235,31 @@ export default function BtamIntake() {
               {s.label}
             </div>
             {i < STEPS.length - 1 && (
-              <ChevronRight className="w-3 h-3 text-slate-300 flex-shrink-0" />
+              <ChevronRight className="w-3 h-3 text-slate-300 dark:text-slate-600 flex-shrink-0" />
             )}
           </div>
         ))}
       </div>
 
       {/* Step Content */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 mb-4">
+      <div className="bg-white dark:bg-card border border-slate-200 dark:border-border rounded-2xl p-6 mb-4">
         {/* ── Step 0: Safety Check ── */}
         {step === 0 && (
           <div>
-            <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl mb-6">
-              <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+            <div className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-xl mb-6">
+              <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="font-semibold text-red-800 mb-1">
+                <p className="font-semibold text-red-800 dark:text-red-300 mb-1">
                   Safety Check — Required
                 </p>
-                <p className="text-sm text-red-700">
+                <p className="text-sm text-red-700 dark:text-red-300/80">
                   If there is an <strong>immediate threat to life</strong>, do NOT
                   use this form. Call <strong>911</strong> immediately, then notify
                   your security team and facility leadership.
                 </p>
               </div>
             </div>
-            <p className="font-medium text-slate-800 mb-4">
+            <p className="font-medium text-foreground mb-4">
               Is there an immediate danger to any person right now?
             </p>
             <div className="grid grid-cols-2 gap-3">
@@ -257,12 +269,12 @@ export default function BtamIntake() {
                 }}
                 className={`p-4 rounded-xl border-2 text-left transition-all ${
                   form.immediateDanger === true
-                    ? "border-red-500 bg-red-50"
-                    : "border-slate-200 hover:border-slate-300"
+                    ? "border-red-500 bg-red-50 dark:bg-red-900/20"
+                    : "border-slate-200 dark:border-border hover:border-slate-300 dark:hover:border-slate-500"
                 }`}
               >
-                <p className="font-semibold text-red-700">Yes — Immediate Danger</p>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="font-semibold text-red-700 dark:text-red-400">Yes — Immediate Danger</p>
+                <p className="text-xs text-slate-500 dark:text-muted-foreground mt-1">
                   Stop. Call 911 now. This form is not appropriate.
                 </p>
               </button>
@@ -270,22 +282,22 @@ export default function BtamIntake() {
                 onClick={() => update("immediateDanger", false)}
                 className={`p-4 rounded-xl border-2 text-left transition-all ${
                   form.immediateDanger === false
-                    ? "border-indigo-500 bg-indigo-50"
-                    : "border-slate-200 hover:border-slate-300"
+                    ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20"
+                    : "border-slate-200 dark:border-border hover:border-slate-300 dark:hover:border-slate-500"
                 }`}
               >
-                <p className="font-semibold text-slate-800">
+                <p className="font-semibold text-foreground">
                   No — Concerning Behavior
                 </p>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-slate-500 dark:text-muted-foreground mt-1">
                   No immediate threat, but behavior warrants assessment.
                 </p>
               </button>
             </div>
             {form.immediateDanger === true && (
-              <div className="mt-4 p-4 bg-red-100 border border-red-300 rounded-xl text-center">
-                <p className="font-bold text-red-800 text-lg">Call 911 Now</p>
-                <p className="text-sm text-red-700 mt-1">
+              <div className="mt-4 p-4 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700/40 rounded-xl text-center">
+                <p className="font-bold text-red-800 dark:text-red-300 text-lg">Call 911 Now</p>
+                <p className="text-sm text-red-700 dark:text-red-300/80 mt-1">
                   Do not submit this form. Contact emergency services immediately.
                 </p>
               </div>
@@ -297,10 +309,10 @@ export default function BtamIntake() {
         {step === 1 && (
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-4">
-              <User className="w-4 h-4 text-slate-500" />
-              <h3 className="font-semibold text-slate-800">Reporter Information</h3>
+              <User className="w-4 h-4 text-muted-foreground" />
+              <h3 className="font-semibold text-foreground">Reporter Information</h3>
             </div>
-            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+            <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-muted rounded-lg">
               <input
                 type="checkbox"
                 id="anon"
@@ -308,7 +320,7 @@ export default function BtamIntake() {
                 onChange={(e) => update("isAnonymous", e.target.checked)}
                 className="w-4 h-4 accent-indigo-600"
               />
-              <label htmlFor="anon" className="text-sm font-medium text-slate-700">
+              <label htmlFor="anon" className="text-sm font-medium text-slate-700 dark:text-foreground/80">
                 Submit anonymously (your identity will not be recorded)
               </label>
             </div>
@@ -349,9 +361,9 @@ export default function BtamIntake() {
         {step === 2 && (
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-2">
-              <User className="w-4 h-4 text-slate-500" />
-              <h3 className="font-semibold text-slate-800">Subject Information</h3>
-              <span className="text-xs text-slate-400 ml-auto">
+              <User className="w-4 h-4 text-muted-foreground" />
+              <h3 className="font-semibold text-foreground">Subject Information</h3>
+              <span className="text-xs text-slate-400 dark:text-muted-foreground ml-auto">
                 PII is encrypted at rest
               </span>
             </div>
@@ -374,7 +386,7 @@ export default function BtamIntake() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+            <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-muted rounded-lg">
               <input
                 type="checkbox"
                 id="nameKnown"
@@ -384,7 +396,7 @@ export default function BtamIntake() {
               />
               <label
                 htmlFor="nameKnown"
-                className="text-sm font-medium text-slate-700"
+                className="text-sm font-medium text-slate-700 dark:text-foreground/80"
               >
                 Subject identity is known
               </label>
@@ -465,7 +477,7 @@ export default function BtamIntake() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-slate-700">
+                  <p className="text-sm font-medium text-foreground">
                     Known Risk Factors
                   </p>
                   {[
@@ -497,7 +509,7 @@ export default function BtamIntake() {
                       />
                       <label
                         htmlFor={key}
-                        className="text-sm text-slate-700"
+                        className="text-sm text-slate-700 dark:text-foreground/80"
                       >
                         {label}
                       </label>
@@ -513,8 +525,8 @@ export default function BtamIntake() {
         {step === 3 && (
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-2">
-              <FileText className="w-4 h-4 text-slate-500" />
-              <h3 className="font-semibold text-slate-800">Incident Details</h3>
+              <FileText className="w-4 h-4 text-muted-foreground" />
+              <h3 className="font-semibold text-foreground">Incident Details</h3>
             </div>
             <div>
               <Label>Type of Violence Concern *</Label>
@@ -572,7 +584,7 @@ export default function BtamIntake() {
               </div>
             </div>
             <div className="space-y-2">
-              <p className="text-sm font-medium text-slate-700">
+              <p className="text-sm font-medium text-foreground">
                 Additional Risk Indicators
               </p>
               {[
@@ -590,7 +602,7 @@ export default function BtamIntake() {
                     onChange={(e) => update(key as keyof FormData, e.target.checked)}
                     className="w-4 h-4 accent-indigo-600"
                   />
-                  <label htmlFor={key} className="text-sm text-slate-700">
+                  <label htmlFor={key} className="text-sm text-slate-700 dark:text-foreground/80">
                     {label}
                   </label>
                 </div>
@@ -637,51 +649,51 @@ export default function BtamIntake() {
         {/* ── Step 4: Review ── */}
         {step === 4 && (
           <div className="space-y-4">
-            <h3 className="font-semibold text-slate-800 mb-4">
+            <h3 className="font-semibold text-foreground mb-4">
               Review & Submit
             </h3>
             <div className="space-y-3 text-sm">
-              <div className="p-3 bg-slate-50 rounded-lg">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+              <div className="p-3 bg-slate-50 dark:bg-muted rounded-lg">
+                <p className="text-xs font-semibold text-slate-500 dark:text-muted-foreground uppercase tracking-wide mb-1">
                   Reporter
                 </p>
-                <p className="text-slate-800">
+                <p className="text-foreground">
                   {form.isAnonymous
                     ? "Anonymous submission"
                     : (form.reporterRole ? form.reporterRole.replace(/_/g, " ") : "Not provided")}
                 </p>
               </div>
-              <div className="p-3 bg-slate-50 rounded-lg">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+              <div className="p-3 bg-slate-50 dark:bg-muted rounded-lg">
+                <p className="text-xs font-semibold text-slate-500 dark:text-muted-foreground uppercase tracking-wide mb-1">
                   Subject
                 </p>
-                <p className="text-slate-800">
+                <p className="text-foreground">
                   {form.subjectType.replace(/_/g, " ") || "Not specified"}
                   {form.nameKnown && form.subjectAlias
                     ? ` — ${form.subjectAlias}`
                     : ""}
                 </p>
               </div>
-              <div className="p-3 bg-slate-50 rounded-lg">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+              <div className="p-3 bg-slate-50 dark:bg-muted rounded-lg">
+                <p className="text-xs font-semibold text-slate-500 dark:text-muted-foreground uppercase tracking-wide mb-1">
                   Violence Type
                 </p>
-                <p className="text-slate-800">
+                <p className="text-foreground">
                   {form.violenceType.replace(/_/g, " ") || "Not specified"}
                 </p>
               </div>
-              <div className="p-3 bg-slate-50 rounded-lg">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+              <div className="p-3 bg-slate-50 dark:bg-muted rounded-lg">
+                <p className="text-xs font-semibold text-slate-500 dark:text-muted-foreground uppercase tracking-wide mb-1">
                   Concern Description
                 </p>
-                <p className="text-slate-800 whitespace-pre-wrap">
+                <p className="text-foreground whitespace-pre-wrap">
                   {form.concernDescription || "—"}
                 </p>
               </div>
             </div>
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2">
-              <Lock className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-              <p className="text-xs text-amber-800">
+            <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 rounded-xl flex items-start gap-2">
+              <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-amber-800 dark:text-amber-300">
                 By submitting this referral, you confirm that the information
                 provided is accurate to the best of your knowledge and that you
                 understand this information is strictly confidential and will be
@@ -692,38 +704,80 @@ export default function BtamIntake() {
         )}
       </div>
 
-      {/* Navigation */}
+      {/* Navigation — always show Cancel to go back to dashboard */}
       <div className="flex justify-between">
         <Button
           variant="outline"
-          onClick={() => (step === 0 ? navigate("/btam") : setStep(step - 1))}
+          onClick={() => navigate("/btam")}
           className="gap-2"
         >
           <ChevronLeft className="w-4 h-4" />
-          {step === 0 ? "Cancel" : "Back"}
+          Cancel
         </Button>
-        {step < STEPS.length - 1 ? (
-          <Button
-            className="gap-2 bg-indigo-700 hover:bg-indigo-800"
-            disabled={
-              (step === 0 && form.immediateDanger !== false) ||
-              (step === 2 && !form.subjectType) ||
-              (step === 3 && !form.concernDescription)
-            }
-            onClick={() => setStep(step + 1)}
-          >
-            Next <ChevronRight className="w-4 h-4" />
-          </Button>
-        ) : (
-          <Button
-            className="gap-2 bg-indigo-700 hover:bg-indigo-800"
-            disabled={createReferral.isPending}
-            onClick={handleSubmit}
-          >
-            {createReferral.isPending ? "Submitting..." : "Submit Referral"}
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {step > 0 && (
+            <Button
+              variant="ghost"
+              onClick={() => setStep(step - 1)}
+              className="gap-2"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Previous
+            </Button>
+          )}
+          {step < STEPS.length - 1 ? (
+            <Button
+              className="gap-2 bg-indigo-700 hover:bg-indigo-800 dark:bg-indigo-600 dark:hover:bg-indigo-700"
+              disabled={
+                (step === 0 && form.immediateDanger !== false) ||
+                (step === 2 && !form.subjectType) ||
+                (step === 3 && !form.concernDescription)
+              }
+              onClick={() => setStep(step + 1)}
+            >
+              Next <ChevronRight className="w-4 h-4" />
+            </Button>
+          ) : (
+            <>
+              <Button
+                className="gap-2 bg-indigo-700 hover:bg-indigo-800 dark:bg-indigo-600 dark:hover:bg-indigo-700"
+                disabled={createReferral.isPending}
+                onClick={() => setShowConfirm(true)}
+              >
+                {createReferral.isPending ? "Submitting..." : "Submit Referral"}
+              </Button>
+            </>
+          )}
+        </div>
       </div>
+
+      {/* Submission Confirmation Dialog (Fix 3) */}
+      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Referral Submission</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to submit a BTAM referral. This information is
+              strictly confidential and will be used solely for threat assessment
+              purposes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="text-sm space-y-2 py-2">
+            <p><strong>Subject Type:</strong> {form.subjectType.replace(/_/g, " ") || "Not specified"}</p>
+            <p><strong>Violence Type:</strong> {form.violenceType.replace(/_/g, " ") || "Not specified"}</p>
+            <p><strong>Reporter:</strong> {form.isAnonymous ? "Anonymous" : form.reporterRole?.replace(/_/g, " ")}</p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Go Back</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-indigo-700 hover:bg-indigo-800 dark:bg-indigo-600 dark:hover:bg-indigo-700"
+              onClick={handleConfirmSubmit}
+            >
+              Confirm Submit
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

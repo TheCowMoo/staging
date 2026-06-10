@@ -4,6 +4,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import AppLayout from "./components/AppLayout";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -73,75 +74,83 @@ function Router() {
   return (
     <div className="page-enter">
       <Switch>
+        {/* Public routes — no AppLayout sidebar */}
         <Route path="/" component={Home} />
         <Route path="/login" component={Login} />
-        <Route path="/dashboard" component={Dashboard} />
-        <Route path="/facilities" component={Facilities} />
-        <Route path="/facilities/new" component={FacilityOnboarding} />
-        <Route path="/facilities/:id" component={FacilityDetail} />
-        <Route path="/audits" component={AuditHistory} />
-        <Route path="/audit/:id" component={AuditWalkthrough} />
-        <Route path="/audit/:id/walkthrough" component={WalkthroughMode} />
-        <Route path="/audit/:id/report" component={AuditReport} />
-        <Route path="/audit/:id/feedback" component={TesterFeedback} />
-        <Route path="/feedback" component={FeedbackDashboard} />
-        <Route path="/analytics" component={AnalyticsDashboard} />
-        <Route path="/report-incident" component={ReportIncident} />
-        <Route path="/check-report" component={CheckReport} />
-        <Route path="/incidents" component={IncidentDashboard} />
-        <Route path="/glossary" component={Glossary} />
-        <Route path="/organizations" component={AdminOrgs} />
-        <Route path="/org/:id">{(params) => <OrgAdmin orgId={Number(params.id)} />}</Route>
-        <Route path="/join" component={JoinOrg} />
-        <Route path="/report/:slug">{(params) => <OrgIncidentReport slug={params.slug} />}</Route>
-        <Route path="/visitors" component={VisitorManagement} />
-        <Route path="/eap" component={EAPList} />
-        <Route path="/audit/:id/eap" component={EmergencyActionPlan} />
-        <Route path="/admin/users" component={UserManagement} />
-        <Route path="/admin/api-keys" component={ApiKeys} />
-        <Route path="/user-management">{() => { window.location.replace("/admin/users"); return null; }}</Route>
-        <Route path="/admin/flagged-visitors" component={FlaggedVisitors} />
-        <Route path="/facilities/onboarding" component={FacilityOnboarding} />
-        <Route path="/facilities/onboarding-legacy" component={NewFacility} />
-        <Route path="/legal/privacy" component={PrivacyPolicy} />
-        <Route path="/osha" component={OshaReference} />
-        <Route path="/standards" component={Standards} />
-        <Route path="/liability-scan" component={LiabilityScan} />
-        <Route path="/scan-history" component={ScanHistory} />
-        <Route path="/defensibility-plan" component={DefensibilityPlan} />
-        <Route path="/how-we-help" component={HowWeHelp} />
-        <Route path="/shared/:token" component={SharedResults} />
-        <Route path="/drills" component={DrillScheduler} />
-        <Route path="/drills/after-action" component={DrillAfterActionIndex} />
-        <Route path="/drills/:id/run" component={DrillRunner} />
-        <Route path="/drills/:id/debrief" component={DrillAfterAction} />
-        <Route path="/ras" component={EmergencyAlerts} />
-        <Route path="/ras/activate" component={RASActivation} />
-        <Route path="/staff-checkin" component={StaffCheckin} />
-        <Route path="/training-modules" component={TrainingModules} />
-        <Route path="/training/:id" component={TrainingPlayer} />
-        <Route path="/personnel-tracking" component={PersonnelTracking} />
-        <Route path="/btam" component={BtamDashboard} />
-        <Route path="/btam/new" component={BtamIntake} />
-        <Route path="/btam/:id">{(params) => <BtamCaseDetail />}</Route>
-        <Route path="/legal/terms" component={TermsOfService} />
-        <Route path="/terms-and-conditions" component={TermsAndConditions} />
         <Route path="/forgot-password" component={ForgotPassword} />
         <Route path="/reset-password" component={ResetPassword} />
         <Route path="/set-password" component={SetPassword} />
         <Route path="/verify-email" component={VerifyEmail} />
-        <Route path="/mass-notification" component={MassNotification} />
-        <Route path="/micro-drills" component={MicroDrillAdmin} />
-        <Route path="/micro-drills/run/:assignmentId" component={MicroDrillRunner} />
-        <Route path="/facility-mapping" component={FacilityMapBuilder} />
-        <Route path="/extended-drills" component={ExtendedDrillRunner} />
-        <Route path="/extended-drills/:drillId" component={ExtendedDrillRunner} />
-        <Route path="/micro-drills/tracking" component={MicroDrillTracking} />
-        <Route path="/notifications" component={NotificationsPage} />
-        <Route path="/admin/resource-links" component={ResourceLinks} />
-        <Route path="/settings" component={Settings} />
-        <Route path="/404" component={NotFound} />
-        <Route component={NotFound} />
+        <Route path="/legal/privacy" component={PrivacyPolicy} />
+        <Route path="/legal/terms" component={TermsOfService} />
+        <Route path="/shared/:token" component={SharedResults} />
+
+        {/* Authenticated routes — wrapped in a single AppLayout so sidebar persists */}
+        <Route>
+          <AppLayout>
+            <Switch>
+              <Route path="/dashboard" component={Dashboard} />
+              <Route path="/facilities" component={Facilities} />
+              <Route path="/facilities/new" component={FacilityOnboarding} />
+              <Route path="/facilities/:id" component={FacilityDetail} />
+              <Route path="/audits" component={AuditHistory} />
+              <Route path="/audit/:id" component={AuditWalkthrough} />
+              <Route path="/audit/:id/walkthrough" component={WalkthroughMode} />
+              <Route path="/audit/:id/report" component={AuditReport} />
+              <Route path="/audit/:id/feedback" component={TesterFeedback} />
+              <Route path="/feedback" component={FeedbackDashboard} />
+              <Route path="/analytics" component={AnalyticsDashboard} />
+              <Route path="/report-incident" component={ReportIncident} />
+              <Route path="/check-report" component={CheckReport} />
+              <Route path="/incidents" component={IncidentDashboard} />
+              <Route path="/glossary" component={Glossary} />
+              <Route path="/organizations" component={AdminOrgs} />
+              <Route path="/org/:id">{(params) => <OrgAdmin orgId={Number(params.id)} />}</Route>
+              <Route path="/join" component={JoinOrg} />
+              <Route path="/report/:slug">{(params) => <OrgIncidentReport slug={params.slug} />}</Route>
+              <Route path="/visitors" component={VisitorManagement} />
+              <Route path="/eap" component={EAPList} />
+              <Route path="/audit/:id/eap" component={EmergencyActionPlan} />
+              <Route path="/admin/users" component={UserManagement} />
+              <Route path="/admin/api-keys" component={ApiKeys} />
+              <Route path="/user-management" component={() => { window.location.replace("/admin/users"); return null; }} />
+              <Route path="/admin/flagged-visitors" component={FlaggedVisitors} />
+              <Route path="/facilities/onboarding" component={FacilityOnboarding} />
+              <Route path="/facilities/onboarding-legacy" component={NewFacility} />
+              <Route path="/osha" component={OshaReference} />
+              <Route path="/standards" component={Standards} />
+              <Route path="/liability-scan" component={LiabilityScan} />
+              <Route path="/scan-history" component={ScanHistory} />
+              <Route path="/defensibility-plan" component={DefensibilityPlan} />
+              <Route path="/how-we-help" component={HowWeHelp} />
+              <Route path="/drills" component={DrillScheduler} />
+              <Route path="/drills/after-action" component={DrillAfterActionIndex} />
+              <Route path="/drills/:id/run" component={DrillRunner} />
+              <Route path="/drills/:id/debrief" component={DrillAfterAction} />
+              <Route path="/ras" component={EmergencyAlerts} />
+              <Route path="/ras/activate" component={RASActivation} />
+              <Route path="/staff-checkin" component={StaffCheckin} />
+              <Route path="/training-modules" component={TrainingModules} />
+              <Route path="/training/:id" component={TrainingPlayer} />
+              <Route path="/personnel-tracking" component={PersonnelTracking} />
+              <Route path="/btam" component={BtamDashboard} />
+              <Route path="/btam/new" component={BtamIntake} />
+              <Route path="/btam/:id">{(params) => <BtamCaseDetail />}</Route>
+              <Route path="/terms-and-conditions" component={TermsAndConditions} />
+              <Route path="/mass-notification" component={MassNotification} />
+              <Route path="/micro-drills" component={MicroDrillAdmin} />
+              <Route path="/micro-drills/run/:assignmentId" component={MicroDrillRunner} />
+              <Route path="/facility-mapping" component={FacilityMapBuilder} />
+              <Route path="/extended-drills" component={ExtendedDrillRunner} />
+              <Route path="/extended-drills/:drillId" component={ExtendedDrillRunner} />
+              <Route path="/micro-drills/tracking" component={MicroDrillTracking} />
+              <Route path="/notifications" component={NotificationsPage} />
+              <Route path="/admin/resource-links" component={ResourceLinks} />
+              <Route path="/settings" component={Settings} />
+              <Route component={NotFound} />
+            </Switch>
+          </AppLayout>
+        </Route>
       </Switch>
     </div>
   );
