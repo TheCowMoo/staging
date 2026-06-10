@@ -2791,8 +2791,14 @@ const onboardingRouter = router({
       usedAfterDark: z.boolean().optional(),
       publicAccessWithoutScreening: z.boolean().optional(),
       multiSite: z.boolean().optional(),
-      // â”€â”€ Step 4: Personnel & Contacts â”€â”€
+      // ── Step 4: Personnel & Contacts ──
       emergencyCoordinator: z.string().optional(),
+      emergencyRoles: z.string().optional(),
+      aedOnSite: z.boolean().optional(),
+      aedLocations: z.string().optional(),
+      operationalPolicies: z.string().optional(),
+      coordinatorContacts: z.string().optional(),
+      emergencyContacts: z.string().optional(),
       notes: z.string().optional(),
       // â”€â”€ Options â”€â”€
       createAudit: z.boolean().default(true),

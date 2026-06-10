@@ -19,7 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, ChevronRight, ChevronLeft, Building2, Layers, Clock, Users } from "lucide-react";
+import { CheckCircle2, ChevronRight, ChevronLeft, Building2, Layers, Clock, Users, HeartPulse, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { FACILITY_TYPES } from "@shared/auditFramework";
 import { ALL_STATE_PROVINCES } from "@shared/stateProvinces";
@@ -48,8 +48,14 @@ interface FormData {
   usedAfterDark: boolean;
   publicAccessWithoutScreening: boolean;
   multiSite: boolean;
-  // Step 4 — Personnel
+  // Step 4 — Personnel & Administration
   emergencyCoordinator: string;
+  emergencyRoles: string;
+  aedOnSite: boolean;
+  aedLocations: string;
+  operationalPolicies: string;
+  coordinatorContacts: string;
+  emergencyContacts: string;
   notes: string;
   createAudit: boolean;
 }
@@ -60,15 +66,32 @@ const empty = (): FormData => ({
   hasAlleyways: false, hasConcealedAreas: false, multiTenant: false,
   operatingHours: "", eveningOperations: false, usedAfterDark: false,
   publicAccessWithoutScreening: false, multiSite: false,
-  emergencyCoordinator: "", notes: "", createAudit: true,
+  emergencyCoordinator: "", emergencyRoles: "", aedOnSite: false, aedLocations: "",
+  operationalPolicies: "", coordinatorContacts: "", emergencyContacts: "",
+  notes: "", createAudit: true,
 });
+
+// ─── Emergency role keys (shared with FacilityDetail) ─────────────────────────
+const EMERGENCY_ROLE_KEYS = [
+  { key: "role_siteLead", label: "Site Lead" },
+  { key: "role_secondaryLead", label: "Secondary Lead" },
+  { key: "role_emergencyCaller", label: "Emergency Caller" },
+  { key: "role_evacuationCoordinator", label: "Evacuation Coordinator" },
+  { key: "role_accountabilityCoordinator", label: "Accountability Coordinator" },
+  { key: "role_mediaRelations", label: "Media Relations" },
+];
+
+function parseRoles(json: string): Record<string, string> {
+  if (!json) return {};
+  try { return JSON.parse(json); } catch { return {}; }
+}
 
 // ─── Step metadata ────────────────────────────────────────────────────────────
 const STEPS = [
   { id: 1, label: "Facility Identity",       icon: Building2 },
   { id: 2, label: "Physical Layout",         icon: Layers },
   { id: 3, label: "Operations",              icon: Clock },
-  { id: 4, label: "Personnel & Contacts",    icon: Users },
+  { id: 4, label: "Personnel & Admin",    icon: Users },
 ];
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
@@ -82,14 +105,14 @@ export default function FacilityOnboarding() {
   const [, navigate] = useLocation();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormData>(empty());
-  const [done, setDone] = useState<{ facilityId: number; facilityName: string; auditId: number | null } | null>(null);
+  const [submitted, setSubmitted] = useState<{ facilityId: number; facilityName: string; auditId: number | null } | null>(null);
 
   const set = <K extends keyof FormData>(k: K, v: FormData[K]) =>
     setForm(f => ({ ...f, [k]: v }));
 
   const submit = trpc.onboarding.submitProfile.useMutation({
     onSuccess: (result) => {
-      setDone(result);
+      setSubmitted(result);
       toast.success(`"${result.facilityName}" profile created successfully`);
     },
     onError: (e) => toast.error(e.message),
@@ -102,25 +125,25 @@ export default function FacilityOnboarding() {
   };
 
   // ── Success screen ──
-  if (done) {
+  if (submitted) {
     return (
       <AppLayout>
         <div className="container max-w-2xl py-16 text-center space-y-6">
           <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto" />
           <h1 className="text-2xl font-bold">Facility Profile Created</h1>
           <p className="text-muted-foreground">
-            <strong>{done.facilityName}</strong> has been added to your facilities. All profile data has been saved and is ready to drive your audit, EAP, and reporting.
+            <strong>{submitted.facilityName}</strong> has been added to your facilities. All profile data has been saved and is ready to drive your audit, EAP, and reporting.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-            {done.auditId && (
-              <Button onClick={() => navigate(`/audit/${done.auditId}`)}>
+            {submitted.auditId && (
+              <Button onClick={() => navigate(`/audit/${submitted.auditId}`)}>
                 Start Audit Walkthrough
               </Button>
             )}
             <Button variant="outline" onClick={() => navigate(`/facilities`)}>
               View All Facilities
             </Button>
-            <Button variant="ghost" onClick={() => { setDone(null); setForm(empty()); setStep(1); }}>
+            <Button variant="ghost" onClick={() => { setSubmitted(null); setForm(empty()); setStep(1); }}>
               Add Another Facility
             </Button>
           </div>
@@ -288,7 +311,7 @@ export default function FacilityOnboarding() {
               </>
             )}
 
-            {/* ── Step 4: Personnel & Options ── */}
+            {/* ── Step 4: Personnel & Admin ── */}
             {step === 4 && (
               <>
                 <div className="space-y-1">
@@ -296,6 +319,95 @@ export default function FacilityOnboarding() {
                   <Input placeholder="Name and title of primary emergency contact" value={form.emergencyCoordinator} onChange={e => set("emergencyCoordinator", e.target.value)} />
                   <p className="text-xs text-muted-foreground">This person will be referenced in your EAP as the primary point of contact.</p>
                 </div>
+
+                {/* Assigned Emergency Roles */}
+                <div className="space-y-3 pt-1 border-t border-border">
+                  <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <ShieldAlert size={13} /> Assigned Emergency Roles
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    For each role, enter primary, secondary, and tertiary contacts separated by semicolons.
+                  </p>
+                  {EMERGENCY_ROLE_KEYS.map((r) => {
+                    const parsed = parseRoles(form.emergencyRoles);
+                    const val = parsed[r.key] ?? "";
+                    return (
+                      <div key={r.key}>
+                        <Label className="text-sm">{r.label}</Label>
+                        <Input
+                          className="mt-1"
+                          placeholder="Primary; Secondary (optional); Tertiary (optional)"
+                          value={val}
+                          onChange={(e) => {
+                            const cur = parseRoles(form.emergencyRoles);
+                            cur[r.key] = e.target.value;
+                            set("emergencyRoles", JSON.stringify(cur));
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Administration */}
+                <div className="space-y-3 pt-1 border-t border-border">
+                  <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="text-primary">🛡️</span> Administration
+                  </h3>
+                  <div className="space-y-1">
+                    <Label>Operational Policies</Label>
+                    <Textarea
+                      placeholder="Enter operational policies..."
+                      value={form.operationalPolicies}
+                      onChange={e => set("operationalPolicies", e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Coordinator Contacts</Label>
+                    <Textarea
+                      placeholder="Enter coordinator contact information..."
+                      value={form.coordinatorContacts}
+                      onChange={e => set("coordinatorContacts", e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Emergency Contacts</Label>
+                    <Textarea
+                      placeholder="Enter emergency contact information..."
+                      value={form.emergencyContacts}
+                      onChange={e => set("emergencyContacts", e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+                </div>
+
+                {/* AED */}
+                <div className="space-y-3 pt-1 border-t border-border">
+                  <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <HeartPulse size={13} /> AED (Automated External Defibrillator)
+                  </h3>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40">
+                    <Label className="text-sm font-normal cursor-pointer">AED(s) on-site?</Label>
+                    <Switch
+                      checked={form.aedOnSite}
+                      onCheckedChange={v => set("aedOnSite", v)}
+                    />
+                  </div>
+                  {form.aedOnSite && (
+                    <div className="space-y-1">
+                      <Label>AED Location(s)</Label>
+                      <Textarea
+                        placeholder="e.g. Main lobby near reception desk; Second floor break room"
+                        value={form.aedLocations}
+                        onChange={e => set("aedLocations", e.target.value)}
+                        rows={2}
+                      />
+                    </div>
+                  )}
+                </div>
+
                 <div className="space-y-1">
                   <Label>Additional Notes</Label>
                   <Textarea placeholder="Any additional context about this facility (optional)" value={form.notes} onChange={e => set("notes", e.target.value)} rows={3} />
@@ -366,6 +478,12 @@ export default function FacilityOnboarding() {
                 publicAccessWithoutScreening: form.publicAccessWithoutScreening,
                 multiSite: form.multiSite,
                 emergencyCoordinator: form.emergencyCoordinator.trim() || undefined,
+                emergencyRoles: form.emergencyRoles || undefined,
+                aedOnSite: form.aedOnSite,
+                aedLocations: form.aedLocations || undefined,
+                operationalPolicies: form.operationalPolicies || undefined,
+                coordinatorContacts: form.coordinatorContacts || undefined,
+                emergencyContacts: form.emergencyContacts || undefined,
                 notes: form.notes.trim() || undefined,
                 createAudit: form.createAudit,
               })}
