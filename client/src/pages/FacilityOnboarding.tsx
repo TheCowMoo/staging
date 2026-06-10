@@ -12,6 +12,7 @@ import { trpc } from "@/lib/trpc";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { OperatingHoursSelector } from "@/components/OperatingHoursSelector";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -267,10 +268,10 @@ export default function FacilityOnboarding() {
             {/* ── Step 3: Operations ── */}
             {step === 3 && (
               <>
-                <div className="space-y-1">
-                  <Label>Normal Operating Hours</Label>
-                  <Input placeholder="e.g. Mon–Fri 8 AM – 6 PM" value={form.operatingHours} onChange={e => set("operatingHours", e.target.value)} />
-                </div>
+                <OperatingHoursSelector
+                  value={form.operatingHours}
+                  onChange={(value) => set("operatingHours", value)}
+                />
                 <div className="space-y-3 pt-1">
                   {([
                     ["eveningOperations",            "Evening or night-time operations"],
