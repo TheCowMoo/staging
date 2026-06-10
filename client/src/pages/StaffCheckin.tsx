@@ -1,5 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +56,10 @@ export default function StaffCheckin() {
   const [selectedStatus, setSelectedStatus] = useState<StatusValue | null>(null);
   const [location, setLocation] = useState("");
 
-  const { data: checkins, refetch } = trpc.staffCheckin.list.useQuery({});
+  const { data: memberships = [] } = trpc.org.myMemberships.useQuery();
+  const orgId = memberships[0]?.orgId ?? 0;
+
+  const { data: checkins, refetch } = trpc.staffCheckin.list.useQuery({ orgId });
 
   const createMutation = trpc.staffCheckin.create.useMutation({
     onSuccess: () => {
@@ -87,6 +91,7 @@ export default function StaffCheckin() {
       staffName: staffName.trim(),
       status: selectedStatus,
       location: location.trim() || undefined,
+      orgId,
     });
   };
 

@@ -3756,7 +3756,12 @@ const staffCheckinRouter = router({
       orgId: z.number().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      // Only include orgId/facilityId if they have a truthy value
+      // Resolve orgId: prefer client-provided, fall back to user's primary membership
+      let resolvedOrgId = input.orgId;
+      if (!resolvedOrgId) {
+        const memberships = await getOrgMembershipForUser(ctx.user.id);
+        resolvedOrgId = memberships[0]?.orgId;
+      }
       const data: any = {
         staffName: input.staffName,
         status: input.status,
@@ -3764,7 +3769,7 @@ const staffCheckinRouter = router({
         recordedByUserId: ctx.user.id,
       };
       if (input.facilityId) data.facilityId = input.facilityId;
-      if (input.orgId) data.orgId = input.orgId;
+      if (resolvedOrgId) data.orgId = resolvedOrgId;
       return createStaffCheckin(data);
     }),
   delete: paidProcedure
