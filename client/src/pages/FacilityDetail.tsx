@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { OperatingHoursSelector } from "@/components/OperatingHoursSelector";
 import { Switch } from "@/components/ui/switch";
 import {
   Building2, ArrowLeft, Plus, ClipboardList, Copy,
@@ -272,10 +273,10 @@ export default function FacilityDetail() {
                     <Input id="edit-occupancy" type="number" value={editForm.maxOccupancy} onChange={(e) => setEditForm({ ...editForm, maxOccupancy: e.target.value })} className="mt-1" />
                   </div>
                 </div>
-                <div>
-                  <Label htmlFor="edit-hours">Operating Hours</Label>
-                  <Input id="edit-hours" value={editForm.operatingHours} onChange={(e) => setEditForm({ ...editForm, operatingHours: e.target.value })} className="mt-1" />
-                </div>
+                <OperatingHoursSelector
+                  value={editForm.operatingHours}
+                  onChange={(value) => setEditForm({ ...editForm, operatingHours: value })}
+                />
               </div>
 
               {/* Operational Flags */}
