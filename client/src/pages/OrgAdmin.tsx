@@ -115,7 +115,7 @@ export default function OrgAdmin({ orgId }: { orgId: number }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       {/* Permission Flags Dialog */}
       <Dialog open={flagsDialogOpen} onOpenChange={setFlagsDialogOpen}>
         <DialogContent className="max-w-md">
@@ -248,7 +248,7 @@ export default function OrgAdmin({ orgId }: { orgId: number }) {
           <div className="space-y-2">
             {members?.map((m) => (
               <Card key={m.id} className="p-4">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center justify-between gap-4">
                   <div className="min-w-0">
                     <p className="font-medium truncate">{m.userName ?? "Unknown"}</p>
                     <p className="text-sm text-muted-foreground truncate">{m.userEmail ?? "—"}</p>
@@ -320,7 +320,7 @@ export default function OrgAdmin({ orgId }: { orgId: number }) {
             <div className="space-y-2">
               {pendingInvites.map((inv) => (
                 <Card key={inv.id} className="p-4">
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                       <p className="font-medium">{inv.email}</p>
                       <p className="text-xs text-muted-foreground">
@@ -477,7 +477,7 @@ function AuditLogTab({ orgId }: { orgId: number }) {
           Showing {logs.length} most recent events &mdash; retained indefinitely per ISO 27001 A.12.4
         </p>
       </div>
-      <div className="rounded-md border overflow-hidden">
+      <div className="rounded-md border overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-muted/50">
             <tr>

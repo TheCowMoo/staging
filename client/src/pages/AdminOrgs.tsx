@@ -39,7 +39,7 @@ function AdminOrgsContent() {
   });
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
+    <div className="px-4 sm:px-6 lg:px-8 py-6 space-y-6 animate-fade-in-up">
       {/* ── Stats Bar ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="metal-card p-5 flex items-center gap-4">
