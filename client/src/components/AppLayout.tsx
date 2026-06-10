@@ -493,7 +493,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Main content */}
-        <main className="flex-1 overflow-auto bg-background">
+        <main className="flex-1 flex flex-col min-h-0 overflow-auto bg-background">
           {/* Desktop breadcrumb bar */}
           <div className="border-b border-border bg-card px-6 py-4 sticky top-0 z-20">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">

@@ -123,7 +123,7 @@ export default function TrainingPlayer() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-black">
+    <div className="flex flex-col flex-1 min-h-0 bg-black">
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-2 bg-background border-b border-border z-10">
         <div className="flex items-center gap-3">
@@ -153,7 +153,7 @@ export default function TrainingPlayer() {
       </div>
 
       {/* Content area */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative min-h-0">
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-background z-20">
             <div className="text-center space-y-3">
