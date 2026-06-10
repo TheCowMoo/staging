@@ -15,6 +15,7 @@ import {
 import { getRiskBadgeClass } from "@/lib/riskUtils";
 import { FACILITY_TYPES } from "../../../shared/auditFramework";
 import { ALL_STATE_PROVINCES } from "../../../shared/stateProvinces";
+import MapPicker from "@/components/MapPicker";
 import { toast } from "sonner";
 import { useState } from "react";
 
@@ -117,6 +118,8 @@ export default function FacilityDetail() {
       multiSite: facility.multiSite ?? false,
       emergencyCoordinator: facility.emergencyCoordinator ?? "",
       emergencyRoles: facility.emergencyRoles ?? "",
+      latitude: (facility as any).latitude ?? null,
+      longitude: (facility as any).longitude ?? null,
       aedOnSite: facility.aedOnSite ?? false,
       aedLocations: facility.aedLocations ?? "",
       operationalPolicies: facility.operationalPolicies ?? "",
@@ -154,6 +157,8 @@ export default function FacilityDetail() {
       usedAfterDark: editForm.usedAfterDark,
       multiSite: editForm.multiSite,
       emergencyCoordinator: editForm.emergencyCoordinator || undefined,
+      latitude: editForm.latitude ?? undefined,
+      longitude: editForm.longitude ?? undefined,
       emergencyRoles: editForm.emergencyRoles || undefined,
       aedOnSite: editForm.aedOnSite,
       aedLocations: editForm.aedLocations || undefined,

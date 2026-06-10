@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, ChevronRight, ChevronLeft, Building2, Layers, Clock, Users, HeartPulse, ShieldAlert, Upload, X, Image as ImageIcon, Loader2 } from "lucide-react";
+import MapPicker from "@/components/MapPicker";
 import { toast } from "sonner";
 import { FACILITY_TYPES } from "@shared/auditFramework";
 import { ALL_STATE_PROVINCES } from "@shared/stateProvinces";
@@ -41,6 +42,8 @@ interface FloorPlanEntry {
 
 interface FormData {
   // Step 1 — Identity
+  latitude: number | null;
+  longitude: number | null;
   name: string;
   facilityType: string;
   address: string;
@@ -75,7 +78,7 @@ interface FormData {
 }
 
 const empty = (): FormData => ({
-  name: "", facilityType: "", address: "", city: "", state: "", jurisdiction: "United States",
+  latitude: null, longitude: null, name: "", facilityType: "", address: "", city: "", state: "", jurisdiction: "United States",
   squareFootage: "", floors: "", maxOccupancy: "", publicEntrances: "", staffEntrances: "",
   hasAlleyways: false, hasConcealedAreas: false, multiTenant: false,
   operatingHours: "", eveningOperations: false, usedAfterDark: false,
@@ -371,6 +374,16 @@ export default function FacilityOnboarding() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Map Picker */}
+                <MapPicker
+                  initialLat={form.latitude}
+                  initialLng={form.longitude}
+                  initialAddress={`${form.address}, ${form.city}, ${form.state}`}
+                  onChange={(result) => {
+                    setForm(f => ({ ...f, latitude: result.lat, longitude: result.lng, address: result.address }));
+                  }}
+                />
               </>
             )}
 
@@ -709,6 +722,8 @@ export default function FacilityOnboarding() {
                 usedAfterDark: form.usedAfterDark,
                 publicAccessWithoutScreening: form.publicAccessWithoutScreening,
                 multiSite: form.multiSite,
+                latitude: form.latitude ?? undefined,
+                longitude: form.longitude ?? undefined,
                 emergencyCoordinator: form.emergencyCoordinator.trim() || undefined,
                 emergencyRoles: form.emergencyRoles || undefined,
                 aedOnSite: form.aedOnSite,
