@@ -417,6 +417,7 @@ const normalizeAnswers = (answers: Record<string, string | boolean>): Record<str
   ) as Record<string, AnswerValue>;
 };
 
+<<<<<<< HEAD
 /**
  * Normalize the LLM's recommended_next_actions to a flat string[].
  * The Layer-2 interpreter sometimes returns an array of objects like
@@ -441,6 +442,14 @@ function normalizeActionPlan(raw: unknown): string[] | null {
     return String(item ?? "");
   }).filter(Boolean);
 }
+=======
+const normalizeActionPlan = (items: unknown[]): string[] =>
+  items.map((item) => {
+    if (typeof item === "string") return item;
+    if (item && typeof item === "object" && "action" in item) return String((item as any).action);
+    return String(item ?? "");
+  });
+>>>>>>> 18d2514 (Updated project)
 
 const validateAiResult: (candidate: any) => asserts candidate is AssessmentOutput = (candidate) => {
   if (typeof candidate !== "object" || candidate === null) {
@@ -618,7 +627,11 @@ export async function generateLiabilityScanResult(
     categoryScores: engineResult.categoryScores,
     interpretation: (interpParsed?.executive_summary as string) || engineResult.interpretation,
     advisorSummary: (interpParsed?.defensibility_risk_statement as string) || engineResult.advisorSummary,
+<<<<<<< HEAD
     immediateActionPlan: normalizeActionPlan(interpParsed?.recommended_next_actions) || engineResult.immediateActionPlan,
+=======
+    immediateActionPlan: normalizeActionPlan(interpParsed?.recommended_next_actions ?? engineResult.immediateActionPlan ?? []),
+>>>>>>> 18d2514 (Updated project)
     ctaBlock: (outParsed?.CTA_block as string[]) || engineResult.ctaBlock,
     crmPayload: engineResult.crmPayload,
     escalationFlags: engineResult.escalationFlags,

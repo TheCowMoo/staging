@@ -134,6 +134,7 @@ export default function AuditWalkthrough() {
   // activeCategoryIdx: 0..categories.length-1 = normal categories; categories.length = EAP contacts step
   const [activeCategoryIdx, setActiveCategoryIdx] = useState(0);
   const [responses, setResponses] = useState<Record<string, QuestionState>>({});
+  const [responsesLoaded, setResponsesLoaded] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [eapContacts, setEapContacts] = useState<EapContacts>({});
   const [eapSaving, setEapSaving] = useState(false);
@@ -164,9 +165,9 @@ export default function AuditWalkthrough() {
   const totalSteps = categories.length + 1;
   const isEapContactsStep = activeCategoryIdx === categories.length;
 
-  // Load existing responses — restores ALL decision-tree fields from DB on page load
+  // Load existing responses — restores ALL decision-tree fields from DB on page load (ONCE)
   useEffect(() => {
-    if (existingResponses?.length) {
+    if (existingResponses?.length && !responsesLoaded) {
       const loaded: Record<string, QuestionState> = {};
       for (const r of existingResponses) {
         // conditionTypes is stored as JSON in DB; parse if it's a string
@@ -193,8 +194,9 @@ export default function AuditWalkthrough() {
         };
       }
       setResponses(loaded);
+      setResponsesLoaded(true);
     }
-  }, [existingResponses]);
+  }, [existingResponses, responsesLoaded]);
 
   // Load saved EAP contacts
   useEffect(() => {
@@ -316,6 +318,13 @@ export default function AuditWalkthrough() {
       : state.response
         ? getResponseScore(state.response, polarity)
         : null;
+    // Map decision-tree values to legacy mysqlEnum values for backward compatibility
+    const mappedResponse = (() => {
+      const resp = pr ?? state.response;
+      if (resp === "Yes") return polarity === "negative" ? "Yes — Present" : "Secure / Yes";
+      if (resp === "No") return polarity === "negative" ? "No — Not Present" : "No — Not in place";
+      return resp;
+    })();
     await saveResponse.mutateAsync({
       auditId,
       categoryName,
@@ -325,7 +334,7 @@ export default function AuditWalkthrough() {
       primaryResponse: pr,
       concernLevel: cl,
       // Legacy field (kept for backward compat)
-      response: (pr ?? state.response) as Parameters<typeof saveResponse.mutateAsync>[0]["response"],
+      response: mappedResponse as Parameters<typeof saveResponse.mutateAsync>[0]["response"],
       conditionType: state.conditionType as any,
       conditionTypes: state.conditionTypes as any,
       isUnavoidable: state.isUnavoidable,
@@ -1063,11 +1072,17 @@ export default function AuditWalkthrough() {
                                   const pr = val as PrimaryResponse;
                                   const updated = { ...(responses[question.id] ?? { notes: "" }), primaryResponse: pr, concernLevel: undefined, response: pr };
                                   setResponses((prev) => ({ ...prev, [question.id]: updated }));
+                                  // Map decision-tree values to legacy mysqlEnum values for backward compatibility
+                                  const legacyResponse = pr === "Yes"
+                                    ? (question.polarity === "negative" ? "Yes — Present" : "Secure / Yes")
+                                    : pr === "No"
+                                      ? (question.polarity === "negative" ? "No — Not Present" : "No — Not in place")
+                                      : pr;
                                   // Persist immediately; score will be recalculated when concern level is set
                                   const score = getDecisionTreeScore(pr, undefined, question.polarity);
                                   saveResponse.mutate({
                                     auditId, categoryName: activeCategory.name, questionId: question.id, questionText: question.text,
-                                    response: pr as any, primaryResponse: pr, concernLevel: undefined,
+                                    response: legacyResponse as any, primaryResponse: pr, concernLevel: undefined,
                                     conditionType: updated.conditionType as any, score, notes: updated.notes,
                                   });
                                   // Gate / cross-fill logic
@@ -1102,14 +1117,20 @@ export default function AuditWalkthrough() {
                                 </p>
                                 <Select
                                   value={state.concernLevel ?? ""}
-                                  onValueChange={(val) => {
+                                onValueChange={(val) => {
                                     const cl = val as ConcernLevel;
                                     const updated = { ...(responses[question.id] ?? { notes: "" }), concernLevel: cl };
                                     setResponses((prev) => ({ ...prev, [question.id]: updated }));
                                     const score = getDecisionTreeScore(primaryResp!, cl, question.polarity);
+                                    // Map decision-tree values to legacy mysqlEnum values for backward compatibility
+                                    const legacyResponse = primaryResp === "Yes"
+                                      ? (question.polarity === "negative" ? "Yes — Present" : "Secure / Yes")
+                                      : primaryResp === "No"
+                                        ? (question.polarity === "negative" ? "No — Not Present" : "No — Not in place")
+                                        : primaryResp;
                                     saveResponse.mutate({
                                       auditId, categoryName: activeCategory.name, questionId: question.id, questionText: question.text,
-                                      response: primaryResp as any, primaryResponse: primaryResp, concernLevel: cl,
+                                      response: legacyResponse as any, primaryResponse: primaryResp, concernLevel: cl,
                                       conditionType: updated.conditionType as any, score, notes: updated.notes,
                                     });
                                   }}

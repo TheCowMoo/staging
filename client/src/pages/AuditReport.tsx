@@ -312,6 +312,20 @@ export default function AuditReport() {
   });
   const [showThreatForm, setShowThreatForm] = useState(false);
 
+  // Reset local state when auditId changes (prevent bleed between audit reports)
+  useEffect(() => {
+    setAiRecs(null);
+    setAiLoading(false);
+    setExpandedRec(null);
+    setExecSummary(null);
+    setExecSummaryLoading(false);
+    setExecSummaryError(null);
+    setEapGenerating(false);
+    setEapGenError(null);
+    setShowThreatForm(false);
+    setFetchMarkdown(false);
+  }, [auditId]);
+
   // ── Phase 4: Executive Summary ────────────────────────────────────────────
   const [execSummary, setExecSummary] = useState<{
     summary: string;

@@ -49,7 +49,11 @@ function normalizeAction(item: unknown): string {
 }
 
 function ActionCard({ action, index, checked, onToggle }: ActionCardProps) {
+<<<<<<< HEAD
   const actionStr = normalizeAction(action);
+=======
+  const actionStr = typeof action === "string" ? action : (action && typeof action === "object" && "action" in action ? String((action as any).action) : String(action ?? ""));
+>>>>>>> 18d2514 (Updated project)
   const dashIdx = actionStr.indexOf(" — ");
   const title = dashIdx > -1 ? actionStr.slice(0, dashIdx) : actionStr;
   const body = dashIdx > -1 ? actionStr.slice(dashIdx + 3) : "";
