@@ -49,7 +49,7 @@ function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: s
           <p className="metric-number">{value}</p>
           {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
         </div>
-        <div className="w-12 h-12 rounded-xl bg-[#0B1F33]/5 flex items-center justify-center text-[#0B1F33] shadow-inner shadow-black/5">
+        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary dark:text-[#C9A86A] shadow-inner shadow-black/5">
           {icon}
         </div>
       </div>

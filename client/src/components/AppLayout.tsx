@@ -317,7 +317,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <aside className={`${mobile ? "flex flex-col h-full" : "hidden lg:flex flex-col min-h-screen fixed top-0 left-0 bottom-0"} w-64 sidebar-metallic overflow-y-auto`} style={{ zIndex: 2000 }}>
       {/* Logo area */}
       <div className="flex items-center justify-center px-3 py-3 border-b border-sidebar-border">
-        <img src={LOGO_URL} alt="Five Stones Technology" className="h-48 w-full object-contain" />
+        <Link href="/dashboard" onClick={() => setSidebarOpen(false)}>
+          <img src={LOGO_URL} alt="Five Stones Technology" className="h-48 w-full object-contain cursor-pointer" />
+        </Link>
         {mobile && (
           <button onClick={() => setSidebarOpen(false)} className="ml-2 text-sidebar-foreground hover:text-white transition-colors p-1 -mr-1">
             <X size={18} />
@@ -450,7 +452,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <button onClick={() => setSidebarOpen(true)} className="text-muted-foreground hover:text-foreground transition-colors">
             <Menu size={20} />
           </button>
-          <img src={LOGO_URL} alt="Five Stones Technology" className="h-24 w-auto max-w-[320px] object-contain" />
+          <Link href="/dashboard" onClick={() => setSidebarOpen(false)}>
+            <img src={LOGO_URL} alt="Five Stones Technology" className="h-24 w-auto max-w-[320px] object-contain cursor-pointer" />
+          </Link>
           <div className="ml-auto flex items-center gap-2">
             <Link href="/ras/activate" className="inline-flex items-center gap-3 text-lg font-black text-white bg-red-600 hover:bg-red-700 active:bg-red-800 px-7 py-4 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:scale-[1.02] border-2 border-red-400/30" onClick={() => setSidebarOpen(false)}>
               <ShieldAlert className="w-8 h-8" />
@@ -493,23 +497,25 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {/* Desktop breadcrumb bar */}
           <div className="border-b border-border bg-card px-6 py-4 sticky top-0 z-20">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    if (window.history.length > 1) {
-                      window.history.back();
-                    } else {
-                      navigate("/dashboard");
-                    }
-                  }}
-                  className="inline-flex items-center gap-2 transition-colors"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  Back
-                </Button>
-              </div>
+              {location !== "/dashboard" && (
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (window.history.length > 1) {
+                        window.history.back();
+                      } else {
+                        navigate("/dashboard");
+                      }
+                    }}
+                    className="inline-flex items-center gap-2 transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Back
+                  </Button>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <Link href="/ras/activate" className="inline-flex items-center gap-3 text-lg font-black text-white bg-red-600 hover:bg-red-700 active:bg-red-800 px-7 py-4 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:scale-[1.02] border-2 border-red-400/30">
                   <ShieldAlert className="w-8 h-8" />
