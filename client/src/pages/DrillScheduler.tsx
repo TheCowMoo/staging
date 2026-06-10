@@ -1616,7 +1616,7 @@ export default function DrillScheduler() {
     : [];
 
   return (
-
+    <>
       <div className="container max-w-5xl py-8 space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -2459,6 +2459,6 @@ export default function DrillScheduler() {
           </DialogContent>
         </Dialog>
       )}
-
+    </>
   );
 }
