@@ -154,7 +154,20 @@ export default function DefensibilityPlan() {
   const phasedActions = useMemo(() => {
     if (!state?.result) return null;
     const gaps = state.result.topGaps;
-    const actions = state.result.immediateActionPlan;
+    const rawActions = state.result.immediateActionPlan as unknown[];
+    // Normalize each item — the LLM sometimes returns {priority, action} objects instead of strings
+    const actions = rawActions.map((item): string => {
+      if (typeof item === "string") return item;
+      if (item && typeof item === "object") {
+        const obj = item as Record<string, unknown>;
+        if (typeof obj.action === "string") {
+          return obj.priority ? `${String(obj.priority)}: ${obj.action}` : obj.action;
+        }
+        const vals = Object.values(obj).filter((v) => typeof v === "string") as string[];
+        if (vals.length > 0) return vals.join(" — ");
+      }
+      return String(item ?? "");
+    });
     return {
       phase1: gaps.slice(0, 2).map((g, i) => ({
         action: actions[i] ?? g.gap,
