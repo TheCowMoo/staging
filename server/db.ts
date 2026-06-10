@@ -140,8 +140,22 @@ export async function createFacility(data: InsertFacility) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
   const now = new Date();
-  const result = await db.insert(facilities).values({ ...data, createdAt: now, updatedAt: now });
-  return getFacilityById(result.insertId);
+  console.log("[createFacility] Inserting facility with data:", { ...data, createdAt: now, updatedAt: now });
+  try {
+    const result = await db.insert(facilities).values({ ...data, createdAt: now, updatedAt: now });
+    console.log("[createFacility] Insert result:", JSON.stringify(result), "insertId type:", typeof result.insertId, "value:", result.insertId);
+    const id = Number(result.insertId);
+    if (!id || isNaN(id)) {
+      console.error("[createFacility] Invalid insertId:", result.insertId);
+      throw new Error("Invalid insertId after facility insert");
+    }
+    const facility = await getFacilityById(id);
+    console.log("[createFacility] Retrieved facility:", facility?.id ?? "undefined");
+    return facility;
+  } catch (err) {
+    console.error("[createFacility] ERROR:", err);
+    throw err;
+  }
 }
 
 export async function getFacilitiesByUser(userId: number) {
