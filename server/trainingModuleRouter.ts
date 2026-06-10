@@ -527,8 +527,13 @@ export const trainingModuleRouter = router({
         return { url: mod.launchPath };
       }
 
-      // Handle bare domain URLs
-      if (mod.launchPath.startsWith("//") || /^[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(mod.launchPath)) {
+      // Handle bare domain URLs (e.g. "training.example.com" or "//training.example.com")
+      // Must NOT match file paths like "story.html", "html5/lib/script.js", etc.
+      if (mod.launchPath.startsWith("//") || (
+        /^[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(mod.launchPath) &&
+        !mod.launchPath.includes("/") &&
+        !/\.(html?|js|css|txt|xml|json|png|jpg|jpeg|gif|webp|svg)$/i.test(mod.launchPath)
+      )) {
         return { url: mod.launchPath.startsWith("//") ? `https:${mod.launchPath}` : `https://${mod.launchPath}` };
       }
 
@@ -543,6 +548,17 @@ export const trainingModuleRouter = router({
       }
 
       // Legacy Storyline modules: generate presigned S3 URL
+      // If S3 is not configured, fall back to local filesystem for development
+      if (!process.env.S3_BUCKET_NAME && process.env.LOCAL_COURSES_PATH) {
+        // Extract directory name from storagePrefix (e.g. "courses/Active Threat Response" -> "Active Threat Response")
+        const dirName = mod.storagePrefix
+          ? mod.storagePrefix.replace(/^courses\//, "").replace(/^local:/, "")
+          : mod.courseTitle;
+        const baseUrl = (ctx.req as any)?.headers?.host
+          ? `http://${(ctx.req as any).headers.host}`
+          : process.env.APP_BASE_URL || "http://localhost:3000";
+        return { url: `${baseUrl}/courses/${encodeURIComponent(dirName)}/${mod.launchPath}` };
+      }
       const s3Key = mod.storagePrefix
         ? `${mod.storagePrefix}/${mod.launchPath}`
         : mod.launchPath;
