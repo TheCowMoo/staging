@@ -70,11 +70,6 @@ export function NewAuditButton({
 
             {/* Body */}
             <div className="p-6 space-y-3">
-              <p className="text-sm text-muted-foreground mb-2">
-                Choose which section of the assessment to perform. The other section will be
-                permanently unavailable for this audit.
-              </p>
-
               {/* Menu A */}
               <button
                 onClick={() => handleSelect("a")}
@@ -141,12 +136,7 @@ export function NewAuditButton({
               </button>
             </div>
 
-            {/* Footer */}
-            <div className="px-6 py-3 border-t border-border bg-muted/20">
-              <p className="text-[10px] text-muted-foreground">
-                This choice is permanent and cannot be changed after the audit is created.
-              </p>
-            </div>
+
           </div>
         </div>
       )}
