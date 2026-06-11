@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
-  Building2, Plus, Trash2, Settings, ExternalLink, Globe, Mail, Users, ChevronRight, Shield
+  Building2, Plus, Trash2, Settings, ExternalLink, Globe, Mail, Users, ChevronRight, Shield, Database
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -17,11 +17,20 @@ function slugify(name: string) {
 }
 
 function AdminOrgsContent() {
+  const { user } = useAuth();
   const [, navigate] = useLocation();
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState({ name: "", slug: "", contactEmail: "" });
 
   const { data: orgs, refetch } = trpc.org.listAll.useQuery();
+
+  const backupMutation = trpc.system.backupDatabase.useMutation({
+    onSuccess: (result) => {
+      const sizeMb = (result.size / 1024 / 1024).toFixed(2);
+      toast.success(`Database backup complete — ${sizeMb} MB uploaded to S3`);
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   const createMutation = trpc.org.create.useMutation({
     onSuccess: () => {
@@ -70,6 +79,30 @@ function AdminOrgsContent() {
           </div>
         </div>
       </div>
+
+      {/* ── Ultra Admin: Database Backup ── */}
+      {user?.role === "ultra_admin" && (
+        <div className="metal-card p-5 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 shrink-0">
+            <Database size={22} />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm uppercase tracking-[0.16em] text-muted-foreground">Database Backup</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Dump the full MySQL database and upload to S3 as a timestamped .sql file.
+            </p>
+          </div>
+          <Button
+            variant="default"
+            className="gap-2 shrink-0 shadow-sm"
+            disabled={backupMutation.isPending}
+            onClick={() => backupMutation.mutate()}
+          >
+            <Database className="h-4 w-4" />
+            {backupMutation.isPending ? "Backing up…" : "Backup DB to S3"}
+          </Button>
+        </div>
+      )}
 
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
