@@ -46,6 +46,10 @@ export default function FacilityDetail() {
   const skipQuery = facilityId === 0;
   const { data: facility, isLoading: facilityLoading } = trpc.facility.get.useQuery({ id: facilityId }, { enabled: !skipQuery });
   const { data: audits, isLoading: auditsLoading } = trpc.audit.listByFacility.useQuery({ facilityId }, { enabled: !skipQuery });
+  const { data: attachmentsData, isLoading: attachmentsLoading } = trpc.attachment.listByFacility.useQuery(
+    { facilityId },
+    { enabled: photosOpen && facilityId > 0 }
+  );
   const [editForm, setEditForm] = useState<Record<string, any>>({});
 
   const utils = trpc.useUtils();
@@ -737,27 +741,16 @@ export default function FacilityDetail() {
                     </div>
 
                     {/* Gallery */}
-                    {(() => {
-                      const { data: attachmentsData, isLoading: attachmentsLoading, refetch: refetchAttachments } = trpc.attachment.listByFacility.useQuery(
-                        { facilityId },
-                        { enabled: photosOpen && facilityId > 0 }
-                      );
-                      if (attachmentsLoading) {
-                        return (
-                          <div className="flex items-center justify-center py-6 text-muted-foreground">
-                            <Loader2 size={16} className="animate-spin mr-2" /> Loading...
-                          </div>
-                        );
-                      }
-                      const items = (attachmentsData ?? []) as any[];
-                      if (items.length === 0) {
-                        return (
-                          <p className="text-xs text-muted-foreground text-center py-6">
-                            No files uploaded yet. Upload photos or documents above.
-                          </p>
-                        );
-                      }
-                      // Split into images and documents
+                    {attachmentsLoading ? (
+                      <div className="flex items-center justify-center py-6 text-muted-foreground">
+                        <Loader2 size={16} className="animate-spin mr-2" /> Loading...
+                      </div>
+                    ) : !attachmentsData || (attachmentsData as any[]).length === 0 ? (
+                      <p className="text-xs text-muted-foreground text-center py-6">
+                        No files uploaded yet. Upload photos or documents above.
+                      </p>
+                    ) : (() => {
+                      const items = attachmentsData as any[];
                       const images = items.filter((a: any) => a.mimeType?.startsWith("image/"));
                       const docs = items.filter((a: any) => !a.mimeType?.startsWith("image/"));
                       return (
