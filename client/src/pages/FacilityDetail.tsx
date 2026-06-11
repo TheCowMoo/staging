@@ -445,8 +445,13 @@ export default function FacilityDetail() {
 
               {/* Notes */}
               <div className="pt-2 border-t border-border">
-                <Label htmlFor="edit-notes">Additional Notes</Label>
-                <Textarea id="edit-notes" value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} className="mt-1" rows={3} />
+                <Label htmlFor="edit-notes" className="flex items-center gap-1.5 text-sm font-semibold">
+                  <FileText size={13} className="text-primary" /> Facility Notes & Observations
+                </Label>
+                <p className="text-[11px] text-muted-foreground mt-0.5 mb-1.5">
+                  Use this space to record pre-assessment observations, things to remember when answering questions, or any general notes about this facility.
+                </p>
+                <Textarea id="edit-notes" value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} className="mt-1" rows={8} placeholder="e.g. Noticed the main entrance has no camera coverage. Need to check if back door is alarmed..." />
               </div>
 
               <div className="flex gap-3 pt-2">
@@ -831,8 +836,17 @@ export default function FacilityDetail() {
                 </div>
               )}
 
+              {/* Facility Notes display */}
               {facility.notes && (
-                <p className="mt-3 text-sm text-muted-foreground bg-muted/40 rounded-lg p-3">{facility.notes}</p>
+                <div className="mt-3 border border-border rounded-lg overflow-hidden">
+                  <div className="px-3 py-2 bg-muted/40 border-b border-border flex items-center gap-1.5">
+                    <FileText size={13} className="text-primary" />
+                    <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Facility Notes & Observations</span>
+                  </div>
+                  <div className="p-3">
+                    <p className="text-xs text-foreground whitespace-pre-wrap leading-relaxed">{facility.notes}</p>
+                  </div>
+                </div>
               )}
             </>
           )}
