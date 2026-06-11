@@ -588,6 +588,14 @@ export async function getFacilityAttachments(auditId: number) {
     .where(eq(facilityAttachments.auditId, auditId))
     .orderBy(desc(facilityAttachments.createdAt));
 }
+
+export async function getFacilityAttachmentsByFacility(facilityId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(facilityAttachments)
+    .where(eq(facilityAttachments.facilityId, facilityId))
+    .orderBy(desc(facilityAttachments.createdAt));
+}
 export async function getFacilityAttachmentById(id: number) {
   const db = await getDb();
   if (!db) return undefined;

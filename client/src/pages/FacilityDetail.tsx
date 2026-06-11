@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Building2, ArrowLeft, Plus, ClipboardList, Copy,
   MapPin, Clock, CheckCircle2, AlertCircle, Pencil, X, Save, ShieldAlert, HeartPulse,
-  Map as MapIcon, Image, Upload, Trash2, ChevronDown, ChevronRight
+  Map as MapIcon, Image, Upload, Trash2, ChevronDown, ChevronRight, Loader2, FileText
 } from "lucide-react";
 import { getRiskBadgeClass } from "@/lib/riskUtils";
 import { FACILITY_TYPES } from "../../../shared/auditFramework";
@@ -679,7 +679,7 @@ export default function FacilityDetail() {
                 )}
               </div>
 
-              {/* ── Photos & Documents (inline uploader) ── */}
+              {/* ── Photos & Documents (gallery with upload) ── */}
               <div className="mt-3 border border-border rounded-lg overflow-hidden">
                 <button
                   onClick={() => setPhotosOpen(!photosOpen)}
@@ -690,51 +690,137 @@ export default function FacilityDetail() {
                   <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Photos & Documents</span>
                 </button>
                 {photosOpen && (
-                    <div className="p-3">
-                    <p className="text-xs text-muted-foreground mb-3">
-                      Upload photos and documents related to this facility. Accepted: JPEG, PNG, WebP, PDF, DOC, DOCX (max 20MB each).
-                    </p>
-                    <div className="flex items-center gap-2 mb-3">
-                      <Input
-                        type="file"
-                        accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                        capture="environment"
-                        className="text-sm flex-1"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          // Show uploading state
-                          toast.loading("Uploading...");
-                          try {
-                            const formData = new FormData();
-                            formData.append("file", file);
-                            formData.append("auditId", "0");
-                            formData.append("facilityId", String(facilityId));
-                            formData.append("category", "other");
-                            formData.append("caption", "");
-                            const resp = await fetch("/api/upload/attachment", {
-                              method: "POST",
-                              body: formData,
-                              credentials: "include",
-                            });
-                            const result = await resp.json();
-                            if (result.success) {
+                  <div className="p-3 space-y-4">
+                    {/* Upload row */}
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Upload photos and documents related to this facility. Accepted: JPEG, PNG, WebP, HEIC, PDF, DOC, DOCX (max 20MB each).
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="file"
+                          accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                          capture="environment"
+                          className="text-sm flex-1"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            toast.loading("Uploading...");
+                            try {
+                              const formData = new FormData();
+                              formData.append("file", file);
+                              formData.append("auditId", "0");
+                              formData.append("facilityId", String(facilityId));
+                              formData.append("category", "other");
+                              formData.append("caption", "");
+                              const resp = await fetch("/api/upload/attachment", {
+                                method: "POST",
+                                body: formData,
+                                credentials: "include",
+                              });
+                              const result = await resp.json();
+                              if (result.success) {
+                                toast.dismiss();
+                                toast.success("File uploaded");
+                                utils.attachment.listByFacility.invalidate({ facilityId });
+                              } else {
+                                toast.dismiss();
+                                toast.error(result.error || "Upload failed");
+                              }
+                            } catch {
                               toast.dismiss();
-                              toast.success("File uploaded");
-                            } else {
-                              toast.dismiss();
-                              toast.error(result.error || "Upload failed");
+                              toast.error("Upload failed");
                             }
-                          } catch {
-                            toast.dismiss();
-                            toast.error("Upload failed");
-                          }
-                        }}
-                      />
+                          }}
+                        />
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Uploaded files are stored securely and linked to this facility.
-                    </p>
+
+                    {/* Gallery */}
+                    {(() => {
+                      const { data: attachmentsData, isLoading: attachmentsLoading, refetch: refetchAttachments } = trpc.attachment.listByFacility.useQuery(
+                        { facilityId },
+                        { enabled: photosOpen && facilityId > 0 }
+                      );
+                      if (attachmentsLoading) {
+                        return (
+                          <div className="flex items-center justify-center py-6 text-muted-foreground">
+                            <Loader2 size={16} className="animate-spin mr-2" /> Loading...
+                          </div>
+                        );
+                      }
+                      const items = (attachmentsData ?? []) as any[];
+                      if (items.length === 0) {
+                        return (
+                          <p className="text-xs text-muted-foreground text-center py-6">
+                            No files uploaded yet. Upload photos or documents above.
+                          </p>
+                        );
+                      }
+                      // Split into images and documents
+                      const images = items.filter((a: any) => a.mimeType?.startsWith("image/"));
+                      const docs = items.filter((a: any) => !a.mimeType?.startsWith("image/"));
+                      return (
+                        <div className="space-y-3">
+                          {images.length > 0 && (
+                            <div>
+                              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Photos ({images.length})</p>
+                              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                                {images.map((img: any) => (
+                                  <a
+                                    key={img.id}
+                                    href={img.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="group relative aspect-square rounded-lg overflow-hidden border border-border bg-muted/30 hover:ring-2 hover:ring-primary/50 transition-all"
+                                    title={img.caption || img.filename}
+                                  >
+                                    <img
+                                      src={img.url}
+                                      alt={img.caption || img.filename}
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                      loading="lazy"
+                                    />
+                                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <p className="text-[10px] text-white truncate leading-tight">{img.caption || img.filename}</p>
+                                    </div>
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {docs.length > 0 && (
+                            <div>
+                              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Documents ({docs.length})</p>
+                              <div className="space-y-1.5">
+                                {docs.map((doc: any) => (
+                                  <a
+                                    key={doc.id}
+                                    href={doc.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 p-2 rounded-lg border border-border hover:bg-muted/30 transition-colors"
+                                  >
+                                    <FileText size={14} className="text-primary flex-shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-xs font-medium text-foreground truncate">{doc.caption || doc.filename}</p>
+                                      {doc.fileSize && (
+                                        <p className="text-[10px] text-muted-foreground">
+                                          {doc.fileSize < 1024 * 1024
+                                            ? `${Math.round(doc.fileSize / 1024)} KB`
+                                            : `${(doc.fileSize / (1024 * 1024)).toFixed(1)} MB`}
+                                        </p>
+                                      )}
+                                    </div>
+                                    <FileText size={14} className="text-muted-foreground flex-shrink-0" />
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>

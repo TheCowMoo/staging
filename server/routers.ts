@@ -14,7 +14,7 @@ import {
   createQuestionFlag, getAllQuestionFlags, getQuestionFlagsByAudit,
   createIncidentReport, getIncidentReports, getIncidentReportByToken, getIncidentReportById, updateIncidentReportStatus, updateIncidentThreatFlags, deleteAllIncidentReports, deleteIncidentReport,
   findSimilarIncidents, findIncidentsByPerson, markAsRepeatIncident,
-  getFacilityAttachments, getFacilityAttachmentById, updateAttachmentAnalysis, deleteFacilityAttachment,
+  getFacilityAttachments, getFacilityAttachmentsByFacility, getFacilityAttachmentById, updateAttachmentAnalysis, deleteFacilityAttachment,
   getCorrectiveActionChecks, toggleCorrectiveActionCheck,
   createOrganization, getAllOrganizations, getOrganizationById, getOrganizationBySlug, updateOrganization, deleteOrganization,
   getOrgMembersForOrg, getOrgMembersWithLocations, getOrgMembershipForUser, getOrgMemberRecord, addOrgMember, updateOrgMemberRole, removeOrgMember,
@@ -1622,6 +1622,12 @@ const attachmentTrpcRouter = router({
     .input(z.object({ auditId: z.number() }))
     .query(async ({ input }) => {
       return getFacilityAttachments(input.auditId);
+    }),
+
+  listByFacility: paidProcedure
+    .input(z.object({ facilityId: z.number() }))
+    .query(async ({ input }) => {
+      return getFacilityAttachmentsByFacility(input.facilityId);
     }),
 
   delete: paidProcedure
