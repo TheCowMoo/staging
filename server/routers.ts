@@ -35,6 +35,7 @@ import {
 import {
   calculateCategoryScore, calculateOverallScore, calculateThreatSeverity,
   AUDIT_CATEGORIES, CATEGORY_WEIGHTS, getCorrectiveActionRecommendation, PRIORITY_ORDER,
+  getDecisionTreeScore, getResponseScore,
 } from "../shared/auditFramework";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
@@ -311,11 +312,27 @@ const auditRouter = router({
     .mutation(async ({ ctx, input }) => {
       const responses = await getResponsesByAudit(input.auditId);
 
-      // Group responses by category
+      // Build polarity lookup from AUDIT_CATEGORIES (no DB schema change needed)
+      const polarityMap: Record<string, "positive" | "negative"> = {};
+      for (const cat of AUDIT_CATEGORIES) {
+        for (const q of cat.questions) {
+          polarityMap[q.id] = q.polarity;
+        }
+      }
+
+      // Group responses by category, recomputing scores authoritatively
       const byCategory: Record<string, { score: number | null }[]> = {};
       for (const r of responses) {
         if (!byCategory[r.categoryName]) byCategory[r.categoryName] = [];
-        byCategory[r.categoryName].push({ score: r.score });
+        // Recompute score from decision-tree fields (primaryResponse + concernLevel)
+        // Falls back to legacy response field, then to stored score as last resort
+        const polarity = polarityMap[r.questionId] ?? "positive";
+        const computedScore = r.primaryResponse
+          ? getDecisionTreeScore(r.primaryResponse, r.concernLevel ?? null, polarity)
+          : r.response
+            ? getResponseScore(r.response, polarity)
+            : r.score;
+        byCategory[r.categoryName].push({ score: computedScore });
       }
 
       // Calculate category scores
@@ -520,6 +537,7 @@ const reportRouter = router({
       const correctiveActions = responses
         .filter((r) => r.score !== null && (r.score ?? 0) >= 1 && !(r as any).isUnavoidable)
         .map((r) => ({
+          questionId: r.questionId,
           category: r.categoryName,
           question: r.questionText,
           response: r.response ?? "Unknown",
