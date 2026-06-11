@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
-  UserCog, ShieldCheck, Eye, Pencil, Crown, Shield, User, Users, Settings, ArrowLeft, Radio, Mail, Plus, X,
+  UserCog, ShieldCheck, Eye, Pencil, Crown, Shield, User, Users, Settings, ArrowLeft, Radio, Mail, Plus, X, Building2, Trash2,
 } from "lucide-react";
 import { ROLE_META, type PlatformRole } from "@shared/permissions";
 
@@ -141,6 +141,42 @@ export default function UserManagement() {
       utils.adminUser.listInvites.invalidate();
     },
     onError: (err: any) => toast.error(err?.message || "Failed to cancel invite"),
+  });
+
+  // ── Org Assignment State ──
+  const [orgDialogUser, setOrgDialogUser] = useState<any>(null);
+  const [assignOrgId, setAssignOrgId] = useState<number | "">("");
+  const [assignOrgRole, setAssignOrgRole] = useState<string>("auditor");
+  const { data: allOrgs } = trpc.org.listAll.useQuery(undefined, { enabled: !!orgDialogUser });
+  const { data: userOrgs, refetch: refetchUserOrgs } = trpc.adminUser.getUserOrgs.useQuery(
+    { userId: orgDialogUser?.id ?? 0 },
+    { enabled: !!orgDialogUser, initialData: [] }
+  );
+
+  const assignToOrg = trpc.adminUser.assignToOrg.useMutation({
+    onSuccess: () => {
+      toast.success("User assigned to organization");
+      setAssignOrgId("");
+      setAssignOrgRole("auditor");
+      refetchUserOrgs();
+    },
+    onError: (err: any) => toast.error(err?.message || "Failed to assign to org"),
+  });
+
+  const removeFromOrg = trpc.adminUser.removeFromOrg.useMutation({
+    onSuccess: () => {
+      toast.success("User removed from organization");
+      refetchUserOrgs();
+    },
+    onError: (err: any) => toast.error(err?.message || "Failed to remove from org"),
+  });
+
+  const updateOrgRole = trpc.adminUser.updateOrgRole.useMutation({
+    onSuccess: () => {
+      toast.success("Org role updated");
+      refetchUserOrgs();
+    },
+    onError: (err: any) => toast.error(err?.message || "Failed to update org role"),
   });
 
   function getRoleIcon(role: string) {
@@ -480,6 +516,15 @@ export default function UserManagement() {
                                 Login As
                               </Button>
                             )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs h-7"
+                              onClick={() => setOrgDialogUser(u)}
+                            >
+                              <Building2 size={12} className="mr-1" />
+                              Orgs
+                            </Button>
                           </div>
                         </TableCell>
                       )}
@@ -672,6 +717,142 @@ export default function UserManagement() {
             className="w-full"
             onClick={() => setFlagsDialogOpen(false)}
           >
+            Close
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Org Assignment Dialog ── */}
+      <Dialog open={!!orgDialogUser} onOpenChange={(open) => { if (!open) setOrgDialogUser(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 size={16} />
+              Organization Memberships
+            </DialogTitle>
+            <DialogDescription>
+              {orgDialogUser
+                ? `Manage org assignments for ${orgDialogUser.name ?? orgDialogUser.email ?? `User #${orgDialogUser.id}`}.`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5 py-2">
+            {/* Current Memberships */}
+            <div>
+              <Label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-2 block">
+                Current Organizations
+              </Label>
+              {(!userOrgs || userOrgs.length === 0) ? (
+                <p className="text-sm text-muted-foreground italic">Not assigned to any organization.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Organization</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {userOrgs.map((m: any) => (
+                      <TableRow key={m.orgId}>
+                        <TableCell className="font-medium text-sm">{m.orgName ?? `Org #${m.orgId}`}</TableCell>
+                        <TableCell>
+                          <Select
+                            value={m.role}
+                            onValueChange={(newRole) => {
+                              updateOrgRole.mutate({ userId: orgDialogUser.id, orgId: m.orgId, role: newRole as any });
+                            }}
+                            disabled={updateOrgRole.isPending}
+                          >
+                            <SelectTrigger className="w-32 h-7 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {["super_admin", "admin", "auditor", "user", "viewer"].map((r) => (
+                                <SelectItem key={r} value={r} className="text-xs">{r.replace(/_/g, " ")}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs h-7 text-red-600 hover:bg-red-50"
+                            onClick={() => removeFromOrg.mutate({ userId: orgDialogUser.id, orgId: m.orgId })}
+                            disabled={removeFromOrg.isPending}
+                          >
+                            <Trash2 size={12} className="mr-1" />
+                            Remove
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+
+            {/* Assign to New Org */}
+            <div className="border-t pt-4">
+              <Label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-2 block">
+                Assign to Organization
+              </Label>
+              <div className="flex items-end gap-3">
+                <div className="flex-1 space-y-1">
+                  <Label className="text-xs">Organization</Label>
+                  <Select
+                    value={String(assignOrgId)}
+                    onValueChange={(v) => setAssignOrgId(Number(v))}
+                  >
+                    <SelectTrigger className="w-full h-8 text-xs">
+                      <SelectValue placeholder="Select org..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(allOrgs ?? []).map((o: any) => (
+                        <SelectItem key={o.id} value={String(o.id)} className="text-xs">
+                          {o.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="w-32 space-y-1">
+                  <Label className="text-xs">Role</Label>
+                  <Select value={assignOrgRole} onValueChange={setAssignOrgRole}>
+                    <SelectTrigger className="w-full h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["super_admin", "admin", "auditor", "user", "viewer"].map((r) => (
+                        <SelectItem key={r} value={r} className="text-xs">{r.replace(/_/g, " ")}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  size="sm"
+                  className="h-8 shrink-0"
+                  disabled={!assignOrgId || assignToOrg.isPending}
+                  onClick={() => {
+                    if (!assignOrgId) return;
+                    assignToOrg.mutate({
+                      userId: orgDialogUser.id,
+                      orgId: assignOrgId as number,
+                      role: assignOrgRole as any,
+                    });
+                  }}
+                >
+                  <Plus size={14} className="mr-1" />
+                  Assign
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <Button variant="outline" size="sm" className="w-full" onClick={() => setOrgDialogUser(null)}>
             Close
           </Button>
         </DialogContent>

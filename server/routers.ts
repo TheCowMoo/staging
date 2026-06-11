@@ -2587,6 +2587,49 @@ const adminUserRouter = router({
       await deleteUserInvite(input.id);
       return { success: true };
     }),
+
+  // Ultra Admin: get org memberships for a user
+  getUserOrgs: ultraAdminProcedure
+    .input(z.object({ userId: z.number() }))
+    .query(async ({ input }) => {
+      return getOrgMembershipForUser(input.userId);
+    }),
+
+  // Ultra Admin: assign a user to an organization with a role
+  assignToOrg: ultraAdminProcedure
+    .input(z.object({
+      userId: z.number(),
+      orgId: z.number(),
+      role: z.enum(["super_admin", "admin", "auditor", "user", "viewer"]),
+    }))
+    .mutation(async ({ input }) => {
+      const existing = await getOrgMemberRecord(input.orgId, input.userId);
+      if (existing) {
+        throw new TRPCError({ code: "CONFLICT", message: "User is already a member of this organization" });
+      }
+      await addOrgMember({ orgId: input.orgId, userId: input.userId, role: input.role, joinedAt: new Date() });
+      return { success: true };
+    }),
+
+  // Ultra Admin: remove a user from an organization
+  removeFromOrg: ultraAdminProcedure
+    .input(z.object({ userId: z.number(), orgId: z.number() }))
+    .mutation(async ({ input }) => {
+      await removeOrgMember(input.orgId, input.userId);
+      return { success: true };
+    }),
+
+  // Ultra Admin: update a user's role within an organization
+  updateOrgRole: ultraAdminProcedure
+    .input(z.object({
+      userId: z.number(),
+      orgId: z.number(),
+      role: z.enum(["super_admin", "admin", "auditor", "user", "viewer"]),
+    }))
+    .mutation(async ({ input }) => {
+      await updateOrgMemberRole(input.orgId, input.userId, input.role);
+      return { success: true };
+    }),
 });
 
 // ─── Liability Scan Router ─
