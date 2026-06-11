@@ -275,11 +275,14 @@ const auditRouter = router({
       primaryResponse: z.enum(["Yes", "No", "Unknown", "Not Applicable", "Unavoidable"]).optional(),
       concernLevel: z.enum(["Minor", "Moderate", "Serious"]).optional(),
       // Legacy response field (kept for backward compat)
+      // NOTE: includes both em-dash (—) and double-dash (--) variants for compatibility
       response: z.enum([
         // Positive polarity responses
         "Secure / Yes", "Partial", "Minor Concern", "Moderate Concern", "Serious Vulnerability",
-        // Negative polarity responses
+        // Negative polarity responses (double-dash legacy)
         "No -- Not Present", "Unlikely / Minimal", "Partially Present", "Yes -- Present",
+        // Negative polarity responses (em-dash variants sent by new frontend)
+        "No \u2014 Not Present", "No \u2014 Not in place", "Yes \u2014 Present", "Yes \u2014 Secure",
         // Shared
         "Unknown", "Not Applicable", "Unavoidable",
         // Decision-tree aliases
@@ -531,10 +534,55 @@ const reportRouter = router({
       const threatFindings = await getThreatFindingsByAudit(input.auditId);
       const photos = await getPhotosByAudit(input.auditId);
 
-      const categoryScores = (audit.categoryScores as any) ?? {};
+      // Build polarity lookup from AUDIT_CATEGORIES
+      const polarityMap: Record<string, "positive" | "negative"> = {};
+      for (const cat of AUDIT_CATEGORIES) {
+        for (const q of cat.questions) {
+          polarityMap[q.id] = q.polarity;
+        }
+      }
 
-      // Build corrective actions -- exclude items marked as unavoidable structural constraints
-      const correctiveActions = responses
+      // Recompute scores live from primaryResponse + concernLevel (authoritative)
+      // Falls back to legacy response field, then stored score as last resort
+      const responsesWithLiveScores = responses.map((r) => {
+        const polarity = polarityMap[r.questionId] ?? "positive";
+        const liveScore = r.primaryResponse
+          ? getDecisionTreeScore(r.primaryResponse, r.concernLevel ?? null, polarity)
+          : r.response
+            ? getResponseScore(r.response, polarity)
+            : r.score;
+        return { ...r, score: liveScore };
+      });
+
+      // Recompute category scores from live response scores
+      const byCategory: Record<string, { score: number | null }[]> = {};
+      for (const r of responsesWithLiveScores) {
+        if (!byCategory[r.categoryName]) byCategory[r.categoryName] = [];
+        byCategory[r.categoryName].push({ score: r.score });
+      }
+      const liveCategoryScores: Record<string, { percentage: number; weight: number; riskLevel: string; rawScore: number; maxScore: number }> = {};
+      for (const [catName, catResponses] of Object.entries(byCategory)) {
+        const result = calculateCategoryScore(catResponses);
+        liveCategoryScores[catName] = { ...result, weight: CATEGORY_WEIGHTS[catName] ?? 0 };
+      }
+      // Fall back to stored categoryScores for categories with no responses yet
+      const storedCategoryScores = (audit.categoryScores as any) ?? {};
+      const categoryScores = Object.keys(liveCategoryScores).length > 0 ? liveCategoryScores : storedCategoryScores;
+
+      // Recompute overall score live
+      const { overallScore: liveOverallScore, overallRiskLevel: liveOverallRiskLevel } = calculateOverallScore(
+        Object.fromEntries(Object.entries(categoryScores).map(([k, v]: [string, any]) => [k, { percentage: v.percentage, weight: v.weight }]))
+      );
+      // Merge live scores into audit object for display
+      const auditWithLiveScore = {
+        ...audit,
+        overallScore: liveOverallScore,
+        overallRiskLevel: liveOverallRiskLevel,
+        categoryScores,
+      };
+
+      // Build corrective actions using live scores -- exclude items marked as unavoidable structural constraints
+      const correctiveActions = responsesWithLiveScores
         .filter((r) => r.score !== null && (r.score ?? 0) >= 1 && !(r as any).isUnavoidable)
         .map((r) => ({
           questionId: r.questionId,
@@ -551,7 +599,7 @@ const reportRouter = router({
         }))
         .sort((a, b) => PRIORITY_ORDER.indexOf(a.priority) - PRIORITY_ORDER.indexOf(b.priority));
       // Collect unavoidable constraints separately (for EAP context)
-      const unavoidableConstraints = responses
+      const unavoidableConstraints = responsesWithLiveScores
         .filter((r) => (r as any).isUnavoidable && r.score !== null && (r.score ?? 0) >= 1)
         .map((r) => ({
           category: r.categoryName,
@@ -563,7 +611,7 @@ const reportRouter = router({
 
       return {
         facility,
-        audit,
+        audit: auditWithLiveScore,
         categoryScores,
         threatFindings,
         correctiveActions,
