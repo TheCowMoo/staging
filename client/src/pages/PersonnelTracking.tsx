@@ -43,6 +43,10 @@ export default function PersonnelTracking() {
   );
 
   const updateLocation = trpc.org.personnel.updateLocation.useMutation();
+  // Use a ref so sendLocationToServer doesn't need updateLocation in its deps,
+  // which would cause an infinite re-render loop (mutation object changes every render).
+  const updateLocationRef = useRef(updateLocation);
+  useEffect(() => { updateLocationRef.current = updateLocation; });
 
   const selectedMember = personnel.find((member) => member.userId === selectedUserId) ?? null;
 
@@ -73,8 +77,8 @@ export default function PersonnelTracking() {
 
     const sendLocationToServer = useCallback((lat: number, lng: number) => {
       if (!orgId) return;
-      updateLocation.mutate({ orgId, latitude: lat, longitude: lng, status: "Active" });
-    }, [orgId, updateLocation]);
+      updateLocationRef.current.mutate({ orgId, latitude: lat, longitude: lng, status: "Active" });
+    }, [orgId]);
 
     const onPositionSuccess = useCallback((position: GeolocationPosition) => {
       const { latitude: lat, longitude: lng, accuracy: posAccuracy } = position.coords;
