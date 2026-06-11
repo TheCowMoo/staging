@@ -690,51 +690,45 @@ export default function FacilityDetail() {
                   <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Photos & Documents</span>
                 </button>
                 {photosOpen && (
-                  <div className="p-3">
+                    <div className="p-3">
                     <p className="text-xs text-muted-foreground mb-3">
-                      Upload photos and documents related to this facility. Accepted: JPEG, PNG, PDF, DOC, DOCX (max 20MB each).
+                      Upload photos and documents related to this facility. Accepted: JPEG, PNG, WebP, PDF, DOC, DOCX (max 20MB each).
                     </p>
                     <div className="flex items-center gap-2 mb-3">
                       <Input
                         type="file"
-                        accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        capture="environment"
                         className="text-sm flex-1"
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
-                          // Read file as base64
-                          const reader = new FileReader();
-                          reader.onload = async (ev) => {
-                            const base64 = (ev.target?.result as string)?.split(",")[1];
-                            if (!base64) { toast.error("Failed to read file"); return; }
-                            // Show uploading state
-                            toast.loading("Uploading...");
-                            try {
-                              const resp = await fetch("/api/upload/attachment", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                  auditId: 0,
-                                  facilityId,
-                                  base64Data: base64,
-                                  mimeType: file.type,
-                                  filename: file.name,
-                                }),
-                              });
-                              const result = await resp.json();
-                              if (result.success) {
-                                toast.dismiss();
-                                toast.success("File uploaded");
-                              } else {
-                                toast.dismiss();
-                                toast.error(result.error || "Upload failed");
-                              }
-                            } catch {
+                          // Show uploading state
+                          toast.loading("Uploading...");
+                          try {
+                            const formData = new FormData();
+                            formData.append("file", file);
+                            formData.append("auditId", "0");
+                            formData.append("facilityId", String(facilityId));
+                            formData.append("category", "other");
+                            formData.append("caption", "");
+                            const resp = await fetch("/api/upload/attachment", {
+                              method: "POST",
+                              body: formData,
+                              credentials: "include",
+                            });
+                            const result = await resp.json();
+                            if (result.success) {
                               toast.dismiss();
-                              toast.error("Upload failed");
+                              toast.success("File uploaded");
+                            } else {
+                              toast.dismiss();
+                              toast.error(result.error || "Upload failed");
                             }
-                          };
-                          reader.readAsDataURL(file);
+                          } catch {
+                            toast.dismiss();
+                            toast.error("Upload failed");
+                          }
                         }}
                       />
                     </div>

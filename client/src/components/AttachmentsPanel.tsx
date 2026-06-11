@@ -163,7 +163,7 @@ export function AttachmentsPanel({ auditId, facilityId }: Props) {
             ref={fileInputRef}
             type="file"
             multiple
-            accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,.doc,.docx"
+            accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif,application/pdf,.doc,.docx"
             className="hidden"
             onChange={handleFileSelect}
           />

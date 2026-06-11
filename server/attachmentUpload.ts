@@ -15,11 +15,13 @@ const upload = multer({
   fileFilter: (_req, file, cb) => {
     const allowed = [
       "image/jpeg", "image/png", "image/gif", "image/webp",
+      "image/heic", "image/heif",
       "application/pdf",
       "application/msword",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ];
-    if (allowed.includes(file.mimetype)) {
+    // Accept common iOS HEIC mislabeling
+    if (allowed.includes(file.mimetype) || file.mimetype === "image/heic-sequence" || file.mimetype === "image/heif-sequence") {
       cb(null, true);
     } else {
       cb(new Error(`File type not allowed: ${file.mimetype}`));
