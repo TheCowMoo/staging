@@ -56,7 +56,7 @@ attachmentRouter.post(
       const category = req.body.category || "other";
       const caption = req.body.caption || "";
 
-      if (!auditId || !facilityId) {
+      if (isNaN(auditId) || isNaN(facilityId)) {
         res.status(400).json({ error: "auditId and facilityId are required" });
         return;
       }
