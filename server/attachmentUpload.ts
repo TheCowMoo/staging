@@ -36,9 +36,11 @@ attachmentRouter.post(
     try {
       // Verify session
       let user = null;
-      try { user = await sdk.authenticateRequest(req); } catch {}
+      try { user = await sdk.authenticateRequest(req); } catch {
+        console.warn("[AttachmentUpload] Session authentication failed");
+      }
       if (!user) {
-        res.status(401).json({ error: "Unauthorized" });
+        res.status(401).json({ error: "Your session has expired. Please log out and sign in again." });
         return;
       }
 

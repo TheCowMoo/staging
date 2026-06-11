@@ -89,12 +89,15 @@ export function AttachmentsPanel({ auditId, facilityId }: Props) {
     }
 
     setUploading(false);
+    // Always invalidate the cache so the list re-fetches from the server,
+    // even when some/all uploads fail — otherwise already-uploaded files
+    // can appear to disappear if the stale cache is cleared by React state changes.
+    utils.attachment.list.invalidate({ auditId });
     if (successCount > 0) {
       toast.success(`${successCount} file${successCount > 1 ? "s" : ""} uploaded`);
-      utils.attachment.list.invalidate({ auditId });
       setCaption("");
     }
-    // Reset file input
+    // Reset file input regardless of success/failure
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
