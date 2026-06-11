@@ -8,7 +8,17 @@ import App from "./App";
 import { getLoginUrl } from "./const";
 import "./index.css";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Disable global retries — individual queries opt in if needed.
+      // Without this, a 429 or network error causes React Query to retry
+      // 3 times by default, which floods the server and triggers more 429s.
+      retry: false,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;

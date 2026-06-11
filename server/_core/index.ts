@@ -107,10 +107,10 @@ async function startServer() {
   app.set("trust proxy", 1);
 
   // ─── Rate Limiting ────────────────────────────────────────────────────────────
-  // General API rate limit: 200 requests per 15 minutes per IP
+  // General API rate limit: 1000 requests per 15 minutes per IP
   const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 200,
+    max: 1000,
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: "Too many requests, please try again later." },
