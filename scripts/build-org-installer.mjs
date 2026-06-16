@@ -6,14 +6,13 @@
  * 1. Generates a dedicated API key for the org (label: "RAS Desktop Alert")
  * 2. Writes ras_settings.json with the org's API key, orgId, and API base URL
  * 3. Runs dotnet publish (self-contained, single-file EXE)
- * 4. Runs Inno Setup to produce FiveStonesRASAlert-Setup-Org{orgId}.exe
- * 5. Uploads to S3 at installers/ras-alert/{orgId}/v{version}/
- * 6. Cleans up build artifacts
+ * 4. Uploads the EXE + settings to S3
+ * 5. Cleans up build artifacts
  */
 
 import { execSync } from "child_process";
 import { createHash, randomBytes } from "crypto";
-import { existsSync, mkdirSync, writeFileSync, readFileSync, unlinkSync, rmSync } from "fs";
+import { existsSync, mkdirSync, writeFileSync, readFileSync, unlinkSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -21,7 +20,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = join(__dirname, "..");
 const RAS_DIR = join(PROJECT_ROOT, "ras-desktop-alert");
 const DIST_DIR = join(RAS_DIR, "dist");
-const OUTPUT_DIR = join(PROJECT_ROOT, "dist");
 
 // Parse args
 const args = process.argv.slice(2);
@@ -40,14 +38,14 @@ if (isNaN(orgId)) {
   process.exit(1);
 }
 
-console.log(`\n=== Building RAS Desktop Alert Installer for Org ${orgId} ===\n`);
+console.log(`\n=== Building RAS Desktop Alert for Org ${orgId} ===\n`);
 console.log(`  Version:   ${versionArg}`);
 console.log(`  API URL:   ${apiBaseUrl}`);
 console.log(`  Org ID:    ${orgId}`);
 
 // ─── Step 1: Connect to DB, generate a dedicated API key ───────────────────
 async function generateApiKey() {
-  console.log("\n[1/5] Generating dedicated API key...");
+  console.log("\n[1/4] Generating dedicated API key...");
 
   const dotenv = await import("dotenv");
   dotenv.config();
@@ -71,7 +69,6 @@ async function generateApiKey() {
     const adminUser = admins[0];
     const userId = adminUser?.id ?? null;
 
-    // Generate API key
     const token = randomBytes(32).toString("hex");
     const hash = createHash("sha256").update(token).digest("hex");
     const label = "RAS Desktop Alert";
@@ -91,7 +88,7 @@ async function generateApiKey() {
 
 // ─── Step 2: Write ras_settings.json ────────────────────────────────────────
 function writeSettingsFile(apiKey) {
-  console.log("\n[2/5] Writing ras_settings.json...");
+  console.log("\n[2/4] Writing ras_settings.json...");
 
   if (!existsSync(DIST_DIR)) {
     mkdirSync(DIST_DIR, { recursive: true });
@@ -111,7 +108,7 @@ function writeSettingsFile(apiKey) {
 
 // ─── Step 3: Build .NET self-contained EXE ──────────────────────────────────
 function buildExe() {
-  console.log("\n[3/5] Building self-contained EXE...");
+  console.log("\n[3/4] Building self-contained EXE...");
 
   execSync(
     `dotnet publish -c Release -r win-x64 --self-contained true ` +
@@ -130,78 +127,55 @@ function buildExe() {
   console.log(`  EXE built: ${(stats.length / 1024 / 1024).toFixed(1)} MB`);
 }
 
-// ─── Step 4: Compile Inno Setup installer ───────────────────────────────────
-function buildInstaller() {
-  console.log("\n[4/5] Compiling installer...");
-
-  // Find ISCC
-  let isccPath = null;
-  const candidates = [
-    "C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe",
-    "C:\\Program Files\\Inno Setup 6\\ISCC.exe",
-  ];
-  for (const c of candidates) {
-    if (existsSync(c)) { isccPath = c; break; }
-  }
-
-  if (!isccPath) {
-    console.error("  ERROR: Inno Setup 6 not found. Install from https://jrsoftware.org/isdl.php");
-    process.exit(1);
-  }
-
-  const setupIssPath = join(RAS_DIR, "setup.iss");
-  const installerName = `FiveStonesRASAlert-Setup-Org${orgId}.exe`;
-
-  // Read current setup.iss, patch OutputBaseFilename
-  let issContent = readFileSync(setupIssPath, "utf-8");
-  issContent = issContent.replace(
-    /OutputBaseFilename=FiveStonesRASAlert-Setup/,
-    `OutputBaseFilename=FiveStonesRASAlert-Setup-Org${orgId}`
-  );
-
-  const patchedIssPath = join(DIST_DIR, "setup-patched.iss");
-  writeFileSync(patchedIssPath, issContent);
-
-  execSync(`"${isccPath}" "${patchedIssPath}" /Q`, { cwd: RAS_DIR, stdio: "inherit" });
-
-  // Clean up patched file
-  unlinkSync(patchedIssPath);
-
-  const installerPath = join(OUTPUT_DIR, `${installerName}`);
-  if (existsSync(installerPath)) {
-    const stats = readFileSync(installerPath);
-    console.log(`  Installer: ${installerPath} (${(stats.length / 1024 / 1024).toFixed(1)} MB)`);
-  }
-}
-
-// ─── Step 5: Upload to S3 ───────────────────────────────────────────────────
+// ─── Step 4: Upload to S3 ───────────────────────────────────────────────────
 async function uploadToS3() {
-  console.log("\n[5/5] Uploading to S3...");
+  console.log("\n[4/4] Uploading to S3...");
 
-  const installerName = `FiveStonesRASAlert-Setup-Org${orgId}.exe`;
-  const installerPath = join(OUTPUT_DIR, installerName);
+  const exeName = "FiveStonesRASAlert.exe";
+  const settingsName = "ras_settings.json";
+  const exePath = join(DIST_DIR, exeName);
+  const settingsPath = join(DIST_DIR, settingsName);
 
-  if (!existsSync(installerPath)) {
-    console.error("  ERROR: Installer not found. Skipping upload.");
-    return;
-  }
+  const storagePath = join(PROJECT_ROOT, "server/storage.ts");
+  const { storagePut } = await import(new URL(`file://${storagePath.replace(/\\/g, "/")}`).href);
 
-  const { readFileSync: fsReadFileSync } = await import("fs");
-  const S3_KEY = `installers/ras-alert/${orgId}/v${versionArg}/${installerName}`;
-
+  // Upload EXE
   try {
-    const { storagePut } = await import(join(PROJECT_ROOT, "server/storage.ts"));
     const result = await storagePut(
-      S3_KEY,
-      fsReadFileSync(installerPath),
+      `installers/ras-alert/${orgId}/v${versionArg}/${exeName}`,
+      readFileSync(exePath),
       "application/x-msdownload"
     );
-    console.log(`  Uploaded to: s3://${result.key}`);
-    console.log(`  Signed URL:  ${result.url}`);
+    console.log(`  EXE uploaded to: s3://${result.key}`);
+    console.log(`  Signed URL:      ${result.url}`);
+
+    // Upload settings
+    const settingsResult = await storagePut(
+      `installers/ras-alert/${orgId}/v${versionArg}/${settingsName}`,
+      readFileSync(settingsPath),
+      "application/json"
+    );
+    console.log(`  Settings uploaded to: s3://${settingsResult.key}`);
+
+    // Create a redirect/pointer for download compatibility
+    // Also store download URL metadata
+    const buildMeta = {
+      url: result.url,
+      orgId,
+      version: versionArg,
+      timestamp: new Date().toISOString(),
+    };
+    const metaResult = await storagePut(
+      `installers/ras-alert/${orgId}/v${versionArg}/build-meta.json`,
+      Buffer.from(JSON.stringify(buildMeta)),
+      "application/json"
+    );
+    console.log(`  Metadata uploaded to: s3://${metaResult.key}`);
+
     return result;
   } catch (err) {
     console.error(`  Upload failed (S3 may not be configured): ${err.message}`);
-    console.log("  Installer is still available locally.");
+    console.log("  Build artifacts are still available locally.");
     return null;
   }
 }
@@ -212,11 +186,11 @@ async function main() {
     const { apiKey } = await generateApiKey();
     writeSettingsFile(apiKey);
     buildExe();
-    buildInstaller();
     await uploadToS3();
 
     console.log("\n=== BUILD COMPLETE ===");
-    console.log(`  Installer: ${join(OUTPUT_DIR, `FiveStonesRASAlert-Setup-Org${orgId}.exe`)}`);
+    console.log(`  EXE:  ${join(DIST_DIR, "FiveStonesRASAlert.exe")}`);
+    console.log(`  Settings: ${join(DIST_DIR, "ras_settings.json")}`);
     console.log(`  Org ID:    ${orgId}`);
     console.log(`  Version:   ${versionArg}`);
     console.log("");

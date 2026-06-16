@@ -113,8 +113,6 @@ export default function AnalyticsDashboard() {
 
   // ── Computed Metrics ──────────────────────────────────────────────────────
   const totalFeedback = allFeedback.length;
-  const clientReadyCount = allFeedback.filter((f: any) => f.wouldUseForClient).length;
-  const clientReadyPct = totalFeedback ? Math.round((clientReadyCount / totalFeedback) * 100) : 0;
 
   const avgRatings = useMemo(() => ({
     overallReportQuality: avg(allFeedback.map((f: any) => f.overallReportQuality)),
@@ -226,14 +224,13 @@ export default function AnalyticsDashboard() {
     const headers = [
       "ID", "Audit ID", "Facility Type", "Completion Time (min)",
       "Report Quality", "Scoring Accuracy", "CAP Realism", "EAP Completeness", "Question Relevance",
-      "Client Ready", "Missing Questions", "Irrelevant Questions", "CAP Issues",
+      "Missing Questions", "Irrelevant Questions", "CAP Issues",
       "Scoring Disagreements", "EAP Feedback", "General Notes", "Date"
     ];
     const rows = allFeedback.map((f: any) => [
       f.id, f.auditId, f.facilityType ?? "", f.completionTimeMinutes ?? "",
       f.overallReportQuality ?? "", f.scoringAccuracy ?? "", f.correctiveActionRealism ?? "",
       f.eapCompleteness ?? "", f.questionRelevance ?? "",
-      f.wouldUseForClient ? "Yes" : "No",
       (f.missingQuestions ?? "").replace(/,/g, ";"),
       (f.irrelevantQuestions ?? "").replace(/,/g, ";"),
       (f.correctiveActionIssues ?? "").replace(/,/g, ";"),
@@ -390,38 +387,6 @@ export default function AnalyticsDashboard() {
 
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Client Readiness */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-green-600" />
-                    Client Readiness
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-6">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-green-600">{clientReadyCount}</div>
-                      <div className="text-xs text-muted-foreground mt-1">Ready</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-red-500">{totalFeedback - clientReadyCount}</div>
-                      <div className="text-xs text-muted-foreground mt-1">Needs Work</div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-muted-foreground">Rate</span>
-                        <span className="text-sm font-bold">{clientReadyPct}%</span>
-                      </div>
-                      <div className="h-3 rounded-full bg-muted overflow-hidden">
-                        <div className="h-full rounded-full bg-green-500 transition-all" style={{ width: `${clientReadyPct}%` }} />
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-2">Target: 80%+</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
               {/* Avg Ratings Summary */}
               <Card>
                 <CardHeader className="pb-3">
@@ -481,15 +446,12 @@ export default function AnalyticsDashboard() {
                   <div className="space-y-2 max-h-80 overflow-y-auto">
                     {allFeedback.slice(0, 30).map((fb: any) => (
                       <div key={fb.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 text-sm">
-                        <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
-                          fb.wouldUseForClient ? "bg-green-500" : "bg-amber-500"
-                        }`} />
+                        <div className="w-2 h-2 rounded-full mt-1.5 shrink-0 bg-amber-500" />
                         <div className="flex-1 min-w-0">
                           <span className="font-medium text-foreground">Feedback #{fb.id}</span>
                           <span className="text-muted-foreground">
                             {" "}— Audit #{fb.auditId}
                             {fb.facilityType ? ` (${fb.facilityType.replace(/_/g, " ")})` : ""}
-                            {fb.wouldUseForClient ? "" : " — Needs work"}
                           </span>
                         </div>
                         <span className="text-xs text-muted-foreground shrink-0">
@@ -536,44 +498,6 @@ export default function AnalyticsDashboard() {
                     </BarChart>
                   </ResponsiveContainer>
                 )}
-              </CardContent>
-            </Card>
-
-            {/* Client Readiness Detail */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Client Readiness Breakdown</CardTitle>
-                <CardDescription>Would you deliver this report to a paying client?</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-center gap-12 py-6">
-                  <div className="text-center">
-                    <div className="text-5xl font-bold text-green-600">{clientReadyCount}</div>
-                    <div className="flex items-center gap-1 mt-2 justify-center">
-                      <CheckCircle2 size={16} className="text-green-500" />
-                      <span className="text-sm text-muted-foreground">Client Ready</span>
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-5xl font-bold text-red-500">{totalFeedback - clientReadyCount}</div>
-                    <div className="flex items-center gap-1 mt-2 justify-center">
-                      <XCircle size={16} className="text-red-400" />
-                      <span className="text-sm text-muted-foreground">Needs Improvement</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium">Client Ready Rate</span>
-                    <span className="text-sm font-bold">{clientReadyPct}%</span>
-                  </div>
-                  <div className="h-4 rounded-full bg-muted overflow-hidden">
-                    <div className="h-full rounded-full bg-green-500 transition-all" style={{ width: `${clientReadyPct}%` }} />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {clientReadyPct >= 80 ? "✓ Target achieved (80%+)" : `${80 - clientReadyPct}% away from target`}
-                  </p>
-                </div>
               </CardContent>
             </Card>
 
@@ -708,11 +632,6 @@ export default function AnalyticsDashboard() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          {fb.wouldUseForClient ? (
-                            <Badge className="bg-green-100 text-green-700 border-green-200 text-xs">Client Ready</Badge>
-                          ) : (
-                            <Badge className="bg-red-100 text-red-700 border-red-200 text-xs">Needs Work</Badge>
-                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">

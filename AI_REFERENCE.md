@@ -571,7 +571,3 @@ if (scan.orgId) {
 - `JWT_SECRET` — Token signing secret
 - `OPENAI_API_KEY` — LLM provider key
 - `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET` — File storage
-- `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` — Web push notifications
-- `GOOGLE_MAPS_API_KEY` — Google Maps
-- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` — Payments
-- `GHL_API_KEY` — GoHighLevel email integration

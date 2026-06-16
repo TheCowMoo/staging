@@ -1,4 +1,3 @@
-import { trpc } from "@/lib/trpc";
 import { Link, useLocation, useParams } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,9 +27,43 @@ const EMERGENCY_ROLE_KEYS = [
   { key: "role_mediaRelations", label: "Media Relations" },
 ];
 
-function parseRoles(json: string | null | undefined): Record<string, string> {
+const TIER_OPTIONS = [
+  { value: "primary", label: "Primary" },
+  { value: "secondary", label: "Secondary" },
+  { value: "territory", label: "Territory" },
+];
+
+interface RoleContact {
+  tier: string;
+  name: string;
+}
+
+function parseRoles(json: string | null | undefined): Record<string, RoleContact[]> {
   if (!json) return {};
-  try { return JSON.parse(json); } catch { return {}; }
+  try {
+    const parsed = JSON.parse(json);
+    // Migrate old semicolon-separated format → new array format
+    if (typeof parsed === "object" && !Array.isArray(parsed)) {
+      const result: Record<string, RoleContact[]> = {};
+      for (const [key, val] of Object.entries(parsed)) {
+        if (typeof val === "string" && val.includes(";")) {
+          const parts = val.split(";").map((s) => s.trim()).filter(Boolean);
+          result[key] = parts.map((name, i) => ({
+            tier: i === 0 ? "primary" : i === 1 ? "secondary" : "territory",
+            name,
+          }));
+        } else if (Array.isArray(val)) {
+          result[key] = val;
+        } else if (typeof val === "string" && val.trim()) {
+          result[key] = [{ tier: "primary", name: val.trim() }];
+        }
+      }
+      return result;
+    }
+    return parsed;
+  } catch {
+    return {};
+  }
 }
 
 export default function FacilityDetail() {
@@ -352,25 +385,69 @@ export default function FacilityDetail() {
                   <ShieldAlert size={13} /> Assigned Emergency Roles
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  For each role, enter primary, secondary, and tertiary contacts separated by semicolons
-                  (e.g. <em>Jane Smith; Bob Lee; Maria Torres</em>).
+                  Add contacts for each emergency role. Use the dropdown to label each contact as Primary, Secondary, or Territory.
                 </p>
                 {EMERGENCY_ROLE_KEYS.map((r) => {
                   const parsed = parseRoles(editForm.emergencyRoles);
-                  const val = parsed[r.key] ?? "";
+                  const contacts: RoleContact[] = parsed[r.key] ?? [];
+                  const updateContacts = (updated: RoleContact[]) => {
+                    const cur = parseRoles(editForm.emergencyRoles);
+                    cur[r.key] = updated;
+                    setEditForm({ ...editForm, emergencyRoles: JSON.stringify(cur) });
+                  };
+                  const addContact = () => {
+                    updateContacts([...contacts, { tier: "primary", name: "" }]);
+                  };
+                  const removeContact = (idx: number) => {
+                    updateContacts(contacts.filter((_, i) => i !== idx));
+                  };
+                  const updateContact = (idx: number, patch: Partial<RoleContact>) => {
+                    updateContacts(contacts.map((c, i) => i === idx ? { ...c, ...patch } : c));
+                  };
                   return (
-                    <div key={r.key}>
+                    <div key={r.key} className="space-y-1.5">
                       <Label className="text-sm">{r.label}</Label>
-                      <Input
-                        className="mt-1"
-                        placeholder="Primary; Secondary (optional); Tertiary (optional)"
-                        value={val}
-                        onChange={(e) => {
-                          const cur = parseRoles(editForm.emergencyRoles);
-                          cur[r.key] = e.target.value;
-                          setEditForm({ ...editForm, emergencyRoles: JSON.stringify(cur) });
-                        }}
-                      />
+                      <div className="space-y-1.5">
+                        {contacts.map((contact, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <Select
+                              value={contact.tier}
+                              onValueChange={(v) => updateContact(idx, { tier: v })}
+                            >
+                              <SelectTrigger className="w-[130px] h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {TIER_OPTIONS.map((t) => (
+                                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Input
+                              className="h-8 text-xs flex-1"
+                              placeholder="Contact name"
+                              value={contact.name}
+                              onChange={(e) => updateContact(idx, { name: e.target.value })}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 shrink-0"
+                              onClick={() => removeContact(idx)}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs gap-1"
+                        onClick={addContact}
+                      >
+                        + Add contact
+                      </Button>
                     </div>
                   );
                 })}
@@ -595,8 +672,12 @@ export default function FacilityDetail() {
               {/* Emergency Roles display */}
               {(() => {
                 const parsed = parseRoles(facility.emergencyRoles);
-                const entries = EMERGENCY_ROLE_KEYS.map((r) => ({ ...r, val: parsed[r.key] ?? "" })).filter((e) => e.val);
+                const entries = EMERGENCY_ROLE_KEYS.map((r) => ({ ...r, contacts: parsed[r.key] ?? [] })).filter((e) => e.contacts.length > 0);
                 if (!entries.length) return null;
+                const tierLabel = (tier: string) => {
+                  const opt = TIER_OPTIONS.find((t) => t.value === tier);
+                  return opt ? opt.label : tier.charAt(0).toUpperCase() + tier.slice(1);
+                };
                 return (
                   <div className="mt-3 border border-border rounded-lg overflow-hidden">
                     <div className="px-3 py-2 bg-muted/40 border-b border-border flex items-center gap-1.5">
@@ -604,25 +685,22 @@ export default function FacilityDetail() {
                       <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Assigned Emergency Roles</span>
                     </div>
                     <div className="divide-y divide-border">
-                      {entries.map(({ key, label, val }) => {
-                        const contacts = val.split(";").map((s) => s.trim()).filter(Boolean);
-                        return (
-                          <div key={key} className="px-3 py-2">
-                            <p className="text-xs font-medium text-foreground">{label}</p>
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {contacts.map((c, i) => (
-                                <span key={i} className={`text-xs px-2 py-0.5 rounded-full border ${
-                                  i === 0 ? "bg-primary/10 text-primary border-primary/20" :
-                                  i === 1 ? "bg-muted text-muted-foreground border-border" :
-                                  "bg-muted/50 text-muted-foreground border-border"
-                                }`}>
-                                  {i === 0 ? "Primary" : i === 1 ? "Secondary" : "Tertiary"}: {c}
-                                </span>
-                              ))}
-                            </div>
+                      {entries.map(({ key, label, contacts }) => (
+                        <div key={key} className="px-3 py-2">
+                          <p className="text-xs font-medium text-foreground">{label}</p>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {contacts.map((contact, i) => (
+                              <span key={i} className={`text-xs px-2 py-0.5 rounded-full border ${
+                                contact.tier === "primary" ? "bg-primary/10 text-primary border-primary/20" :
+                                contact.tier === "secondary" ? "bg-muted text-muted-foreground border-border" :
+                                "bg-muted/50 text-muted-foreground border-border"
+                              }`}>
+                                {tierLabel(contact.tier)}: {contact.name}
+                              </span>
+                            ))}
                           </div>
-                        );
-                      })}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 );

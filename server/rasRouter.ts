@@ -510,28 +510,19 @@ export const rasRouter = router({
       const { orgId } = await assertRasRole(db, ctx.user.id, ["admin"]);
 
       const version = "1.1.0";
-      const fileName = `FiveStonesRASAlert-Setup-Org${orgId}.exe`;
+      const fileName = "FiveStonesRASAlert.exe";
+
+      // Try to get installer EXE from S3
       const s3Key = `installers/ras-alert/${orgId}/v${version}/${fileName}`;
-
       let installerUrl = null;
+      let buildStatus = "not_found";
 
-      // Check if cached in S3
       try {
         const result = await storageGet(s3Key);
         installerUrl = result.url;
+        if (installerUrl) buildStatus = "ready";
       } catch {
-        // Not cached yet — check if a build is already in progress
         installerUrl = null;
-      }
-
-      // Store build metadata for polling
-      const buildMetaKey = `installers/ras-alert/${orgId}/v${version}/build-meta.json`;
-      let buildStatus = "ready";
-      try {
-        const meta = await storageGet(buildMetaKey);
-        if (meta) buildStatus = "ready";
-      } catch {
-        buildStatus = installerUrl ? "ready" : "not_found";
       }
 
       return {

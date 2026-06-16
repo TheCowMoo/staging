@@ -1279,6 +1279,8 @@ export default function AuditWalkthrough() {
                                 )}
 
                                 {/* ─── STEP 4: Add to Emergency Action Plan ───────────────── */}
+                                {/* Only show for Menu B (EAP Development) categories — CPTED assessments are excluded from EAP generation */}
+                                {activeCategory.section !== "cpted_physical" && (
                                 <div className="pt-2 border-t border-border">
                                   <button
                                     type="button"
@@ -1317,6 +1319,7 @@ export default function AuditWalkthrough() {
                                     <span>Step 4 — {(responses[question.id] as any)?.addToEap ? "Added to Emergency Action Plan ✓" : "Add to Emergency Action Plan"}</span>
                                   </button>
                                 </div>
+                                )}
                               </div>
                             )}
                           </div>
@@ -1325,7 +1328,8 @@ export default function AuditWalkthrough() {
                     </div>
 
                     {/* Section EAP Notes Block */}
-                    {activeCategory && activeCategory.section !== "profile" && (
+                    {/* Only show for Menu B (EAP Development) categories — CPTED assessments are excluded from EAP generation */}
+                    {activeCategory && activeCategory.section !== "profile" && activeCategory.section !== "cpted_physical" && (
                       <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl">
                         <div className="flex items-center gap-2 mb-2">
                           <Flag size={14} className="text-red-600" />

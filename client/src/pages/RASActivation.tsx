@@ -211,24 +211,40 @@ export default function RASActivation() {
                 The installer is pre-configured with your org-specific API key.
               </p>
             </div>
-            <Button
-              size="sm"
-              disabled={installerLoading || !installerData?.downloadUrl}
-              onClick={() => {
-                if (installerData?.downloadUrl) {
-                  window.open(installerData.downloadUrl, "_blank");
-                } else {
-                  toast.error("Installer not yet available. Run the build script first.");
-                }
-              }}
-            >
-              {installerLoading ? "Checking..." : "Download Installer"}
-            </Button>
+            {installerData?.downloadUrl ? (
+              <Button
+                size="sm"
+                onClick={() => window.open(installerData.downloadUrl ?? "", "_blank")}
+              >
+                Download Installer
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled
+                title="No installer built yet"
+              >
+                Not Available
+              </Button>
+            )}
           </div>
-          {installerData?.downloadUrl && (
+          {installerData?.downloadUrl ? (
             <p className="text-xs text-muted-foreground mt-2">
-              Last built for org {installerData.orgId}
+              Pre-configured for org #{installerData.orgId}
             </p>
+          ) : installerLoading ? null : (
+            <div className="mt-3 text-xs text-muted-foreground space-y-1.5 border-t border-border pt-3">
+              <p>
+                <span className="font-medium text-foreground">No installer available yet.</span> Run this command on a Windows machine with .NET SDK 8+ and Inno Setup 6 to build it:
+              </p>
+              <pre className="bg-muted/80 rounded-md px-3 py-2 text-[11px] font-mono select-all whitespace-pre-wrap break-all">
+                {installerData?.buildCommand ?? `node scripts/build-org-installer.mjs --orgId ${installerData?.orgId ?? "?"} --version ${installerData?.version ?? "1.1.0"}`}
+              </pre>
+              <p className="text-[11px] text-muted-foreground/70">
+                After building, the installer will be uploaded to S3 and available for download here.
+              </p>
+            </div>
           )}
         </div>
       )}

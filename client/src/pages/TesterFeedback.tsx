@@ -8,7 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
   ClipboardList, Star, CheckCircle2, AlertTriangle,
@@ -117,8 +116,6 @@ export default function TesterFeedback() {
   const [scoringDisagreements, setScoringDisagreements] = useState("");
   const [eapFeedback, setEapFeedback] = useState("");
   const [generalNotes, setGeneralNotes] = useState("");
-  const [wouldUseForClient, setWouldUseForClient] = useState<boolean | undefined>();
-
   const alreadySubmitted = existingFeedback && existingFeedback.length > 0;
 
   const handleSubmit = () => {
@@ -139,7 +136,6 @@ export default function TesterFeedback() {
       scoringDisagreements: scoringDisagreements || undefined,
       eapFeedback: eapFeedback || undefined,
       generalNotes: generalNotes || undefined,
-      wouldUseForClient,
     });
   };
 
@@ -343,39 +339,6 @@ Back to Report
                 />
               </div>
             ))}
-          </CardContent>
-        </Card>
-
-        {/* Section 4: Client Readiness */}
-        <Card>
-          <CardHeader className="pb-3">
-            <SectionHeader
-              icon={CheckCircle2}
-              title="Client Readiness Assessment"
-              description="The most important single question in the feedback form."
-            />
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-start gap-4 p-4 rounded-lg border bg-muted/30">
-              <Switch
-                checked={wouldUseForClient ?? false}
-                onCheckedChange={setWouldUseForClient}
-                className="mt-0.5"
-              />
-              <div>
-                <Label className="text-base font-semibold cursor-pointer">
-                  Would you deliver this report to a paying client today?
-                </Label>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Toggle on if the report, corrective action plan, and EAP are of sufficient quality to present to a real client without significant manual editing.
-                </p>
-                {wouldUseForClient !== undefined && (
-                  <Badge className={`mt-2 ${wouldUseForClient ? "bg-green-100 text-green-700 border-green-200" : "bg-red-100 text-red-700 border-red-200"}`}>
-                    {wouldUseForClient ? "Yes — Client Ready" : "No — Needs Improvement"}
-                  </Badge>
-                )}
-              </div>
-            </div>
           </CardContent>
         </Card>
 
