@@ -292,9 +292,9 @@ namespace RasDesktopAlert
             var tw = TextRenderer.MeasureText(displayText, Font).Width;
             if (tw > bw - 32)
             {
-                while (displayText.Length > 0 && TextRenderer.MeasureText(displayText + "…", Font).Width > bw - 32)
+                while (displayText.Length > 0 && TextRenderer.MeasureText(displayText + "\u2026", Font).Width > bw - 32)
                     displayText = displayText[..^1];
-                displayText += "…";
+                displayText += "\u2026";
             }
             TextRenderer.DrawText(e.Graphics, displayText, Font,
                 new Point(22, (bh - TextRenderer.MeasureText(displayText, Font).Height) / 2),
@@ -746,7 +746,7 @@ namespace RasDesktopAlert
                 (dismissButton.Parent.Height - dismissButton.Height) / 2 - 10);
         }
 
-        public void ShowAlert(string alertType, string message, string rawType)
+        public void ShowAlert(string alertType, string message, string rawType, int? alertEventId = null)
         {
             Color c1, c2; string icon;
             switch (rawType.ToLower())
@@ -766,6 +766,12 @@ namespace RasDesktopAlert
             messageLabel.Visible = true;
             dismissButton.Visible = true;
             dismissButton.BringToFront();
+
+            // Store alertEventId in Tag so Dismiss() can POST acknowledgment
+            if (alertEventId.HasValue)
+            {
+                this.Tag = alertEventId.Value;
+            }
 
             isRed = true;
             this.BackColor = c1;
@@ -802,6 +808,43 @@ namespace RasDesktopAlert
             alertLabel.Visible = false; messageLabel.Visible = false; dismissButton.Visible = false;
             alertTimerLabel.Visible = false;
             this.Hide();
+
+            // Fire-and-forget: POST acknowledgment to server
+            if (Tag is int alertEventId && alertEventId > 0)
+            {
+                _ = AcknowledgeAlert(alertEventId);
+            }
+        }
+
+        /// <summary>
+        /// POSTs an acknowledgment to the server so the admin dashboard
+        /// shows this desktop user has received and dismissed the alert.
+        /// </summary>
+        private async Task AcknowledgeAlert(int alertEventId)
+        {
+            try
+            {
+                using var c = new HttpClient();
+                c.DefaultRequestHeaders.Add("X-Api-Key", SettingsManager.Load().ApiKey);
+                c.Timeout = TimeSpan.FromSeconds(5);
+                var payload = new { alertEventId };
+                var json = JsonSerializer.Serialize(payload);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var baseUrl = SettingsManager.Load().ApiBaseUrl;
+                var r = await c.PostAsync($"{baseUrl.TrimEnd('/')}/api/ras/acknowledge", content);
+                if (r.IsSuccessStatusCode)
+                {
+                    SettingsManager.Log($"Acknowledged alert #{alertEventId}");
+                }
+                else
+                {
+                    SettingsManager.Log($"Acknowledge alert #{alertEventId} failed: {(int)r.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                SettingsManager.Log($"Acknowledge alert #{alertEventId} error: {ex.Message}");
+            }
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
@@ -840,6 +883,8 @@ namespace RasDesktopAlert
         private bool hasActiveAlert = false, settingsShowing = false;
         private static readonly Version CurrentVersion = Assembly.GetExecutingAssembly().GetName().Version ?? new(1, 0, 0, 0);
         private static readonly string UpdateUrl = "https://staging.fivestonestechnology.com/api/ras/update/version.json";
+        // Track the current active alert event ID for acknowledgment
+        private int? _currentAlertEventId = null;
 
         public TrayApplication()
         {
@@ -905,11 +950,27 @@ namespace RasDesktopAlert
                 if (r.IsSuccessStatusCode)
                 {
                     var j = await r.Content.ReadAsStringAsync();
-                    var a = JsonSerializer.Deserialize<RasAlert>(j, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                    if (a != null && a.Status != "resolved" && !hasActiveAlert)
-                    { hasActiveAlert = true; TriggerAlert(a.Type?.ToUpper() ?? "ALERT", a.Message ?? "Alert activated", a.Type ?? "general"); }
-                    else if ((a == null || a.Status == "resolved") && hasActiveAlert)
-                    { hasActiveAlert = false; alertForm?.Invoke((System.Windows.Forms.MethodInvoker)(() => alertForm.Hide())); trayIcon.Text = "Five Stones RAS - Monitoring"; }
+                    using var doc = JsonDocument.Parse(j);
+                    var root = doc.RootElement;
+
+                    // Extract alertEventId for acknowledgment
+                    if (root.TryGetProperty("id", out var idProp) && idProp.TryGetInt32(out var alertId))
+                    {
+                        _currentAlertEventId = alertId;
+                    }
+                    else
+                    {
+                        _currentAlertEventId = null;
+                    }
+
+                    var alertType = root.TryGetProperty("type", out var t) ? t.GetString() ?? "general" : "general";
+                    var alertMsg = root.TryGetProperty("message", out var m) ? m.GetString() ?? "Alert activated" : "Alert activated";
+                    var alertStatus = root.TryGetProperty("status", out var s) ? s.GetString() ?? "active" : "active";
+
+                    if (alertStatus != "resolved" && !hasActiveAlert)
+                    { hasActiveAlert = true; TriggerAlert(alertType.ToUpper(), alertMsg, alertType); }
+                    else if (alertStatus == "resolved" && hasActiveAlert)
+                    { hasActiveAlert = false; _currentAlertEventId = null; alertForm?.Invoke((System.Windows.Forms.MethodInvoker)(() => alertForm.Hide())); trayIcon.Text = "Five Stones RAS - Monitoring"; }
                 }
                 else if (r.StatusCode == System.Net.HttpStatusCode.Unauthorized || r.StatusCode == System.Net.HttpStatusCode.Forbidden)
                 {
@@ -932,7 +993,7 @@ namespace RasDesktopAlert
         private void TriggerAlert(string alertType, string message, string rawType)
         {
             if (alertForm == null || alertForm.IsDisposed) alertForm = new AlertForm();
-            alertForm.ShowAlert(alertType, message, rawType);
+            alertForm.ShowAlert(alertType, message, rawType, _currentAlertEventId);
             trayIcon.Text = "\u26a0\ufe0f ALERT: " + alertType;
             trayIcon.ContextMenuStrip.Items[0].Text = "\u26a0 ALERT";
             trayIcon.ShowBalloonTip(15000, "\u26a0\ufe0f EMERGENCY ALERT", alertType + ": " + message, ToolTipIcon.Warning);

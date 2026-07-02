@@ -14,6 +14,7 @@ import { eapPdfRouter } from "../eapPdf";
 import { liabilityScanPdfRouter } from "../liabilityScanPdf";
 import { webhookRouter } from "./webhookRouter";
 import { apiKeyRouter } from "../apiKeyRouter";
+import { rasDesktopApi } from "../rasDesktopApi";
 import helmet from "helmet";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import fs from "fs";
@@ -188,6 +189,9 @@ async function startServer() {
 
   // API key protected external endpoints
   app.use(apiKeyRouter);
+
+  // RAS Desktop Alert REST API (polling, acknowledgment, auto-update)
+  app.use(rasDesktopApi);
 
   // EAP PDF download
   app.use(eapPdfRouter);
