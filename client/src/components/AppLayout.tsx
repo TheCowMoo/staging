@@ -455,11 +455,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <Link href="/dashboard" onClick={() => setSidebarOpen(false)}>
             <img src={LOGO_URL} alt="Five Stones Technology" className="h-24 w-auto max-w-[320px] object-contain cursor-pointer" />
           </Link>
+          <Link href="/ras/activate" className="inline-flex items-center gap-3 text-lg font-black text-white bg-red-600 hover:bg-red-700 active:bg-red-800 px-7 py-4 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:scale-[1.02] border-2 border-red-400/30" onClick={() => setSidebarOpen(false)}>
+            <ShieldAlert className="w-8 h-8" />
+            <span className="hidden sm:inline">RESPONSE ACTIVATION SYSTEM</span>
+          </Link>
           <div className="ml-auto flex items-center gap-2">
-            <Link href="/ras/activate" className="inline-flex items-center gap-3 text-lg font-black text-white bg-red-600 hover:bg-red-700 active:bg-red-800 px-7 py-4 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:scale-[1.02] border-2 border-red-400/30" onClick={() => setSidebarOpen(false)}>
-              <ShieldAlert className="w-8 h-8" />
-              <span className="hidden sm:inline">RESPONSE ACTIVATION SYSTEM</span>
-            </Link>
             <NotificationBell />
           </div>
         </header>
@@ -497,8 +497,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {/* Desktop breadcrumb bar */}
           <div className="border-b border-border bg-card px-6 py-4 sticky top-0 z-20">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              {location !== "/dashboard" && (
-                <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3">
+                {location !== "/dashboard" && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -514,13 +514,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <ChevronLeft className="w-4 h-4" />
                     Back
                   </Button>
-                </div>
-              )}
-              <div className="flex items-center gap-2">
+                )}
                 <Link href="/ras/activate" className="inline-flex items-center gap-3 text-lg font-black text-white bg-red-600 hover:bg-red-700 active:bg-red-800 px-7 py-4 rounded-xl transition-all shadow-xl hover:shadow-2xl hover:scale-[1.02] border-2 border-red-400/30">
                   <ShieldAlert className="w-8 h-8" />
                   RESPONSE ACTIVATION SYSTEM
                 </Link>
+              </div>
+              <div className="flex items-center gap-2">
                 <NotificationBell />
               </div>
             </div>

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyDescriptionAttribute("Five Stones RAS Desktop Alert - Flashes red/blue on emergency alerts")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.1.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.1.0+3bf47624061ad656cb049d975c09f15d97962063")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.1.0+2d536d2e8b3c9a94c178d78f896cb11a443e0b89")]
 [assembly: System.Reflection.AssemblyProductAttribute("Response Activation System - Desktop Alert")]
 [assembly: System.Reflection.AssemblyTitleAttribute("FiveStonesRASAlert")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.1.0.0")]
