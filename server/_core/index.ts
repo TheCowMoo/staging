@@ -193,6 +193,16 @@ async function startServer() {
   // RAS Desktop Alert REST API (polling, acknowledgment, auto-update)
   app.use(rasDesktopApi);
 
+  // Generic RAS Desktop Alert installer download (pre-built prototype)
+  const rasExePath = path.resolve(process.cwd(), "ras-desktop-alert", "dist", "FiveStonesRASAlert.exe");
+  app.get("/api/ras/installer/FiveStonesRASAlert.exe", (_req, res) => {
+    if (fs.existsSync(rasExePath)) {
+      res.download(rasExePath, "FiveStonesRASAlert.exe");
+    } else {
+      res.status(404).json({ error: "Installer not found. Build it first with 'cd ras-desktop-alert && dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./dist'" });
+    }
+  });
+
   // EAP PDF download
   app.use(eapPdfRouter);
 

@@ -9,6 +9,7 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { ExternalLink, Settings, Key } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -151,12 +152,6 @@ export default function RASActivation() {
   }, [facilities, facilityId]);
 
   const rasRole = (user as Record<string, unknown> | null)?.rasRole as string | null | undefined;
-
-  // Must call hooks before any early return — React 19 rules of hooks
-  const { data: installerData, isLoading: installerLoading } = trpc.ras.getInstallerDownload.useQuery(undefined, {
-    enabled: !!user && rasRole === "admin",
-  });
-
   if (!user || !rasRole) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-12">
@@ -197,57 +192,50 @@ export default function RASActivation() {
         </p>
       </div>
 
-      {/* Download Desktop Alert (admin only) */}
-      {rasRole === "admin" && (
-        <div className="mb-8 p-4 rounded-lg border border-border bg-card">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h3 className="text-sm font-semibold flex items-center gap-2">
-                <Download className="h-4 w-4 text-primary" />
-                RAS Desktop Alert v{installerData?.version ?? "1.1.0"}
-              </h3>
-              <p className="text-xs text-muted-foreground mt-1">
-                Download the desktop alert monitor for your organization.
-                The installer is pre-configured with your org-specific API key.
-              </p>
-            </div>
-            {installerData?.downloadUrl ? (
-              <Button
-                size="sm"
-                onClick={() => window.open(installerData.downloadUrl ?? "", "_blank")}
-              >
-                Download Installer
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                variant="outline"
-                disabled
-                title="No installer built yet"
-              >
-                Not Available
-              </Button>
-            )}
-          </div>
-          {installerData?.downloadUrl ? (
-            <p className="text-xs text-muted-foreground mt-2">
-              Pre-configured for org #{installerData.orgId}
+      {/* Download Desktop Alert (shown to all users with RAS role) */}
+      <div className="mb-8 p-5 rounded-lg border border-border bg-card">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <Download className="h-4 w-4 text-primary" />
+              Five Stones RAS Desktop Alert v1.1.0
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Windows desktop tray application that monitors for active alerts and displays
+              full-screen emergency notifications with audible alarm.
             </p>
-          ) : installerLoading ? null : (
-            <div className="mt-3 text-xs text-muted-foreground space-y-1.5 border-t border-border pt-3">
-              <p>
-                <span className="font-medium text-foreground">No installer available yet.</span> Run this command on a Windows machine with .NET SDK 8+ and Inno Setup 6 to build it:
-              </p>
-              <pre className="bg-muted/80 rounded-md px-3 py-2 text-[11px] font-mono select-all whitespace-pre-wrap break-all">
-                {installerData?.buildCommand ?? `node scripts/build-org-installer.mjs --orgId ${installerData?.orgId ?? "?"} --version ${installerData?.version ?? "1.1.0"}`}
-              </pre>
-              <p className="text-[11px] text-muted-foreground/70">
-                After building, the installer will be uploaded to S3 and available for download here.
-              </p>
-            </div>
-          )}
+          </div>
+          <Button
+            size="sm"
+            onClick={() => window.open("/api/ras/installer/FiveStonesRASAlert.exe", "_blank")}
+          >
+            <Download className="h-4 w-4 mr-1.5" />
+            Download Installer
+          </Button>
         </div>
-      )}
+
+        <div className="mt-4 pt-3 border-t border-border space-y-2 text-xs text-muted-foreground">
+          <p className="font-medium text-foreground">Getting started:</p>
+          <div className="flex items-start gap-2">
+            <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+              <span className="text-[10px] font-bold text-primary">1</span>
+            </div>
+            <span>Download and run the installer on any Windows machine.</span>
+          </div>
+          <div className="flex items-start gap-2">
+            <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+              <span className="text-[10px] font-bold text-primary">2</span>
+            </div>
+            <span>Right-click the system tray icon (<Settings className="h-3 w-3 inline" />) and open <strong>Settings</strong>.</span>
+          </div>
+          <div className="flex items-start gap-2">
+            <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+              <span className="text-[10px] font-bold text-primary">3</span>
+            </div>
+            <span>Enter your <strong>API key</strong> (<Key className="h-3 w-3 inline" />) and <strong>Org ID</strong> from the API Keys page (<ExternalLink className="h-3 w-3 inline" />) and click <strong>Save & Connect</strong>.</span>
+          </div>
+        </div>
+      </div>
 
       {/* 4 Big Blocks */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">

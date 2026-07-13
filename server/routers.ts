@@ -24,7 +24,7 @@ import {
   upsertPersonnelLocation,
   createVisitorLog, getVisitorLogs, checkOutVisitor, updateVisitorLog, deleteVisitorLog,
   getFlaggedVisitors, getFlaggedVisitorById, stampFlaggedVisitorEscalation, addFlaggedVisitor, deactivateFlaggedVisitor, deleteFlaggedVisitor, checkVisitorAgainstWatchlist,
-  getAllUsers, updateUserRole, updateOrgMemberPermissionFlags, getOrgMemberWithFlags,
+  getAllUsers, updateUserRole, updateOrgMemberPermissionFlags, getOrgMemberWithFlags, getUserByEmail,
   getEapSectionsByAudit, upsertEapSection, saveEapSectionVersion, getEapSectionVersions,
   createDrillTemplate, getDrillTemplates, getDrillTemplateById,
   createDrillSession, getDrillSessions, getDrillSessionById, updateDrillSession,
