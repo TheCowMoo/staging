@@ -19,6 +19,7 @@ import helmet from "helmet";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "node:url";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -194,7 +195,8 @@ async function startServer() {
   app.use(rasDesktopApi);
 
   // Generic RAS Desktop Alert installer download (pre-built prototype)
-  const rasExePath = path.resolve(__dirname, "..", "..", "ras-desktop-alert", "dist", "FiveStonesRASAlert.exe");
+  const __rasDir = path.dirname(fileURLToPath(import.meta.url));
+  const rasExePath = path.resolve(__rasDir, "..", "..", "ras-desktop-alert", "dist", "FiveStonesRASAlert.exe");
   app.get("/api/ras/installer/FiveStonesRASAlert.exe", (_req, res) => {
     if (fs.existsSync(rasExePath)) {
       res.download(rasExePath, "FiveStonesRASAlert.exe");
