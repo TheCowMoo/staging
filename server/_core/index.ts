@@ -195,11 +195,16 @@ async function startServer() {
   app.use(rasDesktopApi);
 
   // Generic RAS Desktop Alert installer download (pre-built prototype)
-  const __rasDir = path.dirname(fileURLToPath(import.meta.url));
-  const rasExePath = path.resolve(__rasDir, "..", "..", "ras-desktop-alert", "dist", "FiveStonesRASAlert.exe");
+  // Try relative to cwd (project root), fall back to relative to this source file
+  const _rasCandidates = [
+    path.resolve(process.cwd(), "ras-desktop-alert", "dist", "FiveStonesRASAlert.exe"),
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "ras-desktop-alert", "dist", "FiveStonesRASAlert.exe"),
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "ras-desktop-alert", "dist", "FiveStonesRASAlert.exe"),
+  ];
+  const _rasExePath = _rasCandidates.find(p => fs.existsSync(p));
   app.get("/api/ras/installer/FiveStonesRASAlert.exe", (_req, res) => {
-    if (fs.existsSync(rasExePath)) {
-      res.download(rasExePath, "FiveStonesRASAlert.exe");
+    if (_rasExePath && fs.existsSync(_rasExePath)) {
+      res.download(_rasExePath, "FiveStonesRASAlert.exe");
     } else {
       res.status(404).json({ error: "Installer not found. Build it first with 'cd ras-desktop-alert && dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./dist'" });
     }
