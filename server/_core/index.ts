@@ -194,7 +194,7 @@ async function startServer() {
   app.use(rasDesktopApi);
 
   // Generic RAS Desktop Alert installer download (pre-built prototype)
-  const rasExePath = path.resolve(process.cwd(), "ras-desktop-alert", "dist", "FiveStonesRASAlert.exe");
+  const rasExePath = path.resolve(__dirname, "..", "..", "ras-desktop-alert", "dist", "FiveStonesRASAlert.exe");
   app.get("/api/ras/installer/FiveStonesRASAlert.exe", (_req, res) => {
     if (fs.existsSync(rasExePath)) {
       res.download(rasExePath, "FiveStonesRASAlert.exe");
