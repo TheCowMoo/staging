@@ -195,19 +195,30 @@ async function startServer() {
   app.use(rasDesktopApi);
 
   // Generic RAS Desktop Alert installer download (pre-built prototype)
-  // Try relative to cwd (project root), fall back to relative to this source file
+  // Try local filesystem first, then fall back to S3 shared installer
   const _rasCandidates = [
     path.resolve(process.cwd(), "ras-desktop-alert", "dist", "FiveStonesRASAlert.exe"),
     path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "ras-desktop-alert", "dist", "FiveStonesRASAlert.exe"),
     path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "ras-desktop-alert", "dist", "FiveStonesRASAlert.exe"),
   ];
   const _rasExePath = _rasCandidates.find(p => fs.existsSync(p));
-  app.get("/api/ras/installer/FiveStonesRASAlert.exe", (_req, res) => {
+  app.get("/api/ras/installer/FiveStonesRASAlert.exe", async (_req, res) => {
     if (_rasExePath && fs.existsSync(_rasExePath)) {
       res.download(_rasExePath, "FiveStonesRASAlert.exe");
-    } else {
-      res.status(404).json({ error: "Installer not found. Build it first with 'cd ras-desktop-alert && dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./dist'" });
+      return;
     }
+    // Fallback: redirect to S3 shared installer
+    try {
+      const { storageGet } = await import("../storage");
+      const result = await storageGet("installers/ras-alert/shared/v1.1.0/FiveStonesRASAlert.exe");
+      if (result.url) {
+        res.redirect(result.url);
+        return;
+      }
+    } catch {
+      // Fall through to error
+    }
+    res.status(404).json({ error: "Installer not found. Build it first with 'cd ras-desktop-alert && dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o ./dist'" });
   });
 
   // EAP PDF download
