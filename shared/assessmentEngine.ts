@@ -851,27 +851,27 @@ export function getRiskMap(classification: ClassificationLabel): RiskMap {
     "Defensible Foundation": {
       color: "green",
       label: "Defensible Foundation",
-      descriptor: "Core systems exist and are documented, but state-specific gaps may still exist.",
+      descriptor: "Core readiness systems are established and documented. Continued attention to state-specific requirements and periodic review will help sustain this foundation.",
     },
     "Moderate Readiness": {
       color: "yellow-green",
       label: "Moderate Readiness",
-      descriptor: "Most core elements exist, but one or more weak sections could fail under scrutiny.",
+      descriptor: "Most core elements are in place. Focused attention on the remaining areas will strengthen overall system reliability and organizational confidence.",
     },
     "Material Exposure": {
       color: "yellow",
       label: "Material Exposure",
-      descriptor: "Important gaps are creating material exposure. Your organization shows partial readiness, but key parts of the system are inconsistent, informal, or hard to prove.",
+      descriptor: "Foundational elements exist but are not yet consistent enough to ensure reliable execution. Strengthening these areas will improve documentation, response capability, and organizational defensibility.",
     },
     "High Exposure": {
       color: "orange",
       label: "High Exposure",
-      descriptor: "Your readiness is heavily exposed. Major controls are missing or disconnected, which makes response harder to execute and harder to defend.",
+      descriptor: "Important controls need attention to strengthen readiness. Prioritizing planning, training, and reporting improvements will build a more reliable and defensible system.",
     },
     "Critical Exposure": {
       color: "red",
       label: "Critical Exposure",
-      descriptor: "Your organization is operating without a defensible system. Core planning, reporting, and response structures are largely absent or not operationalized.",
+      descriptor: "Core readiness structures need significant development. Establishing foundational planning, reporting, and response systems is the priority for building organizational resilience.",
     },
 
   };
@@ -1347,44 +1347,52 @@ function buildInterpretation(
 
   const industryContext =
     industry && industry !== "Other"
-      ? ` In the ${industry} sector, these gaps carry heightened scrutiny from regulators and plaintiff attorneys.`
+      ? ` For organizations in the ${industry} sector, these areas carry increased attention from regulators and legal counsel.`
       : "";
 
   if (classification === "Critical Exposure") {
     return (
-      `Readiness at Risk: this organization has ${missingCount} critical gaps in operational readiness.` +
-      ` Foundational systems are missing — ${hasPlanningGap ? "planning and documented response procedures, " : ""}` +
-      `${hasTrainingGap ? "consistent training and refresh cycles, " : ""}` +
-      `${hasReportingGap ? "and reliable reporting/escalation pathways, " : ""}` +
-      `which together reduce the organization's ability to respond reliably to incidents.${industryContext}`
+      `This assessment identifies ${missingCount} priority areas for building operational readiness.` +
+      ` Foundational systems need attention — ${hasPlanningGap ? "planning and documented response procedures, " : ""}` +
+      `${hasTrainingGap ? "consistent training practices, " : ""}` +
+      `${hasReportingGap ? "and reliable reporting and escalation pathways, " : ""}` +
+      `which together are essential for a dependable readiness posture.${industryContext}`
     );
   }
 
   if (classification === "High Exposure") {
     return (
-      `Readiness Gaps Detected: ${missingCount} important control gaps reduce operational maturity.` +
-      `${hasPlanningGap ? " Strengthen planning and documentation to ensure roles and expectations are clear. " : ""}` +
-      `${hasTrainingGap ? " Improve training coverage to equip staff for real scenarios. " : ""}` +
-      `${hasReportingGap ? " Formalize reporting so indicators are escalated and tracked. " : ""}` +
+      `This assessment identifies ${missingCount} areas where focused improvement will strengthen organizational readiness.` +
+      `${hasPlanningGap ? " Strengthening planning and documentation will clarify roles and expectations. " : ""}` +
+      `${hasTrainingGap ? " Expanding training coverage will better equip staff for real scenarios. " : ""}` +
+      `${hasReportingGap ? " Formalizing reporting processes will ensure concerns are escalated and tracked. " : ""}` +
       `${industryContext}`
     );
   }
 
   if (classification === "Material Exposure") {
     return (
-      `Partial Readiness: some foundational controls are present, but ${missingCount} gaps limit consistent execution.` +
-      ` Addressing these areas will improve operational reliability and the organization's ability to learn from incidents.${industryContext}`
+      `Foundational controls are present in several areas, but ${missingCount} items need attention to achieve consistent execution.` +
+      ` Addressing these areas will strengthen operational reliability and the organization's ability to learn from incidents.${industryContext}`
+    );
+  }
+
+  // Moderate Readiness
+  if (classification === "Moderate Readiness") {
+    return (
+      `Most core readiness elements are in place, with ${missingCount} areas remaining for improvement.` +
+      ` Continued attention to these items will further strengthen the organization's overall readiness posture.${industryContext}`
     );
   }
 
   // Defensible / highest band
   if (classification === "Defensible Foundation") {
     return (
-      `Operationally Mature: controls are largely in place. ${missingCount > 0 ? `There are ${missingCount} remaining items to monitor and maintain` : "Maintain regular review and training to preserve readiness"}.${industryContext}`
+      `Readiness systems are largely established. ${missingCount > 0 ? `There are ${missingCount} items to continue monitoring and maintaining.` : "Maintain regular review and training to sustain this foundation."}${industryContext}`
     );
   }
   // Fallback
-  return `Operational readiness assessment complete.${industryContext}`;
+  return `Readiness assessment complete.${industryContext}`;
 }
 
 function buildAdvisorSummary(
@@ -1402,27 +1410,27 @@ function buildAdvisorSummary(
 
   if (classification === "Critical Exposure") {
     return (
-      `Based on this assessment, your organization${locationContext}${industryContext} has significant readiness failures. ` +
-      `Top gaps: ${topMissing}. Immediate action is required to establish documented plans, training, and reporting so operations can respond reliably.`
+      `Your organization${locationContext}${industryContext} has important readiness areas to address. ` +
+      `Priority focus areas: ${topMissing}. Establishing documented plans, consistent training, and reliable reporting systems will build a stronger foundation for operational resilience.`
     );
   }
 
   if (classification === "High Exposure") {
     return (
-      `Your organization${locationContext}${industryContext} has clear readiness gaps. Key areas: ${topMissing}. Prioritizing these controls will raise operational maturity and improve consistent response.`
+      `Your organization${locationContext}${industryContext} has clear opportunities to strengthen readiness. Key areas: ${topMissing}. Prioritizing these will improve operational consistency and build confidence in the organization's response capability.`
     );
   }
 
   if (classification === "Material Exposure") {
     return (
-      `Your organization${locationContext}${industryContext} has partial readiness with ${missing.length} remaining gap${missing.length !== 1 ? "s" : ""}. ${missing.length > 0 ? `Focus areas: ${topMissing}. ` : ""}` +
-      `Addressing these will improve operational reliability and reduce the chance of inconsistent execution.`
+      `Your organization${locationContext}${industryContext} has foundational elements in place with ${missing.length} area${missing.length !== 1 ? "s" : ""} to strengthen. ${missing.length > 0 ? `Key focus areas: ${topMissing}. ` : ""}` +
+      `Addressing these will build more reliable execution and a stronger defensibility posture.`
     );
   }
   if (classification === "Defensible Foundation") {
     return (
-      `Your organization${locationContext}${industryContext} is operationally mature. ${missing.length > 0 ? `Remaining items: ${topMissing}. ` : ""}` +
-      `Continue regular review, training, and documentation to sustain readiness.`
+      `Your organization${locationContext}${industryContext} has a solid readiness foundation. ${missing.length > 0 ? `Continue monitoring: ${topMissing}. ` : ""}` +
+      `Ongoing review, training, and documentation will sustain this posture.`
     );
   }
   return `Assessment complete for your organization${locationContext}${industryContext}.`;

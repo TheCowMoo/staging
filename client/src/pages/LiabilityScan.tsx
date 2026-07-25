@@ -170,9 +170,9 @@ export default function LiabilityScan() {
   const [scanLoadingDialogOpen, setScanLoadingDialogOpen] = useState(false);
 
   const classToStatus = (c: string) =>
-    c === "Critical Exposure" ? "Critical Readiness Failure"
-    : c === "High Exposure" ? "Major Readiness Gaps"
-    : c === "Material Exposure" ? "Significant Readiness Gaps"
+    c === "Critical Exposure" ? "Immediate Readiness Priority"
+    : c === "High Exposure" ? "Key Readiness Areas"
+    : c === "Material Exposure" ? "Readiness Improvements Needed"
     : c === "Moderate Readiness" ? "Emerging Readiness"
     : "Strong Readiness";
 
@@ -721,7 +721,7 @@ export default function LiabilityScan() {
             const isLow = cls === "Defensible Foundation";
             const isMod = cls === "Material Exposure";
             const isHigh = cls === "High Exposure";
-            // isCritical = Critical Exposure
+            const isCrit = cls === "Critical Exposure";
             const riskLabel = isLow ? "Operationally Mature" : isMod ? "Partial Readiness" : isHigh ? "Readiness Gaps Detected" : "Readiness at Risk";
             const borderCls = isLow ? "border-green-500 bg-green-50 dark:bg-green-950/20"
               : isMod ? "border-amber-500 bg-amber-50 dark:bg-amber-950/20"
@@ -729,13 +729,24 @@ export default function LiabilityScan() {
               : "border-red-700 bg-red-50 dark:bg-red-950/20";
             const iconCls = isLow ? "text-green-600" : isMod ? "text-amber-600" : isHigh ? "text-orange-600" : "text-red-700";
             const badgeCls = isLow ? "bg-green-600 text-white" : isMod ? "bg-amber-500 text-white" : isHigh ? "bg-orange-500 text-white" : "bg-red-700 text-white";
+            const catScores = result.categoryScores;
+            const lowCategories: string[] = [];
+            if (catScores.planningDocumentation !== undefined && catScores.planningDocumentation < 50) lowCategories.push("planning and documentation");
+            if (catScores.trainingAwareness !== undefined && catScores.trainingAwareness < 50) lowCategories.push("training practices");
+            if (catScores.reportingCommunication !== undefined && catScores.reportingCommunication < 50) lowCategories.push("reporting and communication");
+            if (catScores.responseReadiness !== undefined && catScores.responseReadiness < 50) lowCategories.push("response readiness");
+
             const descriptor = isLow
-              ? "Your program is largely connected and usable across planning, reporting, training, and documentation."
+              ? "Your readiness systems are largely established. Continued attention to periodic review and state-specific requirements will help sustain this foundation."
               : isMod
-              ? "Your program includes foundational elements, but it is not yet complete enough to ensure consistent action, documentation, and follow-through."
+              ? "Foundational elements exist but are not yet consistent enough to ensure reliable execution across all areas."
+              : isHigh && lowCategories.length > 0
+              ? `Your program would benefit from focused attention in ${lowCategories.join(", ")} to strengthen overall readiness.`
               : isHigh
-              ? "Your program has important gaps in planning, reporting, and training that reduce response readiness."
-              : "Your program has major gaps in planning, reporting, training, and documentation, and needs structure to become dependable.";
+              ? "Your program has several areas where focused improvement will strengthen organizational readiness."
+              : isCrit && lowCategories.length > 0
+              ? `Your program would benefit from structured development in ${lowCategories.join(", ")} to build a more dependable readiness posture.`
+              : "Your program has structural gaps that need attention to build a dependable readiness posture.";
             return (
               <div className={`rounded-xl border-2 p-5 space-y-2 ${borderCls}`}>
                 <div className="flex items-center justify-between flex-wrap gap-2">
@@ -761,6 +772,7 @@ export default function LiabilityScan() {
             riskColor={result.riskMap.color}
             riskDescriptor={result.riskMap.descriptor}
             gapCount={result.topGaps.length}
+            criticalGapCount={result.topGaps.filter((g) => g.severity === "CRITICAL").length}
             jurisdiction={jurisdiction}
             industry={industry}
             primaryLabel={planVisited ? "View Your Readiness Plan" : "Build Your Readiness Plan"}
@@ -772,7 +784,7 @@ export default function LiabilityScan() {
             <div className="rounded-xl border border-border p-5 bg-card space-y-3">
               <p className="text-sm font-semibold text-foreground">What this score means</p>
               <p className="text-sm text-muted-foreground">
-                Your program includes some foundational elements, but the system is not yet complete enough to ensure consistent action, documentation, and follow-through.
+                {result.interpretation}
               </p>
             </div>
             <div className="rounded-xl border border-border p-5 bg-card space-y-3">
