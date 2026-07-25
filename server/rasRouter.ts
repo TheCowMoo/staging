@@ -507,7 +507,7 @@ export const rasRouter = router({
   getInstallerDownload: paidProcedure
     .query(async ({ ctx }) => {
       const db = await getDb();
-      const { orgId } = await assertRasRole(db, ctx.user.id, ["admin"]);
+      const orgId = await getUserOrgId(db, ctx.user.id);
 
       const version = "1.1.0";
       const fileName = "FiveStonesRASAlert.exe";
