@@ -326,7 +326,13 @@ const EXECUTIVE_WRITING_STYLE = `WRITING STYLE:
 - Use active voice
 - Use commas instead of em dashes
 - Avoid repeating the same concepts unnecessarily
-- Every section should naturally flow into the next`;
+- Every section should naturally flow into the next
+- NEVER use internal underscore-keyed category names (e.g., planning_documentation, training_awareness, reporting_communication, response_readiness) in any narrative text. Instead use their human-readable labels:
+  * "planning_documentation" = "Planning & Documentation"
+  * "training_awareness" = "Training & Awareness"  
+  * "reporting_communication" = "Reporting & Communication"
+  * "response_readiness" = "Response Readiness"
+  * "critical_risk_factors" = "Critical Risk Factors"`;
 
 const FIVE_RISK_AREAS = `Evaluate the organization across these five risk areas:
 

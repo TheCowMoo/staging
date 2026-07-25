@@ -1,0 +1,7 @@
+c:\Users\Nathanael\Desktop\FiveStones\staging-main\ras-desktop-alert\dist\FiveStonesRASAlert.pdb
+c:\Users\Nathanael\Desktop\FiveStones\staging-main\ras-desktop-alert\dist\D3DCompiler_47_cor3.dll
+c:\Users\Nathanael\Desktop\FiveStones\staging-main\ras-desktop-alert\dist\PenImc_cor3.dll
+c:\Users\Nathanael\Desktop\FiveStones\staging-main\ras-desktop-alert\dist\PresentationNative_cor3.dll
+c:\Users\Nathanael\Desktop\FiveStones\staging-main\ras-desktop-alert\dist\vcruntime140_cor3.dll
+c:\Users\Nathanael\Desktop\FiveStones\staging-main\ras-desktop-alert\dist\wpfgfx_cor3.dll
+c:\Users\Nathanael\Desktop\FiveStones\staging-main\ras-desktop-alert\dist\FiveStonesRASAlert.exe

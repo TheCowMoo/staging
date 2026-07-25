@@ -512,8 +512,9 @@ export const rasRouter = router({
       const version = "1.1.0";
       const fileName = "FiveStonesRASAlert.exe";
 
-      // Try to get installer EXE from S3
+      // Try to get installer EXE from S3 — first check per-org path, then shared fallback
       const s3Key = `installers/ras-alert/${orgId}/v${version}/${fileName}`;
+      const fallbackKey = `installers/ras-alert/shared/v${version}/${fileName}`;
       let installerUrl = null;
       let buildStatus = "not_found";
 
@@ -523,6 +524,17 @@ export const rasRouter = router({
         if (installerUrl) buildStatus = "ready";
       } catch {
         installerUrl = null;
+      }
+
+      // Fallback to shared installer if per-org not found
+      if (!installerUrl) {
+        try {
+          const fallbackResult = await storageGet(fallbackKey);
+          installerUrl = fallbackResult.url;
+          if (installerUrl) buildStatus = "ready";
+        } catch {
+          installerUrl = null;
+        }
       }
 
       return {

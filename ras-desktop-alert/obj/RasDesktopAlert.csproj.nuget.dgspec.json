@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Nathanael\\Desktop\\FiveStones\\staging-main\\ras-desktop-alert\\RasDesktopAlert.csproj": {}
+    "c:\\Users\\Nathanael\\Desktop\\FiveStones\\staging-main\\ras-desktop-alert\\RasDesktopAlert.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Nathanael\\Desktop\\FiveStones\\staging-main\\ras-desktop-alert\\RasDesktopAlert.csproj": {
+    "c:\\Users\\Nathanael\\Desktop\\FiveStones\\staging-main\\ras-desktop-alert\\RasDesktopAlert.csproj": {
       "version": "1.1.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Nathanael\\Desktop\\FiveStones\\staging-main\\ras-desktop-alert\\RasDesktopAlert.csproj",
+        "projectUniqueName": "c:\\Users\\Nathanael\\Desktop\\FiveStones\\staging-main\\ras-desktop-alert\\RasDesktopAlert.csproj",
         "projectName": "FiveStonesRASAlert",
-        "projectPath": "C:\\Users\\Nathanael\\Desktop\\FiveStones\\staging-main\\ras-desktop-alert\\RasDesktopAlert.csproj",
+        "projectPath": "c:\\Users\\Nathanael\\Desktop\\FiveStones\\staging-main\\ras-desktop-alert\\RasDesktopAlert.csproj",
         "packagesPath": "C:\\Users\\Nathanael\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Nathanael\\Desktop\\FiveStones\\staging-main\\ras-desktop-alert\\obj\\",
+        "outputPath": "c:\\Users\\Nathanael\\Desktop\\FiveStones\\staging-main\\ras-desktop-alert\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Nathanael\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -46,6 +46,12 @@
           "framework": "net8.0-windows7.0",
           "targetAlias": "net8.0-windows",
           "dependencies": {
+            "Microsoft.NET.ILLink.Tasks": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[8.0.27, )",
+              "autoReferenced": true
+            },
             "System.Text.Json": {
               "target": "Package",
               "version": "[9.0.0, )"
@@ -68,6 +74,10 @@
               "version": "[8.0.27, 8.0.27]"
             },
             {
+              "name": "Microsoft.AspNetCore.App.Runtime.win-x64",
+              "version": "[8.0.27, 8.0.27]"
+            },
+            {
               "name": "Microsoft.NETCore.App.Host.win-x64",
               "version": "[8.0.27, 8.0.27]"
             },
@@ -76,7 +86,15 @@
               "version": "[8.0.27, 8.0.27]"
             },
             {
+              "name": "Microsoft.NETCore.App.Runtime.win-x64",
+              "version": "[8.0.27, 8.0.27]"
+            },
+            {
               "name": "Microsoft.WindowsDesktop.App.Ref",
+              "version": "[8.0.27, 8.0.27]"
+            },
+            {
+              "name": "Microsoft.WindowsDesktop.App.Runtime.win-x64",
               "version": "[8.0.27, 8.0.27]"
             }
           ],
@@ -89,6 +107,11 @@
             }
           },
           "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.300/PortableRuntimeIdentifierGraph.json"
+        }
+      },
+      "runtimes": {
+        "win-x64": {
+          "#import": []
         }
       }
     }

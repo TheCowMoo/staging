@@ -472,3 +472,6 @@ C:\Users\Nathanael\Desktop\FiveStones\staging-main\ras-desktop-alert\obj\Release
 C:\Users\Nathanael\Desktop\FiveStones\staging-main\ras-desktop-alert\obj\Release\net8.0-windows\win-x64\refint\FiveStonesRASAlert.dll
 C:\Users\Nathanael\Desktop\FiveStones\staging-main\ras-desktop-alert\obj\Release\net8.0-windows\win-x64\RasDesktopAlert.genruntimeconfig.cache
 C:\Users\Nathanael\Desktop\FiveStones\staging-main\ras-desktop-alert\obj\Release\net8.0-windows\win-x64\ref\FiveStonesRASAlert.dll
+c:\Users\Nathanael\Desktop\FiveStones\staging-main\ras-desktop-alert\bin\Release\net8.0-windows\win-x64\FiveStonesRASAlert.pdb
+c:\Users\Nathanael\Desktop\FiveStones\staging-main\ras-desktop-alert\obj\Release\net8.0-windows\win-x64\RasDesktopAlert.sourcelink.json
+c:\Users\Nathanael\Desktop\FiveStones\staging-main\ras-desktop-alert\obj\Release\net8.0-windows\win-x64\FiveStonesRASAlert.pdb
