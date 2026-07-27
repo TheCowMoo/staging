@@ -29,7 +29,6 @@ import {
   alertRecipients,
   alertStatusUpdates,
   pushSubscriptions,
-  users,
 } from "../drizzle/schema";
 
 // ─── Default alert message templates ─────────────────────────────────────────
@@ -77,26 +76,24 @@ const DEFAULT_TEMPLATES = {
 };
 
 // ─── Helper: resolve orgId for a user ────────────────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getUserOrgId(db: any, userId: number): Promise<number | null> {
-  const rows = (await db.execute(
+  const [rows] = await db.execute(
     `SELECT orgId FROM org_members WHERE userId = ${userId} LIMIT 1`
-  ) as unknown) as Array<{ orgId: number }>;
-  return rows[0]?.orgId ?? null;
+  ) as unknown as [Array<{ orgId: number }>];
+  return rows?.[0]?.orgId ?? null;
 }
 
 // ─── Helper: assert user has a RAS role ──────────────────────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function assertRasRole(
   db: any,
   userId: number,
   allowed: Array<"admin" | "responder" | "staff">
 ): Promise<{ rasRole: "admin" | "responder" | "staff"; orgId: number | null }> {
-  const rows = (await db.execute(
-    `SELECT rasRole, id FROM users WHERE id = ${userId} LIMIT 1`
-  ) as unknown) as Array<{ rasRole: string | null }>;
+  const [rows] = await db.execute(
+    `SELECT rasRole FROM users WHERE id = ${userId} LIMIT 1`
+  ) as unknown as [Array<{ rasRole: string | null }>];
 
-  const rasRole = rows[0]?.rasRole as "admin" | "responder" | "staff" | null;
+  const rasRole = rows?.[0]?.rasRole as "admin" | "responder" | "staff" | null;
   if (!rasRole || !allowed.includes(rasRole)) {
     throw new TRPCError({ code: "FORBIDDEN", message: "RAS access not authorized for your role." });
   }
