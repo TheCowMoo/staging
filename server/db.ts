@@ -1118,6 +1118,21 @@ export async function getFlaggedVisitors(activeOnly = true) {
   return rows;
 }
 
+export async function getFlaggedVisitorsByOrg(orgId: number, activeOnly = true) {
+  const db = await getDb();
+  if (!db) return [];
+  // Get all facilities in this org
+  const orgFacilities = await db.select({ id: facilities.id })
+    .from(facilities)
+    .where(eq(facilities.orgId, orgId));
+  const facilityIds = orgFacilities.map(f => f.id);
+  const rows = await db.select().from(flaggedVisitors)
+    .where(activeOnly ? eq(flaggedVisitors.active, true) : undefined)
+    .orderBy(desc(flaggedVisitors.createdAt));
+  // Filter: entry has no facilityId (org-level) OR belongs to a facility in this org
+  return rows.filter(r => !r.facilityId || facilityIds.includes(r.facilityId));
+}
+
 export async function addFlaggedVisitor(data: {
   name: string;
   reason?: string;

@@ -23,7 +23,7 @@ import {
   getAuditLogsByOrg, getAllAuditLogs,
   upsertPersonnelLocation,
   createVisitorLog, getVisitorLogs, checkOutVisitor, updateVisitorLog, deleteVisitorLog,
-  getFlaggedVisitors, getFlaggedVisitorById, stampFlaggedVisitorEscalation, addFlaggedVisitor, deactivateFlaggedVisitor, deleteFlaggedVisitor, checkVisitorAgainstWatchlist,
+  getFlaggedVisitors, getFlaggedVisitorsByOrg, getFlaggedVisitorById, stampFlaggedVisitorEscalation, addFlaggedVisitor, deactivateFlaggedVisitor, deleteFlaggedVisitor, checkVisitorAgainstWatchlist,
   getAllUsers, updateUserRole, updateOrgMemberPermissionFlags, getOrgMemberWithFlags, getUserByEmail,
   upsertUser, setPasswordResetToken, createUserInvite, listPendingUserInvites, deleteUserInvite,
   getEapSectionsByAudit, upsertEapSection, saveEapSectionVersion, getEapSectionVersions,
@@ -2368,7 +2368,13 @@ const visitorRouter = router({
 const flaggedVisitorRouter = router({
   list: paidProcedure
     .input(z.object({ activeOnly: z.boolean().optional().default(true) }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      // Resolve user's org membership to scope flagged visitors by org
+      const memberships = await getOrgMembershipForUser(ctx.user.id);
+      const orgId = memberships[0]?.orgId;
+      if (orgId) {
+        return getFlaggedVisitorsByOrg(orgId, input.activeOnly);
+      }
       return getFlaggedVisitors(input.activeOnly);
     }),
   add: paidProcedure
