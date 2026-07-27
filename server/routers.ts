@@ -25,6 +25,7 @@ import {
   createVisitorLog, getVisitorLogs, checkOutVisitor, updateVisitorLog, deleteVisitorLog,
   getFlaggedVisitors, getFlaggedVisitorById, stampFlaggedVisitorEscalation, addFlaggedVisitor, deactivateFlaggedVisitor, deleteFlaggedVisitor, checkVisitorAgainstWatchlist,
   getAllUsers, updateUserRole, updateOrgMemberPermissionFlags, getOrgMemberWithFlags, getUserByEmail,
+  upsertUser, setPasswordResetToken, createUserInvite, listPendingUserInvites, deleteUserInvite,
   getEapSectionsByAudit, upsertEapSection, saveEapSectionVersion, getEapSectionVersions,
   createDrillTemplate, getDrillTemplates, getDrillTemplateById,
   createDrillSession, getDrillSessions, getDrillSessionById, updateDrillSession,
@@ -2515,10 +2516,8 @@ const adminUserRouter = router({
       if (!newUser) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create user." });
       // Set a password-reset token (48-hour expiry) used as the set-password link
       const setPasswordToken = rb(32).toString("hex");
-      const { setPasswordResetToken } = await import("./db");
       await setPasswordResetToken(email, setPasswordToken);
       // Also track the invite in user_invites for UI visibility
-      const { createUserInvite } = await import("./db");
       const { nanoid } = await import("nanoid");
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
       await createUserInvite({
@@ -2575,7 +2574,6 @@ const adminUserRouter = router({
 
   // Ultra Admin: list pending user invites
   listInvites: ultraAdminProcedure.query(async () => {
-    const { listPendingUserInvites } = await import("./db");
     return listPendingUserInvites();
   }),
 
@@ -2583,7 +2581,6 @@ const adminUserRouter = router({
   cancelInvite: ultraAdminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      const { deleteUserInvite } = await import("./db");
       await deleteUserInvite(input.id);
       return { success: true };
     }),
