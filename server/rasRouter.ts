@@ -74,12 +74,25 @@ const DEFAULT_TEMPLATES = {
       "SEVERE WEATHER WARNING. Monitor weather updates. Coordinate shelter-in-place procedures. Track personnel status. Issue updates as conditions change.",
   },
 };
+// ─── Helper: normalize drizzle/mysql2 execute result ─────────────────────────
+// drizzle-orm with mysql2 may return either [rows, fields] (raw mysql2) or
+// just rows (drizzle-wrapped). This helper normalizes both to a plain array.
+function normalizeRows(raw: unknown): any[] {
+  if (Array.isArray(raw)) {
+    // If first element is an array, treat as [rows, fields] tuple
+    if (Array.isArray(raw[0])) return raw[0] as any[];
+    // Otherwise it's already just the rows
+    return raw;
+  }
+  return [];
+}
 
 // ─── Helper: resolve orgId for a user ────────────────────────────────────────
 async function getUserOrgId(db: any, userId: number): Promise<number | null> {
-  const [rows] = await db.execute(
+  const raw = await db.execute(
     `SELECT orgId FROM org_members WHERE userId = ${userId} LIMIT 1`
-  ) as unknown as [Array<{ orgId: number }>];
+  );
+  const rows = normalizeRows(raw) as Array<{ orgId: number }>;
   return rows?.[0]?.orgId ?? null;
 }
 
@@ -89,9 +102,10 @@ async function assertRasRole(
   userId: number,
   allowed: Array<"admin" | "responder" | "staff">
 ): Promise<{ rasRole: "admin" | "responder" | "staff"; orgId: number | null }> {
-  const [rows] = await db.execute(
+  const raw = await db.execute(
     `SELECT rasRole FROM users WHERE id = ${userId} LIMIT 1`
-  ) as unknown as [Array<{ rasRole: string | null }>];
+  );
+  const rows = normalizeRows(raw) as Array<{ rasRole: string | null }>;
 
   const rasRole = rows?.[0]?.rasRole as "admin" | "responder" | "staff" | null;
   if (!rasRole || !allowed.includes(rasRole)) {
@@ -165,19 +179,20 @@ export const rasRouter = router({
       const { rasRole, orgId } = await assertRasRole(db, ctx.user.id, ["admin", "responder"]);
 
       // Verify facility belongs to this org
-      const [facilityRows] = await db.execute(
+      const facilityRaw = await db.execute(
         `SELECT id, orgId FROM facilities WHERE id = ${input.facilityId} LIMIT 1`
-      ) as unknown as [Array<{ id: number; orgId: number | null }>];
-
+      );
+      const facilityRows = normalizeRows(facilityRaw) as Array<{ id: number; orgId: number | null }>;
       const facility = facilityRows?.[0];
       if (!facility || (facility.orgId !== null && facility.orgId !== orgId)) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Facility not found in your organization." });
       }
 
       // Check for already-active alert for this facility
-      const [existingRows] = await db.execute(
+      const existingRaw = await db.execute(
         `SELECT id FROM alert_events WHERE facilityId = ${input.facilityId} AND alertStatus != 'resolved' LIMIT 1`
-      ) as unknown as [Array<{ id: number }>];
+      );
+      const existingRows = normalizeRows(existingRaw) as Array<{ id: number }>;
 
       if (existingRows?.length > 0) {
         throw new TRPCError({ code: "CONFLICT", message: "An active alert already exists for this facility. Resolve it before activating a new one." });
@@ -201,11 +216,12 @@ export const rasRouter = router({
       const alertEventId = result.insertId;
 
       // Create alert_recipients for all org users with a rasRole
-      const [orgUsers] = await db.execute(
+      const orgUsersRaw = await db.execute(
         `SELECT id, rasRole FROM users u
          JOIN org_members om ON om.userId = u.id
          WHERE om.orgId = ${orgId} AND u.rasRole IS NOT NULL`
-      ) as unknown as [Array<{ id: number; rasRole: string }>];
+      );
+      const orgUsers = normalizeRows(orgUsersRaw) as Array<{ id: number; rasRole: string }>;
 
       for (const u of orgUsers ?? []) {
         await db.execute(
@@ -243,9 +259,10 @@ export const rasRouter = router({
       const { orgId } = await assertRasRole(db, ctx.user.id, ["admin", "responder", "staff"]);
 
       // Verify alert belongs to this org
-      const [alertRows] = await db.execute(
+      const alertRaw = await db.execute(
         `SELECT id, orgId FROM alert_events WHERE id = ${input.alertEventId} AND orgId = ${orgId} LIMIT 1`
-      ) as unknown as [Array<{ id: number }>];
+      );
+      const alertRows = normalizeRows(alertRaw) as Array<{ id: number }>;
       if (!alertRows?.length) throw new TRPCError({ code: "NOT_FOUND", message: "Alert not found." });
 
       await db.execute(
@@ -263,9 +280,10 @@ export const rasRouter = router({
       const db = await getDb();
       const { orgId } = await assertRasRole(db, ctx.user.id, ["admin", "responder"]);
 
-      const [alertRows] = await db.execute(
+      const alertRaw = await db.execute(
         `SELECT id FROM alert_events WHERE id = ${input.alertEventId} AND orgId = ${orgId} LIMIT 1`
-      ) as unknown as [Array<{ id: number }>];
+      );
+      const alertRows = normalizeRows(alertRaw) as Array<{ id: number }>;
       if (!alertRows?.length) throw new TRPCError({ code: "NOT_FOUND", message: "Alert not found." });
 
       await db.execute(
@@ -293,9 +311,10 @@ export const rasRouter = router({
       const db = await getDb();
       const { orgId } = await assertRasRole(db, ctx.user.id, ["admin", "responder"]);
 
-      const [alertRows] = await db.execute(
+      const alertRaw = await db.execute(
         `SELECT id FROM alert_events WHERE id = ${input.alertEventId} AND orgId = ${orgId} LIMIT 1`
-      ) as unknown as [Array<{ id: number }>];
+      );
+      const alertRows = normalizeRows(alertRaw) as Array<{ id: number }>;
       if (!alertRows?.length) throw new TRPCError({ code: "NOT_FOUND", message: "Alert not found." });
 
       await db.execute(
@@ -330,9 +349,10 @@ export const rasRouter = router({
       const db = await getDb();
       const { orgId } = await assertRasRole(db, ctx.user.id, ["admin"]);
 
-      const [alertRows] = await db.execute(
+      const alertRaw = await db.execute(
         `SELECT id FROM alert_events WHERE id = ${input.alertEventId} AND orgId = ${orgId} LIMIT 1`
-      ) as unknown as [Array<{ id: number }>];
+      );
+      const alertRows = normalizeRows(alertRaw) as Array<{ id: number }>;
       if (!alertRows?.length) throw new TRPCError({ code: "NOT_FOUND", message: "Alert not found." });
 
       await db.execute(
