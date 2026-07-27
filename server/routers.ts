@@ -1486,19 +1486,22 @@ const incidentRouter = router({
   list: paidProcedure
     .input(z.object({ facilityId: z.number().optional() }))
     .query(async ({ ctx, input }) => {
-      // Platform admins can list all; regular users can only list their own facility's reports
-      if ((!["admin","ultra_admin"].includes(ctx.user.role))) {
-        if (!input.facilityId) throw new TRPCError({ code: "FORBIDDEN", message: "facilityId required" });
-        const facility = await getFacilityById(input.facilityId);
-        if (!facility) throw new TRPCError({ code: "NOT_FOUND" });
-        const isOwner = facility.userId === ctx.user.id;
-        let isOrgAdmin = false;
-        if (!isOwner && facility.orgId) {
-          const membership = await getOrgMemberRecord(facility.orgId, ctx.user.id);
-          isOrgAdmin = membership?.role === "super_admin" || membership?.role === "admin";
-        }
-        if (!isOwner && !isOrgAdmin) throw new TRPCError({ code: "FORBIDDEN" });
+      // Platform admins can list all
+      if ((["admin","ultra_admin"].includes(ctx.user.role))) {
+        return getIncidentReports(input.facilityId);
       }
+      // Org members: show only their org's incidents
+      const memberships = await getOrgMembershipForUser(ctx.user.id);
+      const orgId = memberships[0]?.orgId;
+      if (orgId) {
+        return getIncidentReportsByOrg(orgId);
+      }
+      // Fallback: facility-owned reports
+      if (!input.facilityId) throw new TRPCError({ code: "FORBIDDEN", message: "facilityId required" });
+      const facility = await getFacilityById(input.facilityId);
+      if (!facility) throw new TRPCError({ code: "NOT_FOUND" });
+      const isOwner = facility.userId === ctx.user.id;
+      if (!isOwner) throw new TRPCError({ code: "FORBIDDEN" });
       return getIncidentReports(input.facilityId);
     }),
 
