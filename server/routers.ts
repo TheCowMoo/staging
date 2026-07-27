@@ -4460,6 +4460,7 @@ export const appRouter = router({
         { name: "ADD organizations.plan", q: sql`ALTER TABLE \`organizations\` ADD COLUMN IF NOT EXISTS \`plan\` enum('free','paid') NOT NULL DEFAULT 'free'` },
         { name: "ADD organizations.planUpdatedAt", q: sql`ALTER TABLE \`organizations\` ADD COLUMN IF NOT EXISTS \`planUpdatedAt\` timestamp` },
         { name: "ADD organizations.externalSubscriptionId", q: sql`ALTER TABLE \`organizations\` ADD COLUMN IF NOT EXISTS \`externalSubscriptionId\` varchar(255)` },
+        { name: "ADD organizations.websiteResourceLinks", q: sql`ALTER TABLE \`organizations\` ADD COLUMN IF NOT EXISTS \`websiteResourceLinks\` text DEFAULT '[]'` },
         { name: "ADD users.emailVerified", q: sql`ALTER TABLE \`users\` ADD COLUMN IF NOT EXISTS \`emailVerified\` boolean NOT NULL DEFAULT false` },
         { name: "ADD users.emailVerifyToken", q: sql`ALTER TABLE \`users\` ADD COLUMN IF NOT EXISTS \`emailVerifyToken\` varchar(128)` },
         { name: "ADD users.passwordResetToken", q: sql`ALTER TABLE \`users\` ADD COLUMN IF NOT EXISTS \`passwordResetToken\` varchar(128)` },
