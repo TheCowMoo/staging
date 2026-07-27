@@ -75,9 +75,14 @@ const DEFAULT_TEMPLATES = {
   },
 };
 // ─── Helper: normalize drizzle/mysql2 execute result ─────────────────────────
-// drizzle-orm with mysql2 may return either [rows, fields] (raw mysql2) or
-// just rows (drizzle-wrapped). This helper normalizes both to a plain array.
+// drizzle-orm with mysql2 returns { rows: [...], fields: [...] }
+// but raw mysql2 returns [rows, fields] as a tuple.
+// This helper normalizes both to a plain rows array.
 function normalizeRows(raw: unknown): any[] {
+  if (!raw) return [];
+  if (typeof raw === 'object' && 'rows' in (raw as any)) {
+    return (raw as any).rows as any[];  // drizzle-orm { rows, fields } format
+  }
   if (Array.isArray(raw)) {
     // If first element is an array, treat as [rows, fields] tuple
     if (Array.isArray(raw[0])) return raw[0] as any[];
@@ -385,13 +390,14 @@ export const rasRouter = router({
 
       const facilityFilter = input.facilityId ? `AND ae.facilityId = ${input.facilityId}` : "";
 
-      const [alertRows] = await db.execute(
+      const alertRaw = await db.execute(
         `SELECT ae.*, u.name AS activatedByName
          FROM alert_events ae
          LEFT JOIN users u ON u.id = ae.createdByUserId
          WHERE ae.orgId = ${orgId} AND ae.alertStatus != 'resolved' ${facilityFilter}
          ORDER BY ae.createdAt DESC LIMIT 1`
-      ) as unknown as [Array<Record<string, unknown>>];
+      );
+      const alertRows = normalizeRows(alertRaw) as Array<Record<string, unknown>>;
 
       if (!alertRows?.length) return null;
 
@@ -399,18 +405,20 @@ export const rasRouter = router({
       const alertEventId = alert.id as number;
 
       // Get this user's recipient record
-      const [recipientRows] = await db.execute(
+      const recipientRaw = await db.execute(
         `SELECT * FROM alert_recipients WHERE alertEventId = ${alertEventId} AND userId = ${ctx.user.id} LIMIT 1`
-      ) as unknown as [Array<Record<string, unknown>>];
+      );
+      const recipientRows = normalizeRows(recipientRaw) as Array<Record<string, unknown>>;
 
       // Get status updates
-      const [updates] = await db.execute(
+      const updatesRaw = await db.execute(
         `SELECT asu.*, u.name AS updatedByName
          FROM alert_status_updates asu
          LEFT JOIN users u ON u.id = asu.createdByUserId
          WHERE asu.alertEventId = ${alertEventId}
          ORDER BY asu.createdAt ASC`
-      ) as unknown as [Array<Record<string, unknown>>];
+      );
+      const updates = normalizeRows(updatesRaw) as Array<Record<string, unknown>>;
 
       // Parse roleInstructions
       let roleInstructions: Record<string, string> = {};
@@ -437,26 +445,29 @@ export const rasRouter = router({
       const db = await getDb();
       const { orgId } = await assertRasRole(db, ctx.user.id, ["admin"]);
 
-      const [alertRows] = await db.execute(
+      const alertRaw = await db.execute(
         `SELECT * FROM alert_events WHERE id = ${input.alertEventId} AND orgId = ${orgId} LIMIT 1`
-      ) as unknown as [Array<Record<string, unknown>>];
+      );
+      const alertRows = normalizeRows(alertRaw) as Array<Record<string, unknown>>;
       if (!alertRows?.length) throw new TRPCError({ code: "NOT_FOUND", message: "Alert not found." });
 
-      const [recipients] = await db.execute(
+      const recipientsRaw = await db.execute(
         `SELECT ar.*, u.name AS userName, u.email AS userEmail, u.rasRole
          FROM alert_recipients ar
          LEFT JOIN users u ON u.id = ar.userId
          WHERE ar.alertEventId = ${input.alertEventId}
          ORDER BY ar.rasRoleAtTime, u.name`
-      ) as unknown as [Array<Record<string, unknown>>];
+      );
+      const recipients = normalizeRows(recipientsRaw) as Array<Record<string, unknown>>;
 
-      const [updates] = await db.execute(
+      const updatesRaw = await db.execute(
         `SELECT asu.*, u.name AS updatedByName
          FROM alert_status_updates asu
          LEFT JOIN users u ON u.id = asu.createdByUserId
          WHERE asu.alertEventId = ${input.alertEventId}
          ORDER BY asu.createdAt ASC`
-      ) as unknown as [Array<Record<string, unknown>>];
+      );
+      const updates = normalizeRows(updatesRaw) as Array<Record<string, unknown>>;
 
       // Delivery summary counts
       const total = recipients.length;
@@ -481,17 +492,19 @@ export const rasRouter = router({
       const { orgId } = await assertRasRole(db, ctx.user.id, ["admin"]);
 
       // All users in org with a rasRole
-      const [orgUsers] = await db.execute(
+      const orgUsersRaw = await db.execute(
         `SELECT u.id, u.name, u.email, u.rasRole
          FROM users u
          JOIN org_members om ON om.userId = u.id
          WHERE om.orgId = ${orgId} AND u.rasRole IS NOT NULL`
-      ) as unknown as [Array<{ id: number; name: string; email: string; rasRole: string }>];
+      );
+      const orgUsers = normalizeRows(orgUsersRaw) as Array<{ id: number; name: string; email: string; rasRole: string }>;
 
       // Users with at least one push subscription in this org
-      const [pushRows] = await db.execute(
+      const pushRaw = await db.execute(
         `SELECT DISTINCT userId FROM push_subscriptions WHERE orgId = ${orgId}`
-      ) as unknown as [Array<{ userId: number }>];
+      );
+      const pushRows = normalizeRows(pushRaw) as Array<{ userId: number }>;
 
       const pushEnabledIds = new Set(pushRows.map((r) => r.userId));
 
@@ -569,15 +582,16 @@ export const rasRouter = router({
     .query(async ({ ctx }) => {
       const db = await getDb();
       await assertRasRole(db, ctx.user.id, ["admin"]);
-      const [rows] = await db.execute(
+      const listRaw = await db.execute(
         `SELECT u.id, u.name, u.email, u.role, u.rasRole,
                 COUNT(ps.id) AS pushSubscriptionCount
          FROM users u
          LEFT JOIN push_subscriptions ps ON ps.userId = u.id
          GROUP BY u.id
          ORDER BY u.name ASC`
-      ) as unknown as [Array<Record<string, unknown>>];
-      return rows ?? [];
+      );
+      const listRows = normalizeRows(listRaw) as Array<Record<string, unknown>>;
+      return listRows ?? [];
     }),
 
   setRasRole: paidProcedure
@@ -593,9 +607,10 @@ export const rasRouter = router({
         await assertRasRole(db, ctx.user.id, ["admin"]);
       }
       // Verify target user exists
-      const [targetRows] = await db.execute(
+      const targetRaw = await db.execute(
         `SELECT id, name FROM users WHERE id = ${input.targetUserId} LIMIT 1`
-      ) as unknown as [Array<Record<string, unknown>>];
+      );
+      const targetRows = normalizeRows(targetRaw) as Array<Record<string, unknown>>;
       const target = targetRows?.[0];
       if (!target) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
       const rasRoleVal = input.rasRole === null ? "NULL" : `'${input.rasRole}'`;
@@ -619,7 +634,7 @@ export const rasRouter = router({
       const db = await getDb();
       const { orgId } = await assertRasRole(db, ctx.user.id, ["admin"]);
 
-      const [rows] = await db.execute(
+      const historyRaw = await db.execute(
         `SELECT ae.*, u.name AS activatedByName, f.name AS facilityName
          FROM alert_events ae
          LEFT JOIN users u ON u.id = ae.createdByUserId
@@ -627,8 +642,9 @@ export const rasRouter = router({
          WHERE ae.orgId = ${orgId}
          ORDER BY ae.createdAt DESC
          LIMIT ${input.limit}`
-      ) as unknown as [Array<Record<string, unknown>>];
+      );
+      const historyRows = normalizeRows(historyRaw) as Array<Record<string, unknown>>;
 
-      return rows ?? [];
+      return historyRows ?? [];
     }),
 });
