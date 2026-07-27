@@ -81,6 +81,12 @@ initVapid();;
 
 const facilityRouter = router({
   list: paidProcedure.query(async ({ ctx }) => {
+    // Resolve user's org and filter by org if member
+    const memberships = await getOrgMembershipForUser(ctx.user.id);
+    const orgId = memberships[0]?.orgId;
+    if (orgId) {
+      return getFacilitiesByOrg(orgId);
+    }
     return getFacilitiesByUser(ctx.user.id);
   }),
 
@@ -1211,10 +1217,37 @@ const photoRouter = router({
 // â”€â”€â”€ Dashboard Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const dashboardRouter = router({
   summary: paidProcedure.query(async ({ ctx }) => {
-    const userFacilities = await getFacilitiesByUser(ctx.user.id);
-    const userAudits = await getAuditsByUser(ctx.user.id);
-    const completedAudits = userAudits.filter((a) => a.status === "completed");
-    const inProgressAudits = userAudits.filter((a) => a.status === "in_progress");
+    // Resolve the user's org
+    const memberships = await getOrgMembershipForUser(ctx.user.id);
+    const orgId = memberships[0]?.orgId;
+    const isPlatformAdmin = (["admin","ultra_admin"].includes(ctx.user.role));
+
+    let facilitiesForDashboard;
+    if (orgId) {
+      facilitiesForDashboard = await getFacilitiesByOrg(orgId);
+    } else {
+      facilitiesForDashboard = await getFacilitiesByUser(ctx.user.id);
+    }
+
+    // For audits, get by user if no org, otherwise get by org's facilities
+    let userAudits = [];
+    if (orgId) {
+      // Get all audits for org's facilities
+      const facilityIds = facilitiesForDashboard.map(f => f.id);
+      const db = await getDb();
+      if (db && facilityIds.length > 0) {
+        const { inArray } = await import("drizzle-orm");
+        const { audits: auditsTable } = await import("../drizzle/schema");
+        userAudits = await db.select().from(auditsTable)
+          .where(inArray(auditsTable.facilityId, facilityIds))
+          .orderBy(desc(auditsTable.createdAt));
+      }
+    } else {
+      userAudits = await getAuditsByUser(ctx.user.id);
+    }
+
+    const completedAudits = userAudits.filter((a: any) => a.status === "completed");
+    const inProgressAudits = userAudits.filter((a: any) => a.status === "in_progress");
 
     const riskDistribution: Record<string, number> = {
       Low: 0, Moderate: 0, Elevated: 0, High: 0, Critical: 0,
@@ -1226,13 +1259,13 @@ const dashboardRouter = router({
     }
 
     return {
-      totalFacilities: userFacilities.length,
+      totalFacilities: facilitiesForDashboard.length,
       totalAudits: userAudits.length,
       completedAudits: completedAudits.length,
       inProgressAudits: inProgressAudits.length,
       riskDistribution,
       recentAudits: userAudits.slice(0, 5),
-      facilities: userFacilities,
+      facilities: facilitiesForDashboard,
     };
   }),
 });
