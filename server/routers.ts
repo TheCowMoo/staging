@@ -1486,9 +1486,21 @@ const incidentRouter = router({
   list: paidProcedure
     .input(z.object({ facilityId: z.number().optional() }))
     .query(async ({ ctx, input }) => {
-      // Platform admins can list all
-      if ((["admin","ultra_admin"].includes(ctx.user.role))) {
+      // Ultra admins (FiveStones staff) can list across all orgs
+      if (ctx.user.role === "ultra_admin") {
         return getIncidentReports(input.facilityId);
+      }
+      // Platform admin: scope to their org context or require facilityId
+      if (ctx.user.role === "admin") {
+        if (input.facilityId) {
+          return getIncidentReports(input.facilityId);
+        }
+        const memberships = await getOrgMembershipForUser(ctx.user.id);
+        const orgId = memberships[0]?.orgId;
+        if (orgId) {
+          return getIncidentReportsByOrg(orgId);
+        }
+        throw new TRPCError({ code: "FORBIDDEN", message: "facilityId or org membership required" });
       }
       // Org members: show only their org's incidents
       const memberships = await getOrgMembershipForUser(ctx.user.id);
