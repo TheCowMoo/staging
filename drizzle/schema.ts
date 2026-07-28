@@ -335,6 +335,7 @@ export type InsertAuditPhoto = typeof auditPhotos.$inferInsert;
 // ─── Tester Feedback ─────────────────────────────────────────────────────────
 export const testerFeedback = mysqlTable("tester_feedback", {
   id: int("id").autoincrement().primaryKey(),
+  orgId: int("orgId"),
   auditId: int("auditId").notNull(),
   facilityId: int("facilityId").notNull(),
   userId: int("userId").notNull(),
@@ -360,6 +361,7 @@ export type InsertTesterFeedback = typeof testerFeedback.$inferInsert;
 // ─── Question Flags ───────────────────────────────────────────────────────────
 export const questionFlags = mysqlTable("question_flags", {
   id: int("id").autoincrement().primaryKey(),
+  orgId: int("orgId"),
   auditId: int("auditId").notNull(),
   userId: int("userId").notNull(),
   questionId: varchar("questionId", { length: 64 }).notNull(),
@@ -533,6 +535,7 @@ export type InsertAuditLog = typeof auditLogs.$inferInsert;
 // and optional photo ID verification.
 export const visitorLogs = mysqlTable("visitor_logs", {
   id: int("id").autoincrement().primaryKey(),
+  orgId: int("orgId"),
   // Facility this visitor is associated with (optional — can be standalone)
   facilityId: int("facilityId"),
   // Logged by which platform user
@@ -658,6 +661,7 @@ export type InsertEapSectionVersion = typeof eapSectionVersions.$inferInsert;
 // Admin-managed list of names that trigger an immediate alert when they check in.
 export const flaggedVisitors = mysqlTable("flagged_visitors", {
   id: int("id").autoincrement().primaryKey(),
+  orgId: int("orgId"),
   // The name to match against (case-insensitive partial match)
   name: varchar("name", { length: 255 }).notNull(),
   // Optional reason/notes visible only to admin

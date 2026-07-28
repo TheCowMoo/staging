@@ -1126,17 +1126,20 @@ export async function getFlaggedVisitorsByOrg(orgId: number, activeOnly = true) 
     .from(facilities)
     .where(eq(facilities.orgId, orgId));
   const facilityIds = orgFacilities.map(f => f.id);
+  // Filter by orgId OR by facilities belonging to this org — prevents cross-org data leak
   const rows = await db.select().from(flaggedVisitors)
     .where(activeOnly ? eq(flaggedVisitors.active, true) : undefined)
     .orderBy(desc(flaggedVisitors.createdAt));
-  // Filter: entry has no facilityId (org-level) OR belongs to a facility in this org
-  return rows.filter(r => !r.facilityId || facilityIds.includes(r.facilityId));
+  return rows.filter(r =>
+    r.orgId === orgId || (r.facilityId && facilityIds.includes(r.facilityId))
+  );
 }
 
 export async function addFlaggedVisitor(data: {
   name: string;
   reason?: string;
   addedByUserId: number;
+  orgId?: number;
   facilityId?: number;
   flagLevel?: "red" | "yellow";
 }) {
@@ -1146,6 +1149,7 @@ export async function addFlaggedVisitor(data: {
     name: data.name,
     reason: data.reason ?? null,
     addedByUserId: data.addedByUserId,
+    orgId: data.orgId ?? null,
     facilityId: data.facilityId ?? null,
     active: true,
     flagLevel: data.flagLevel ?? "red",

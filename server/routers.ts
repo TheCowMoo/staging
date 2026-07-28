@@ -2325,9 +2325,20 @@ const visitorRouter = router({
       notes: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
+      // Resolve orgId from facility or user membership
+      let orgId: number | undefined;
+      if (input.facilityId) {
+        const facility = await getFacilityById(input.facilityId);
+        if (facility?.orgId) orgId = facility.orgId;
+      }
+      if (!orgId) {
+        const memberships = await getOrgMembershipForUser(ctx.user.id);
+        orgId = memberships[0]?.orgId;
+      }
       return createVisitorLog({
         ...input,
         loggedByUserId: ctx.user.id,
+        orgId: orgId ?? null,
         timeIn: input.timeIn ?? new Date(),
       });
     }),
@@ -2388,10 +2399,14 @@ const flaggedVisitorRouter = router({
       flagLevel: z.enum(["red", "yellow"]).optional().default("red"),
     }))
     .mutation(async ({ ctx, input }) => {
+      // Resolve orgId from user's membership for proper org-scoping
+      const memberships = await getOrgMembershipForUser(ctx.user.id);
+      const orgId = memberships[0]?.orgId;
       await addFlaggedVisitor({
         name: input.name,
         reason: input.reason,
         addedByUserId: ctx.user.id,
+        orgId,
         facilityId: input.facilityId,
         flagLevel: input.flagLevel,
       });
@@ -3898,8 +3913,18 @@ JSON SCHEMA (return ONLY valid JSON matching this schema)
 const staffCheckinRouter = router({
   list: paidProcedure
     .input(z.object({ facilityId: z.number().optional(), orgId: z.number().optional() }))
-    .query(async ({ input }) => {
-      return getStaffCheckins(input.facilityId, input.orgId);
+    .query(async ({ ctx, input }) => {
+      // Require at least one filter to prevent cross-org data leak
+      const resolvedOrgId = input.orgId;
+      if (!input.facilityId && !resolvedOrgId) {
+        // Default to user's primary org if no filter provided
+        const memberships = await getOrgMembershipForUser(ctx.user.id);
+        if (memberships[0]?.orgId) {
+          return getStaffCheckins(undefined, memberships[0].orgId);
+        }
+        return [];
+      }
+      return getStaffCheckins(input.facilityId, resolvedOrgId);
     }),
   create: paidProcedure
     .input(z.object({
