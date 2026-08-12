@@ -72,6 +72,8 @@ async function startServer() {
       "https://fonts.googleapis.com",
       "https://maps.googleapis.com",
       "https://forge.butterfly-effect.dev",
+      "https://www.googletagmanager.com",
+      "https://*.google-analytics.com",
     ],
     styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
     fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],

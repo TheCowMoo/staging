@@ -3,6 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
+import AnalyticsProvider from "@/components/AnalyticsProvider";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import AppLayout from "./components/AppLayout";
 import Home from "./pages/Home";
@@ -159,6 +160,8 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
+      {/* Always-on GA4 tracking (page views, user identity, clicks, forms, errors) */}
+      <AnalyticsProvider />
       {/* switchable=true enables dark/light toggle stored in localStorage */}
       <ThemeProvider defaultTheme="light" switchable>
         <TooltipProvider>

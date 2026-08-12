@@ -137,7 +137,10 @@ const facilityRouter = router({
       notes: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const newFacility = await createFacility({ ...input, userId: ctx.user.id });
+      // Scope new facilities to the user's org so they appear in the org-filtered list
+      const memberships = await getOrgMembershipForUser(ctx.user.id);
+      const orgId = memberships[0]?.orgId;
+      const newFacility = await createFacility({ ...input, userId: ctx.user.id, orgId });
       await writeAuditLog(buildLogContext({ user: ctx.user, req: ctx.req }), {
         action: "create",
         entityType: "facility",
@@ -2991,9 +2994,12 @@ const onboardingRouter = router({
       orgId: z.number().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const { createAudit: shouldCreateAudit, orgId, ...facilityData } = input;
+      const { createAudit: shouldCreateAudit, orgId: inputOrgId, ...facilityData } = input;
+      // Default orgId to the user's org so the facility appears in the org-scoped list
+      const memberships = await getOrgMembershipForUser(ctx.user.id);
+      const orgId = inputOrgId ?? memberships[0]?.orgId;
       // 1. Create the facility record
-      const newFacility = await createFacility({ ...facilityData, userId: ctx.user.id, orgId: orgId ?? undefined });
+      const newFacility = await createFacility({ ...facilityData, userId: ctx.user.id, orgId });
       if (!newFacility) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Facility creation failed" });
       await writeAuditLog(buildLogContext({ user: ctx.user, req: ctx.req }), {
         action: "create",
