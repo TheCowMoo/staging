@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Shield, Sparkles, Eye, EyeOff } from "lucide-react";
+import { executeRecaptcha } from "@/lib/recaptcha";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -26,11 +27,12 @@ export default function Login() {
     e.preventDefault();
     setLoginLoading(true);
     try {
+      const recaptchaToken = await executeRecaptcha("login");
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+        body: JSON.stringify({ email: loginEmail, password: loginPassword, recaptchaToken }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -49,11 +51,12 @@ export default function Login() {
     e.preventDefault();
     setRegLoading(true);
     try {
+      const recaptchaToken = await executeRecaptcha("register");
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email: regEmail, password: regPassword, name: regName }),
+        body: JSON.stringify({ email: regEmail, password: regPassword, name: regName, recaptchaToken }),
       });
       const data = await res.json();
       if (!res.ok) {

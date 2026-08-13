@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Shield, ArrowLeft, CheckCircle, XCircle } from "lucide-react";
+import { executeRecaptcha } from "@/lib/recaptcha";
 
 export default function ResetPassword() {
   const [, setLocation] = useLocation();
@@ -32,10 +33,11 @@ export default function ResetPassword() {
     setLoading(true);
     setError(null);
     try {
+      const recaptchaToken = await executeRecaptcha("reset_password");
       const res = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, newPassword }),
+        body: JSON.stringify({ token, newPassword, recaptchaToken }),
       });
       const data = await res.json();
       if (!res.ok) {

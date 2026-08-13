@@ -1239,7 +1239,7 @@ const dashboardRouter = router({
       const facilityIds = facilitiesForDashboard.map(f => f.id);
       const db = await getDb();
       if (db && facilityIds.length > 0) {
-        const { inArray } = await import("drizzle-orm");
+        const { inArray, desc } = await import("drizzle-orm");
         const { audits: auditsTable } = await import("../drizzle/schema");
         userAudits = await db.select().from(auditsTable)
           .where(inArray(auditsTable.facilityId, facilityIds))

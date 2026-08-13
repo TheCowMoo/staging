@@ -16,6 +16,7 @@ import { sdk } from "./sdk";
 import { createHash, randomBytes } from "crypto";
 import { createGhlContact, sendGhlEmail } from "./ghl";
 import { ENV } from "./env";
+import { verifyRecaptcha } from "./recaptcha";
 
 function hashPassword(password: string, salt: string): string {
   return createHash("sha256").update(salt + password).digest("hex");
@@ -23,6 +24,20 @@ function hashPassword(password: string, salt: string): string {
 
 function generateToken(): string {
   return randomBytes(32).toString("hex");
+}
+
+/**
+ * Verify the reCAPTCHA v3 token in the request body for the given action.
+ * Sends a 400 response and returns false when verification fails.
+ * Returns true when the token passes, or when no secret is configured (dev).
+ */
+async function requireRecaptcha(req: Request, res: Response, action: string): Promise<boolean> {
+  const { recaptchaToken } = req.body ?? {};
+  const result = await verifyRecaptcha(recaptchaToken, req.ip, action);
+  if (result.success) return true;
+  console.warn(`[reCAPTCHA] Blocked action "${action}": ${result.reason ?? "unknown"}`);
+  res.status(400).json({ error: "CAPTCHA verification failed. Please try again." });
+  return false;
 }
 
 function verificationEmailHtml(name: string, verifyUrl: string): string {
@@ -99,6 +114,7 @@ export function registerOAuthRoutes(app: Express) {
       res.status(400).json({ error: "email and password are required" });
       return;
     }
+    if (!(await requireRecaptcha(req, res, "login"))) return;
     try {
       const user = await db.getUserByEmail(email.toLowerCase().trim());
       if (!user || !user.passwordHash || !user.passwordSalt) {
@@ -131,6 +147,7 @@ export function registerOAuthRoutes(app: Express) {
       res.status(400).json({ error: "email, password, and name are required" });
       return;
     }
+    if (!(await requireRecaptcha(req, res, "register"))) return;
     try {
       const existing = await db.getUserByEmail(email.toLowerCase().trim());
       if (existing) {
@@ -224,6 +241,7 @@ export function registerOAuthRoutes(app: Express) {
       res.status(400).json({ error: "email is required" });
       return;
     }
+    if (!(await requireRecaptcha(req, res, "forgot_password"))) return;
     // Always return 200 to prevent email enumeration
     res.json({ ok: true, message: "If an account with that email exists, a reset link has been sent." });
     // Fire-and-forget
@@ -259,6 +277,7 @@ export function registerOAuthRoutes(app: Express) {
       res.status(400).json({ error: "Password must be at least 8 characters" });
       return;
     }
+    if (!(await requireRecaptcha(req, res, "reset_password"))) return;
     try {
       const salt = randomBytes(16).toString("hex");
       const hash = hashPassword(newPassword, salt);

@@ -37,4 +37,8 @@ export const ENV = {
 
   // Webhook secret
   webhookSecret: process.env.WEBHOOK_SECRET ?? "change-me",
+
+  // reCAPTCHA v3 — bot protection for public forms (login, register, password reset)
+  recaptchaSecretKey: process.env.RECAPTCHA_SECRET_KEY ?? "",
+  recaptchaScoreThreshold: Number(process.env.RECAPTCHA_SCORE_THRESHOLD ?? 0.5),
 };

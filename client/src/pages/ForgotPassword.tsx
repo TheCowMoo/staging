@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Shield, ArrowLeft, Mail } from "lucide-react";
+import { executeRecaptcha } from "@/lib/recaptcha";
 
 export default function ForgotPassword() {
   const [, setLocation] = useLocation();
@@ -17,10 +18,11 @@ export default function ForgotPassword() {
     e.preventDefault();
     setLoading(true);
     try {
+      const recaptchaToken = await executeRecaptcha("forgot_password");
       const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, recaptchaToken }),
       });
       const data = await res.json();
       if (!res.ok) {

@@ -74,6 +74,8 @@ async function startServer() {
       "https://forge.butterfly-effect.dev",
       "https://www.googletagmanager.com",
       "https://*.google-analytics.com",
+      "https://www.google.com",
+      "https://www.gstatic.com",
     ],
     styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
     fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
@@ -88,6 +90,8 @@ async function startServer() {
     frameSrc: [
       "'self'",
       "https://*.s3.amazonaws.com",
+      "https://www.google.com",
+      "https://www.recaptcha.net",
       ...(process.env.S3_ENDPOINT ? [process.env.S3_ENDPOINT.replace(/\/+$/, "")] : []),
     ],
     mediaSrc: ["'self'"],
