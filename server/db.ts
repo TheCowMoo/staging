@@ -1015,6 +1015,31 @@ export async function updateUserRole(
   await db.update(users).set({ role }).where(eq(users.id, userId));
 }
 
+// ─── Safe delete helper ───────────────────────────────────────────────────────
+/**
+ * Runs a DB operation but tolerates a missing table (schema drift).
+ * MySQL error code 1146 (ER_NO_SUCH_TABLE) is swallowed so a table that was
+ * never migrated on an older DB doesn't abort the whole user deletion.
+ * All other errors are rethrown.
+ */
+async function safeDelete<T>(fn: () => Promise<T>): Promise<T | null> {
+  try {
+    return await fn();
+  } catch (err: any) {
+    const cause = err?.cause ?? err;
+    const msg = String(cause?.message ?? cause?.sqlMessage ?? cause ?? "");
+    const code = String(cause?.code ?? cause?.errno ?? "");
+    if (
+      code === "ER_NO_SUCH_TABLE" || code === "1146" ||
+      /doesn'?t exist|does not exist|no such table/i.test(msg)
+    ) {
+      console.warn("[deleteUser] Skipping missing table:", msg);
+      return null;
+    }
+    throw err;
+  }
+}
+
 // ─── Delete User (hard delete + cleanup) ──────────────────────────────────────
 /**
  * Permanently deletes a user and cleans up all related records.
@@ -1041,37 +1066,37 @@ export async function deleteUser(
   if (!db) throw new Error("Database not available");
 
   // 1) Delete owned / assigned personal rows
-  await db.delete(orgMembers).where(eq(orgMembers.userId, userId));
-  await db.delete(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
-  await db.delete(apiKeys).where(eq(apiKeys.userId, userId));
-  await db.delete(personnelLocations).where(eq(personnelLocations.userId, userId));
-  await db.delete(microDrillAssignments).where(or(
+  await safeDelete(() => db.delete(orgMembers).where(eq(orgMembers.userId, userId)));
+  await safeDelete(() => db.delete(pushSubscriptions).where(eq(pushSubscriptions.userId, userId)));
+  await safeDelete(() => db.delete(apiKeys).where(eq(apiKeys.userId, userId)));
+  await safeDelete(() => db.delete(personnelLocations).where(eq(personnelLocations.userId, userId)));
+  await safeDelete(() => db.delete(microDrillAssignments).where(or(
     eq(microDrillAssignments.assignedByUserId, userId),
     eq(microDrillAssignments.assignedToUserId, userId),
-  ));
-  await db.delete(staffCheckins).where(eq(staffCheckins.recordedByUserId, userId));
-  await db.delete(liabilityScans).where(eq(liabilityScans.userId, userId));
-  await db.delete(scanShareTokens).where(eq(scanShareTokens.createdByUserId, userId));
-  await db.delete(drillSessions).where(eq(drillSessions.scheduledByUserId, userId));
-  await db.delete(drillTemplates).where(eq(drillTemplates.createdByUserId, userId));
-  await db.delete(trainingModules).where(eq(trainingModules.createdByUserId, userId));
-  await db.delete(facilityFloorMaps).where(eq(facilityFloorMaps.createdByUserId, userId));
-  await db.delete(notifications).where(eq(notifications.userId, userId));
-  await db.delete(alertRecipients).where(eq(alertRecipients.userId, userId));
-  await db.delete(alertStatusUpdates).where(eq(alertStatusUpdates.createdByUserId, userId));
-  await db.delete(visitorLogs).where(eq(visitorLogs.loggedByUserId, userId));
-  await db.delete(flaggedVisitors).where(eq(flaggedVisitors.addedByUserId, userId));
-  await db.delete(testerFeedback).where(eq(testerFeedback.userId, userId));
-  await db.delete(questionFlags).where(eq(questionFlags.userId, userId));
-  await db.delete(userInvites).where(eq(userInvites.invitedByUserId, userId));
-  await db.delete(facilityAttachments).where(eq(facilityAttachments.uploadedBy, userId));
+  )));
+  await safeDelete(() => db.delete(staffCheckins).where(eq(staffCheckins.recordedByUserId, userId)));
+  await safeDelete(() => db.delete(liabilityScans).where(eq(liabilityScans.userId, userId)));
+  await safeDelete(() => db.delete(scanShareTokens).where(eq(scanShareTokens.createdByUserId, userId)));
+  await safeDelete(() => db.delete(drillSessions).where(eq(drillSessions.scheduledByUserId, userId)));
+  await safeDelete(() => db.delete(drillTemplates).where(eq(drillTemplates.createdByUserId, userId)));
+  await safeDelete(() => db.delete(trainingModules).where(eq(trainingModules.createdByUserId, userId)));
+  await safeDelete(() => db.delete(facilityFloorMaps).where(eq(facilityFloorMaps.createdByUserId, userId)));
+  await safeDelete(() => db.delete(notifications).where(eq(notifications.userId, userId)));
+  await safeDelete(() => db.delete(alertRecipients).where(eq(alertRecipients.userId, userId)));
+  await safeDelete(() => db.delete(alertStatusUpdates).where(eq(alertStatusUpdates.createdByUserId, userId)));
+  await safeDelete(() => db.delete(visitorLogs).where(eq(visitorLogs.loggedByUserId, userId)));
+  await safeDelete(() => db.delete(flaggedVisitors).where(eq(flaggedVisitors.addedByUserId, userId)));
+  await safeDelete(() => db.delete(testerFeedback).where(eq(testerFeedback.userId, userId)));
+  await safeDelete(() => db.delete(questionFlags).where(eq(questionFlags.userId, userId)));
+  await safeDelete(() => db.delete(userInvites).where(eq(userInvites.invitedByUserId, userId)));
+  await safeDelete(() => db.delete(facilityAttachments).where(eq(facilityAttachments.uploadedBy, userId)));
 
   // 2) Detach nullable references
-  await db.update(users).set({ impersonatingUserId: null }).where(eq(users.impersonatingUserId, userId));
-  await db.update(auditLogs).set({ userId: null }).where(eq(auditLogs.userId, userId));
-  await db.update(eapSections).set({ lastEditedByUserId: null }).where(eq(eapSections.lastEditedByUserId, userId));
-  await db.update(eapSectionVersions).set({ savedByUserId: null }).where(eq(eapSectionVersions.savedByUserId, userId));
-  await db.update(btamManagementPlan).set({ responsibleParty: null }).where(eq(btamManagementPlan.responsibleParty, userId));
+  await safeDelete(() => db.update(users).set({ impersonatingUserId: null }).where(eq(users.impersonatingUserId, userId)));
+  await safeDelete(() => db.update(auditLogs).set({ userId: null }).where(eq(auditLogs.userId, userId)));
+  await safeDelete(() => db.update(eapSections).set({ lastEditedByUserId: null }).where(eq(eapSections.lastEditedByUserId, userId)));
+  await safeDelete(() => db.update(eapSectionVersions).set({ savedByUserId: null }).where(eq(eapSectionVersions.savedByUserId, userId)));
+  await safeDelete(() => db.update(btamManagementPlan).set({ responsibleParty: null }).where(eq(btamManagementPlan.responsibleParty, userId)));
 
   // 3) Facilities + audits
   const userFacilities = await db.select({ id: facilities.id }).from(facilities).where(eq(facilities.userId, userId));
@@ -1081,9 +1106,9 @@ export async function deleteUser(
 
   if (reassignToUserId && reassignToUserId !== userId) {
     for (const f of userFacilities) {
-      await db.update(facilities).set({ userId: reassignToUserId }).where(eq(facilities.id, f.id));
+      await safeDelete(() => db.update(facilities).set({ userId: reassignToUserId }).where(eq(facilities.id, f.id)));
     }
-    await db.update(audits).set({ auditorId: reassignToUserId }).where(eq(audits.auditorId, userId));
+    await safeDelete(() => db.update(audits).set({ auditorId: reassignToUserId }).where(eq(audits.auditorId, userId)));
   } else {
     // Audit ids: audits of the user's facilities + audits they performed directly
     const auditIds: number[] = [];
@@ -1097,21 +1122,21 @@ export async function deleteUser(
     }
 
     if (auditIds.length > 0) {
-      await db.delete(auditResponses).where(inArray(auditResponses.auditId, auditIds));
-      await db.delete(threatFindings).where(inArray(threatFindings.auditId, auditIds));
-      await db.delete(auditPhotos).where(inArray(auditPhotos.auditId, auditIds));
-      await db.delete(correctiveActionChecks).where(inArray(correctiveActionChecks.auditId, auditIds));
-      await db.delete(eapSectionVersions).where(inArray(eapSectionVersions.auditId, auditIds));
-      await db.delete(eapSections).where(inArray(eapSections.auditId, auditIds));
-      await db.delete(facilityAttachments).where(inArray(facilityAttachments.auditId, auditIds));
-      await db.delete(audits).where(inArray(audits.id, auditIds));
+      await safeDelete(() => db.delete(auditResponses).where(inArray(auditResponses.auditId, auditIds)));
+      await safeDelete(() => db.delete(threatFindings).where(inArray(threatFindings.auditId, auditIds)));
+      await safeDelete(() => db.delete(auditPhotos).where(inArray(auditPhotos.auditId, auditIds)));
+      await safeDelete(() => db.delete(correctiveActionChecks).where(inArray(correctiveActionChecks.auditId, auditIds)));
+      await safeDelete(() => db.delete(eapSectionVersions).where(inArray(eapSectionVersions.auditId, auditIds)));
+      await safeDelete(() => db.delete(eapSections).where(inArray(eapSections.auditId, auditIds)));
+      await safeDelete(() => db.delete(facilityAttachments).where(inArray(facilityAttachments.auditId, auditIds)));
+      await safeDelete(() => db.delete(audits).where(inArray(audits.id, auditIds)));
       auditsDeleted = auditIds.length;
     }
 
     if (facilityIds.length > 0) {
-      await db.delete(facilityAlertSettings).where(inArray(facilityAlertSettings.facilityId, facilityIds));
-      await db.delete(facilityFloorMaps).where(inArray(facilityFloorMaps.facilityId, facilityIds));
-      await db.delete(facilities).where(inArray(facilities.id, facilityIds));
+      await safeDelete(() => db.delete(facilityAlertSettings).where(inArray(facilityAlertSettings.facilityId, facilityIds)));
+      await safeDelete(() => db.delete(facilityFloorMaps).where(inArray(facilityFloorMaps.facilityId, facilityIds)));
+      await safeDelete(() => db.delete(facilities).where(inArray(facilities.id, facilityIds)));
       facilitiesDeleted = facilityIds.length;
     }
   }
@@ -1120,9 +1145,9 @@ export async function deleteUser(
   const userAlertEvents = await db.select({ id: alertEvents.id }).from(alertEvents).where(eq(alertEvents.createdByUserId, userId));
   const alertEventIds = userAlertEvents.map((e) => e.id);
   if (alertEventIds.length > 0) {
-    await db.delete(alertRecipients).where(inArray(alertRecipients.alertEventId, alertEventIds));
-    await db.delete(alertStatusUpdates).where(inArray(alertStatusUpdates.alertEventId, alertEventIds));
-    await db.delete(alertEvents).where(inArray(alertEvents.id, alertEventIds));
+    await safeDelete(() => db.delete(alertRecipients).where(inArray(alertRecipients.alertEventId, alertEventIds)));
+    await safeDelete(() => db.delete(alertStatusUpdates).where(inArray(alertStatusUpdates.alertEventId, alertEventIds)));
+    await safeDelete(() => db.delete(alertEvents).where(inArray(alertEvents.id, alertEventIds)));
   }
 
   // 5) Delete the user
