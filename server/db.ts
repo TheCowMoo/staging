@@ -1,4 +1,4 @@
-import { eq, desc, and, or, isNull, lte, gte } from "drizzle-orm";
+import { eq, desc, and, or, isNull, lte, gte, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users,
@@ -33,6 +33,12 @@ import {
   microDrillAssignments, InsertMicroDrillAssignment,
   facilityFloorMaps, InsertFacilityFloorMap,
   alertEvents,
+  pushSubscriptions,
+  alertRecipients,
+  alertStatusUpdates,
+  facilityAlertSettings,
+  notifications,
+  btamManagementPlan,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -1007,6 +1013,122 @@ export async function updateUserRole(
   const db = await getDb();
   if (!db) return;
   await db.update(users).set({ role }).where(eq(users.id, userId));
+}
+
+// ─── Delete User (hard delete + cleanup) ──────────────────────────────────────
+/**
+ * Permanently deletes a user and cleans up all related records.
+ *
+ * - Owned/assigned rows are deleted (org memberships, push subscriptions, api
+ *   keys, personnel locations, micro-drill assignments, scans, drills, training,
+ *   floor maps, notifications, alert recipients/updates, visitor logs, flagged
+ *   visitors, feedback, question flags, user invites, attachments).
+ * - Nullable references are detached (impersonation flags, audit logs, EAP edit
+ *   history, BTAM responsible-party).
+ * - Facilities owned by the user (and their audits + audit children) are either
+ *   reassigned to `reassignToUserId` (when provided) or cascade-deleted.
+ * - Alert events created by the user are removed together with their recipient
+ *   and status-update rows.
+ *
+ * Note: BTAM cases created by the user are left in place (org-level records);
+ * only `btam_management_plan.responsibleParty` is detached.
+ */
+export async function deleteUser(
+  userId: number,
+  reassignToUserId?: number
+): Promise<{ facilitiesDeleted: number; auditsDeleted: number }> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // 1) Delete owned / assigned personal rows
+  await db.delete(orgMembers).where(eq(orgMembers.userId, userId));
+  await db.delete(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
+  await db.delete(apiKeys).where(eq(apiKeys.userId, userId));
+  await db.delete(personnelLocations).where(eq(personnelLocations.userId, userId));
+  await db.delete(microDrillAssignments).where(or(
+    eq(microDrillAssignments.assignedByUserId, userId),
+    eq(microDrillAssignments.assignedToUserId, userId),
+  ));
+  await db.delete(staffCheckins).where(eq(staffCheckins.recordedByUserId, userId));
+  await db.delete(liabilityScans).where(eq(liabilityScans.userId, userId));
+  await db.delete(scanShareTokens).where(eq(scanShareTokens.createdByUserId, userId));
+  await db.delete(drillSessions).where(eq(drillSessions.scheduledByUserId, userId));
+  await db.delete(drillTemplates).where(eq(drillTemplates.createdByUserId, userId));
+  await db.delete(trainingModules).where(eq(trainingModules.createdByUserId, userId));
+  await db.delete(facilityFloorMaps).where(eq(facilityFloorMaps.createdByUserId, userId));
+  await db.delete(notifications).where(eq(notifications.userId, userId));
+  await db.delete(alertRecipients).where(eq(alertRecipients.userId, userId));
+  await db.delete(alertStatusUpdates).where(eq(alertStatusUpdates.createdByUserId, userId));
+  await db.delete(visitorLogs).where(eq(visitorLogs.loggedByUserId, userId));
+  await db.delete(flaggedVisitors).where(eq(flaggedVisitors.addedByUserId, userId));
+  await db.delete(testerFeedback).where(eq(testerFeedback.userId, userId));
+  await db.delete(questionFlags).where(eq(questionFlags.userId, userId));
+  await db.delete(userInvites).where(eq(userInvites.invitedByUserId, userId));
+  await db.delete(facilityAttachments).where(eq(facilityAttachments.uploadedBy, userId));
+
+  // 2) Detach nullable references
+  await db.update(users).set({ impersonatingUserId: null }).where(eq(users.impersonatingUserId, userId));
+  await db.update(auditLogs).set({ userId: null }).where(eq(auditLogs.userId, userId));
+  await db.update(eapSections).set({ lastEditedByUserId: null }).where(eq(eapSections.lastEditedByUserId, userId));
+  await db.update(eapSectionVersions).set({ savedByUserId: null }).where(eq(eapSectionVersions.savedByUserId, userId));
+  await db.update(btamManagementPlan).set({ responsibleParty: null }).where(eq(btamManagementPlan.responsibleParty, userId));
+
+  // 3) Facilities + audits
+  const userFacilities = await db.select({ id: facilities.id }).from(facilities).where(eq(facilities.userId, userId));
+  const facilityIds = userFacilities.map((f) => f.id);
+  let facilitiesDeleted = 0;
+  let auditsDeleted = 0;
+
+  if (reassignToUserId && reassignToUserId !== userId) {
+    for (const f of userFacilities) {
+      await db.update(facilities).set({ userId: reassignToUserId }).where(eq(facilities.id, f.id));
+    }
+    await db.update(audits).set({ auditorId: reassignToUserId }).where(eq(audits.auditorId, userId));
+  } else {
+    // Audit ids: audits of the user's facilities + audits they performed directly
+    const auditIds: number[] = [];
+    if (facilityIds.length > 0) {
+      const linked = await db.select({ id: audits.id }).from(audits).where(inArray(audits.facilityId, facilityIds));
+      auditIds.push(...linked.map((a) => a.id));
+    }
+    const performed = await db.select({ id: audits.id }).from(audits).where(eq(audits.auditorId, userId));
+    for (const a of performed) {
+      if (!auditIds.includes(a.id)) auditIds.push(a.id);
+    }
+
+    if (auditIds.length > 0) {
+      await db.delete(auditResponses).where(inArray(auditResponses.auditId, auditIds));
+      await db.delete(threatFindings).where(inArray(threatFindings.auditId, auditIds));
+      await db.delete(auditPhotos).where(inArray(auditPhotos.auditId, auditIds));
+      await db.delete(correctiveActionChecks).where(inArray(correctiveActionChecks.auditId, auditIds));
+      await db.delete(eapSectionVersions).where(inArray(eapSectionVersions.auditId, auditIds));
+      await db.delete(eapSections).where(inArray(eapSections.auditId, auditIds));
+      await db.delete(facilityAttachments).where(inArray(facilityAttachments.auditId, auditIds));
+      await db.delete(audits).where(inArray(audits.id, auditIds));
+      auditsDeleted = auditIds.length;
+    }
+
+    if (facilityIds.length > 0) {
+      await db.delete(facilityAlertSettings).where(inArray(facilityAlertSettings.facilityId, facilityIds));
+      await db.delete(facilityFloorMaps).where(inArray(facilityFloorMaps.facilityId, facilityIds));
+      await db.delete(facilities).where(inArray(facilities.id, facilityIds));
+      facilitiesDeleted = facilityIds.length;
+    }
+  }
+
+  // 4) Alert events created by this user (with their recipients/updates)
+  const userAlertEvents = await db.select({ id: alertEvents.id }).from(alertEvents).where(eq(alertEvents.createdByUserId, userId));
+  const alertEventIds = userAlertEvents.map((e) => e.id);
+  if (alertEventIds.length > 0) {
+    await db.delete(alertRecipients).where(inArray(alertRecipients.alertEventId, alertEventIds));
+    await db.delete(alertStatusUpdates).where(inArray(alertStatusUpdates.alertEventId, alertEventIds));
+    await db.delete(alertEvents).where(inArray(alertEvents.id, alertEventIds));
+  }
+
+  // 5) Delete the user
+  await db.delete(users).where(eq(users.id, userId));
+
+  return { facilitiesDeleted, auditsDeleted };
 }
 
 // ─── Org Member Permission Flags ─────────────────────────────────────────────

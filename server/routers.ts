@@ -24,7 +24,7 @@ import {
   upsertPersonnelLocation,
   createVisitorLog, getVisitorLogs, checkOutVisitor, updateVisitorLog, deleteVisitorLog,
   getFlaggedVisitors, getFlaggedVisitorsByOrg, getFlaggedVisitorById, stampFlaggedVisitorEscalation, addFlaggedVisitor, deactivateFlaggedVisitor, deleteFlaggedVisitor, checkVisitorAgainstWatchlist,
-  getAllUsers, updateUserRole, updateOrgMemberPermissionFlags, getOrgMemberWithFlags, getUserByEmail,
+  getAllUsers, updateUserRole, updateOrgMemberPermissionFlags, getOrgMemberWithFlags, getUserByEmail, deleteUser,
   upsertUser, setPasswordResetToken, createUserInvite, listPendingUserInvites, deleteUserInvite,
   getEapSectionsByAudit, upsertEapSection, saveEapSectionVersion, getEapSectionVersions,
   createDrillTemplate, getDrillTemplates, getDrillTemplateById,
@@ -2673,6 +2673,30 @@ const adminUserRouter = router({
     .mutation(async ({ input }) => {
       await deleteUserInvite(input.id);
       return { success: true };
+    }),
+
+  // Ultra Admin: permanently delete a user (hard delete + cleanup)
+  deleteUser: ultraAdminProcedure
+    .input(z.object({
+      userId: z.number(),
+      reassignToUserId: z.number().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const realAdminId = ctx.realAdmin?.id ?? ctx.user!.id;
+      if (input.userId === realAdminId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "You cannot delete your own account." });
+      }
+      const allUsers = await getAllUsers();
+      const target = allUsers.find((u) => u.id === input.userId);
+      if (!target) throw new TRPCError({ code: "NOT_FOUND", message: "User not found." });
+      if (target.role === "ultra_admin") {
+        const ultraAdmins = allUsers.filter((u) => u.role === "ultra_admin");
+        if (ultraAdmins.length <= 1) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot delete the last Ultra Admin account." });
+        }
+      }
+      const { facilitiesDeleted, auditsDeleted } = await deleteUser(input.userId, input.reassignToUserId);
+      return { success: true, facilitiesDeleted, auditsDeleted };
     }),
 
   // Ultra Admin: get org memberships for a user

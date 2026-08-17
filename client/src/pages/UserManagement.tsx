@@ -145,6 +145,18 @@ export default function UserManagement() {
     onError: (err: any) => toast.error(err?.message || "Failed to cancel invite"),
   });
 
+  const deleteUser = trpc.adminUser.deleteUser.useMutation({
+    onSuccess: () => {
+      toast.success("User permanently deleted");
+      setDeleteUserTarget(null);
+      utils.adminUser.listAll.invalidate();
+    },
+    onError: (err: any) => toast.error(err?.message || "Failed to delete user"),
+  });
+
+  // ── Delete User Confirmation State ──
+  const [deleteUserTarget, setDeleteUserTarget] = useState<any>(null);
+
   // ── Org Assignment State ──
   const [orgDialogUser, setOrgDialogUser] = useState<any>(null);
   const [assignOrgId, setAssignOrgId] = useState<number | "">("");
@@ -527,6 +539,18 @@ export default function UserManagement() {
                               <Building2 size={12} className="mr-1" />
                               Orgs
                             </Button>
+                            {!isSelf && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-xs h-7 text-red-600 border-red-300 hover:bg-red-50"
+                                onClick={() => setDeleteUserTarget(u)}
+                                disabled={deleteUser.isPending}
+                              >
+                                <Trash2 size={12} className="mr-1" />
+                                Delete
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       )}
@@ -857,6 +881,36 @@ export default function UserManagement() {
           <Button variant="outline" size="sm" className="w-full" onClick={() => setOrgDialogUser(null)}>
             Close
           </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete user confirmation */}
+      <Dialog open={!!deleteUserTarget} onOpenChange={(open) => { if (!open) setDeleteUserTarget(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 size={16} className="text-red-600" />
+              Delete User Permanently
+            </DialogTitle>
+            <DialogDescription>
+              {deleteUserTarget
+                ? `This will permanently delete ${deleteUserTarget.name ?? deleteUserTarget.email ?? `User #${deleteUserTarget.id}`} and all of their records (facilities, audits, scans, alerts, memberships, etc.). This cannot be undone.`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => setDeleteUserTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deleteUser.isPending}
+              onClick={() => deleteUserTarget && deleteUser.mutate({ userId: deleteUserTarget.id })}
+            >
+              {deleteUser.isPending ? "Deleting…" : "Delete User"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
