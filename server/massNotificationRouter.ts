@@ -125,14 +125,14 @@ export const massNotificationRouter = router({
     await ensureTables();
     const db = await getDb();
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "No DB connection" });
-    const rows = await db.execute(
+    const [notificationRows] = (await db.execute(
       sql`SELECT n.*, u.name as senderName
           FROM \`in_app_notifications\` n
           LEFT JOIN \`users\` u ON u.id = n.senderId
           ORDER BY n.createdAt DESC
           LIMIT 50`
-    );
-    return (rows as any[]).rows ?? rows ?? [];
+    )) as unknown as [any[], unknown];
+    return notificationRows;
   }),
 
   /** Get unread notification count for the current user */
@@ -140,12 +140,11 @@ export const massNotificationRouter = router({
     await ensureTables();
     const db = await getDb();
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "No DB connection" });
-    const rows = await db.execute(
+    const [countRows] = (await db.execute(
       sql`SELECT COUNT(*) as count FROM \`notification_recipients\` nr
           WHERE nr.userId = ${ctx.user.id} AND nr.readAt IS NULL`
-    );
-    const data = (rows as any[]).rows ?? rows ?? [];
-    return (data[0] as any)?.count ?? 0;
+    )) as unknown as [Array<{ count: number }>, unknown];
+    return countRows[0]?.count ?? 0;
   }),
 
   /** Mark a notification as read */

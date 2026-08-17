@@ -38,22 +38,23 @@ rasDesktopApi.get("/api/ras/alerts/active", requireApiKey, async (req, res) => {
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    const membershipRows = await db.execute(
+    // db.execute() returns [rows, fields]; destructure the rows array.
+    const [membershipRows] = (await db.execute(
       `SELECT id FROM org_members WHERE userId = ${userId} AND orgId = ${orgId} LIMIT 1`
-    ) as unknown as Array<{ id: number }>;
+    )) as unknown as [Array<{ id: number }>, unknown];
     if (!membershipRows.length) {
       return res.status(403).json({ error: "Not a member of this organization" });
     }
 
     // Query the most recent non-resolved alert for this org
-    const alertRows = await db.execute(
+    const [alertRows] = (await db.execute(
       `SELECT ae.id, ae.alertType, ae.alertStatus, ae.messageTitle, ae.messageBody, ae.roleInstructions, ae.createdAt, u.name AS activatedByName
        FROM alert_events ae
        LEFT JOIN users u ON u.id = ae.createdByUserId
        WHERE ae.orgId = ${orgId} AND ae.alertStatus != 'resolved'
        ORDER BY ae.createdAt DESC
        LIMIT 1`
-    ) as unknown as Array<Record<string, unknown>>;
+    )) as unknown as [Array<Record<string, unknown>>, unknown];
 
     if (!alertRows.length) {
       // No active alert — tell desktop to standby
@@ -111,9 +112,9 @@ rasDesktopApi.post("/api/ras/acknowledge", requireApiKey, async (req, res) => {
     }
 
     // Verify alert exists
-    const alertRows = await db.execute(
+    const [alertRows] = (await db.execute(
       `SELECT id FROM alert_events WHERE id = ${alertEventId} LIMIT 1`
-    ) as unknown as Array<{ id: number }>;
+    )) as unknown as [Array<{ id: number }>, unknown];
     if (!alertRows.length) {
       return res.status(404).json({ error: "Alert not found" });
     }

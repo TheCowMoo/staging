@@ -212,13 +212,16 @@ export const rasRouter = router({
         admin: tmpl.adminInstruction,
       };
 
-      // Insert alert event
-      const result = (await db.execute(
+      // Insert alert event — db.execute() returns [rows, fields]; the first
+      // element is the ResultSetHeader which carries insertId.
+      const [insertResult] = await db.execute(
         `INSERT INTO alert_events (orgId, facilityId, alertType, alertStatus, messageTitle, messageBody, roleInstructions, createdByUserId, createdAt, updatedAt)
          VALUES (${orgId}, ${input.facilityId}, '${input.alertType}', 'active', ${JSON.stringify(title)}, ${JSON.stringify(body)}, ${JSON.stringify(JSON.stringify(roleInstructions))}, ${ctx.user.id}, NOW(), NOW())`
-      ) as unknown) as { insertId: number };
-
-      const alertEventId = result.insertId;
+      );
+      const alertEventId = Number((insertResult as any).insertId);
+      if (!alertEventId) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create alert event." });
+      }
 
       // Create alert_recipients for all org users with a rasRole
       const orgUsersRaw = await db.execute(
