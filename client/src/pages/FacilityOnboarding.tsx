@@ -168,8 +168,13 @@ export default function FacilityOnboarding() {
   const set = <K extends keyof FormData>(k: K, v: FormData[K]) =>
     setForm(f => ({ ...f, [k]: v }));
 
+  const utils = trpc.useUtils();
+
   const submit = trpc.onboarding.submitProfile.useMutation({
     onSuccess: async (result) => {
+      // Invalidate facility.list so AppLayout's sandbox onboarding redirect
+      // sees the newly created facility immediately.
+      utils.facility.list.invalidate();
       // Upload any pending floor plans using the newly created facility ID
       const pending = floorPlans.filter(p => !p.uploaded && !p.uploading);
       if (pending.length > 0) {

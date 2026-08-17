@@ -27,6 +27,8 @@ interface NavItem {
   icon: React.ReactNode;
   /** "coming-soon" = feature not built yet; "paid" = requires paid plan; "sandbox" = hidden for sandbox users */
   locked?: "coming-soon" | "paid" | "sandbox";
+  /** Show a "Limited" badge for sandbox users (view-only / partial access) */
+  sandboxLimited?: boolean;
   beta?: boolean;
 }
 
@@ -159,10 +161,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const NavLink = ({ item }: { item: NavItem }) => {
     const isActive = location === item.href || (item.href !== "/dashboard" && item.href !== "/liability-scan" && item.href !== "/scan-history" && location.startsWith(item.href));
 
-    // Sandbox users: items locked to the sandbox role are hidden entirely
-    // (e.g. the Training module, which is handled via a separate LMS demo).
+    // Sandbox users: fully-blocked items (e.g. Training) show a lock icon.
     if (item.locked === "sandbox" && isSandbox) {
-      return null;
+      return (
+        <div
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/40 cursor-not-allowed select-none transition-colors"
+          title="Restricted in sandbox"
+          onClick={() => toast.info("This feature is restricted in the sandbox environment. Full access requires standard setup.")}
+        >
+          {item.icon}
+          <span className="flex-1">{item.label}</span>
+          <Lock size={10} className="text-sidebar-foreground/40 flex-shrink-0" />
+        </div>
+      );
     }
 
     // Ultra admins bypass all locks — show every nav item as clickable
@@ -212,6 +223,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       >
         {item.icon}
         {item.label}
+        {isSandbox && item.sandboxLimited && (
+          <span className="ml-auto flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 leading-none">
+            <Lock size={7} className="inline" /> Limited
+          </span>
+        )}
         {item.beta && (
           <span className="text-[8px] font-bold px-1 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 leading-none ml-0.5">
             BETA
@@ -273,8 +289,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         { href: "/facilities/new", label: "Facility Setup Wizard",  icon: <Wand2 size={15} />,         locked: isPaid ? undefined : "paid" },
         { href: "/facilities",            label: "Facilities",             icon: <Building2 size={15} />,     locked: isPaid ? undefined : "paid" },
         { href: "/facility-mapping",      label: "Facility Mapping",       icon: <MapPin size={15} />,        locked: isPaid ? undefined : "paid" },
-        { href: "/audits",                label: "Audit History",          icon: <ClipboardList size={15} />, locked: isPaid ? undefined : "paid" },
-        { href: "/eap",                   label: "Emergency Action Plans", icon: <Shield size={15} />,        locked: isPaid ? undefined : "paid" },
+        { href: "/audits",                label: "Audit History",          icon: <ClipboardList size={15} />, locked: isPaid ? undefined : "paid", sandboxLimited: true },
+        { href: "/eap",                   label: "Emergency Action Plans", icon: <Shield size={15} />,        locked: isPaid ? undefined : "paid", sandboxLimited: true },
       ],
     },
     {
@@ -330,9 +346,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       icon: <GraduationCap size={18} />,
       items: [
         { href: "/training-modules", label: "Training",                 icon: <BookMarked size={15} />,    locked: isSandbox ? "sandbox" : (isPaid ? undefined : "paid") },
-        { href: "/drills", label: "Drill Planner",                    icon: <ClipboardList size={15} />, locked: isPaid ? undefined : "paid" },
-        { href: "/drills/after-action", label: "Drill After-Action",              icon: <TrendingUp size={15} />,    locked: isPaid ? undefined : "paid" },
-        { href: "/ras", label: "Drill Response Activation System", icon: <AlertCircle size={15} />,   locked: isPaid ? undefined : "paid" },
+        { href: "/drills", label: "Drill Planner",                    icon: <ClipboardList size={15} />, locked: isPaid ? undefined : "paid", sandboxLimited: true },
+        { href: "/drills/after-action", label: "Drill After-Action",              icon: <TrendingUp size={15} />,    locked: isPaid ? undefined : "paid", sandboxLimited: true },
+        { href: "/ras", label: "Drill Response Activation System", icon: <AlertCircle size={15} />,   locked: isPaid ? undefined : "paid", sandboxLimited: true },
       ],
     },
   ];
@@ -391,7 +407,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="pt-2 pb-1">
               <p className="text-[10px] font-semibold text-sidebar-foreground/50 uppercase tracking-wider px-3 mb-1">Analytics</p>
             </div>
-            <NavLink item={{ href: "/analytics", label: "Analytics Dashboard", icon: <BarChart3 size={18} /> }} />
+            <NavLink item={{ href: "/analytics", label: "Analytics Dashboard", icon: <BarChart3 size={18} />, sandboxLimited: true }} />
           </>
         )}
         {isAdmin && (
