@@ -47,6 +47,7 @@ const ROLE_BADGE: Record<string, { label: string; variant: "default" | "secondar
   auditor:     { label: "Auditor",     variant: "secondary" },
   user:        { label: "User",        variant: "secondary" },
   viewer:      { label: "Viewer",      variant: "outline" },
+  sandbox:     { label: "Sandbox",     variant: "outline" },
 };
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -81,22 +82,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Ultra admins see everything unlocked — no paywall, no coming-soon blocks
   const isPaid = isUltraAdmin ? true : orgPlan === "paid";
 
-  // Sandbox users must complete facility onboarding before using the platform.
-  const { data: sandboxFacilities } = trpc.facility.list.useQuery(undefined, {
-    enabled: isAuthenticated && user?.role === "sandbox",
-    retry: false,
-  });
-  useEffect(() => {
-    if (
-      isAuthenticated &&
-      user?.role === "sandbox" &&
-      sandboxFacilities &&
-      sandboxFacilities.length === 0 &&
-      location !== "/facilities/onboarding"
-    ) {
-      navigate("/facilities/onboarding");
-    }
-  }, [isAuthenticated, user?.role, sandboxFacilities, location, navigate]);
   const utils = trpc.useUtils();
   const stopImpersonationMutation = trpc.adminUser.stopImpersonation.useMutation({
     onSuccess: async () => {
