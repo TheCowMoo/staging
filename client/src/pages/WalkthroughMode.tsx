@@ -10,7 +10,8 @@ import {
   ChevronLeft, ChevronRight, Smartphone, AlertTriangle
 } from "lucide-react";
 import {
-  AUDIT_CATEGORIES, getQuestionsForFacility, type QuestionPolarity
+  AUDIT_CATEGORIES, getQuestionsForFacility, type QuestionPolarity,
+  SANDBOX_PREVIEW_CATEGORY_IDS
 } from "../../../shared/auditFramework";
 import { getResponseScore } from "@/lib/riskUtils";
 
@@ -84,9 +85,9 @@ export default function WalkthroughMode() {
   const { user } = useAuth();
   const categories = useMemo(() => {
     let cats = facility ? getQuestionsForFacility(facility.facilityType) : AUDIT_CATEGORIES;
-    // Sandbox users may only view one CPTED topic and one EAP topic.
+    // Sandbox users may only view ONE topic from CPTED and ONE from EAP.
     if (user?.role === "sandbox") {
-      cats = cats.filter((c) => c.id === "cpted_physical" || c.id === "eap_development");
+      cats = cats.filter((c) => (SANDBOX_PREVIEW_CATEGORY_IDS as readonly string[]).includes(c.id));
     }
     return cats;
   }, [facility, user?.role]);

@@ -285,6 +285,13 @@ export const AUDIT_SECTIONS = [
   },
 ] as const;
 
+/**
+ * Sandbox / demo preview: sandbox users may only view ONE topic (category)
+ * from each section — one CPTED topic and one Emergency Action Plan topic.
+ * Every other topic in the audit is locked for them.
+ */
+export const SANDBOX_PREVIEW_CATEGORY_IDS = ["exterior_environment", "communication_systems"] as const;
+
 export const AUDIT_CATEGORIES: AuditCategory[] = [
   // ══════════════════════════════════════════════════════════════════════════
   // FACILITY PROFILE (not scored — drives conditional logic downstream)

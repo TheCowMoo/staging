@@ -19,6 +19,7 @@ import {
   FACILITY_TYPES, REMEDIATION_TIMELINES, CONDITION_TYPES,
   PRIMARY_RESPONSES, CONCERN_LEVELS,
   getDecisionTreeScore,
+  SANDBOX_PREVIEW_CATEGORY_IDS,
   type QuestionPolarity, type AuditQuestion,
   type PrimaryResponse, type ConcernLevel, type ConditionType,
 } from "../../../shared/auditFramework";
@@ -160,10 +161,10 @@ export default function AuditWalkthrough() {
   const { user } = useAuth();
   const categories = useMemo(() => {
     let cats = facility ? getQuestionsForFacility(facility.facilityType) : AUDIT_CATEGORIES;
-    // Sandbox users may only view one CPTED topic and one EAP topic —
+    // Sandbox users may only view ONE topic from CPTED and ONE from EAP —
     // every other topic is locked for them.
     if (user?.role === "sandbox") {
-      cats = cats.filter((c) => c.id === "cpted_physical" || c.id === "eap_development");
+      cats = cats.filter((c) => (SANDBOX_PREVIEW_CATEGORY_IDS as readonly string[]).includes(c.id));
     }
     return cats;
   }, [facility, user?.role]);
@@ -553,6 +554,12 @@ export default function AuditWalkthrough() {
             <div className="h-2 bg-muted rounded-full overflow-hidden">
               <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${(totalAnswered / Math.max(totalQuestions, 1)) * 100}%` }} />
             </div>
+            {user?.role === "sandbox" && (
+              <div className="mt-3 rounded-md bg-sky-50 border border-sky-200 px-2.5 py-2 text-[10px] text-sky-800">
+                <p className="font-semibold flex items-center gap-1"><Lock size={9} className="text-sky-600" /> Sandbox preview</p>
+                <p className="mt-0.5 text-sky-700/80 leading-tight">One CPTED topic + one EAP topic. Other topics are locked.</p>
+              </div>
+            )}
           </div>
           <nav className="flex-1 p-2">
             {/* CPTED Section Header */}

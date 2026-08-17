@@ -918,6 +918,12 @@ function NoRasRoleView() {
 export default function EmergencyAlerts() {
   const { user, loading } = useAuth();
   const [facilityId, setFacilityId] = useState<number | null>(null);
+  const [sandboxNoticeOpen, setSandboxNoticeOpen] = useState(false);
+
+  // Show the sandbox preview pop-up whenever a sandbox user opens RAS.
+  useEffect(() => {
+    if (user?.role === "sandbox") setSandboxNoticeOpen(true);
+  }, [user?.role]);
 
   // Fetch facilities to get the first one for this user
   const { data: facilities } = trpc.facility.list.useQuery(undefined, { enabled: !!user });
@@ -948,13 +954,32 @@ export default function EmergencyAlerts() {
 
   if (!user) return null;
 
-  if (!rasRole) return <NoRasRoleView />;
-
   const alertStatus = activeAlert ? (activeAlert as Record<string, unknown>).alertStatus as AlertStatus : null;
   const alertEventId = activeAlert ? (activeAlert as Record<string, unknown>).id as number : null;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+    <>
+      {/* Sandbox preview pop-up — explains the limited demo access */}
+      <Dialog open={sandboxNoticeOpen} onOpenChange={setSandboxNoticeOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="h-4 w-4 text-sky-600" />
+              Response Activation System — Preview
+            </DialogTitle>
+            <DialogDescription>
+              You can explore how this system works. Full access to use it comes with our standard setup.
+              In the sandbox, you cannot initiate any emergency communication or download the installer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setSandboxNoticeOpen(false)}>Got it</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {rasRole ? (
+        <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
       {/* Sandbox view-only notice */}
       {user.role === "sandbox" && (
         <div className="rounded-md border border-sky-300 bg-sky-50/70 px-4 py-3 text-sm text-sky-800">
@@ -1022,6 +1047,10 @@ export default function EmergencyAlerts() {
 
       {/* Role management — admin only, always visible */}
       {rasRole === "admin" && <RasRoleManagement />}
-    </div>
+        </div>
+      ) : (
+        <NoRasRoleView />
+      )}
+    </>
   );
 }
