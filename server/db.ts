@@ -797,7 +797,7 @@ export async function addOrgMember(data: InsertOrgMember) {
   await db.insert(orgMembers).values(data);
 }
 
-export async function updateOrgMemberRole(orgId: number, userId: number, role: "super_admin" | "admin" | "auditor" | "user" | "viewer") {
+export async function updateOrgMemberRole(orgId: number, userId: number, role: "super_admin" | "admin" | "auditor" | "user" | "viewer" | "sandbox") {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(orgMembers).set({ role }).where(and(eq(orgMembers.orgId, orgId), eq(orgMembers.userId, userId)));
@@ -1002,7 +1002,7 @@ export async function getAllUsers() {
 
 export async function updateUserRole(
   userId: number,
-  role: "ultra_admin" | "admin" | "super_admin" | "auditor" | "viewer" | "user"
+  role: "ultra_admin" | "admin" | "super_admin" | "auditor" | "viewer" | "user" | "sandbox"
 ) {
   const db = await getDb();
   if (!db) return;

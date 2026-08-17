@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -84,14 +85,16 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function AnalyticsDashboard() {
+  const { user } = useAuth();
+  const isSandbox = user?.role === "sandbox";
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [selectedFacilityId, setSelectedFacilityId] = useState<number | "all">("all");
 
   // ── Data Queries ──────────────────────────────────────────────────────────
   const { data: allFeedback = [], isLoading: fbLoading } = trpc.feedback.listAll.useQuery();
   const { data: allFlags = [] } = trpc.feedback.getAllFlags.useQuery();
-  const { data: allUsers = [] } = trpc.adminUser.listAll.useQuery(undefined, { enabled: activeTab === "users" || activeTab === "overview" });
-  const { data: allOrgs = [] } = trpc.org.listAll.useQuery(undefined, { enabled: activeTab === "overview" });
+  const { data: allUsers = [] } = trpc.adminUser.listAll.useQuery(undefined, { enabled: (activeTab === "users" || activeTab === "overview") && !isSandbox });
+  const { data: allOrgs = [] } = trpc.org.listAll.useQuery(undefined, { enabled: activeTab === "overview" && !isSandbox });
   const { data: allIncidents = [] } = trpc.incident.list.useQuery({}, { enabled: activeTab === "incidents" || activeTab === "overview" });
   const { data: allScans = [] } = trpc.liabilityScan.list.useQuery(undefined, { enabled: activeTab === "scans" || activeTab === "overview" });
   const { data: drillSessions = [] } = trpc.drill.listSessions.useQuery({}, { enabled: activeTab === "drills" || activeTab === "overview" });
@@ -273,6 +276,16 @@ export default function AnalyticsDashboard() {
   return (
 
       <div className="space-y-6 px-6">
+        {/* Sandbox notice */}
+        {isSandbox && (
+          <div className="rounded-md border border-sky-300 bg-sky-50/70 px-4 py-3 text-sm text-sky-800">
+            <p className="font-medium">Sandbox analytics — your organization's data</p>
+            <p className="mt-1 text-sky-700/80">
+              Platform-wide user and organization counts are hidden in the sandbox. You can still view
+              feedback, incidents, scans, and drill analytics.
+            </p>
+          </div>
+        )}
         {/* Header */}
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div className="flex items-start gap-4">

@@ -3,7 +3,7 @@ import path from "path";
 import { storageGet, storageGetText, storageListDirectories, storageCheckFile, storagePut } from "./storage";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { router, protectedProcedure, paidProcedure, orgAdminProcedure, ultraAdminProcedure } from "./_core/trpc";
+import { router, protectedProcedure, paidProcedure, orgAdminProcedure, ultraAdminProcedure, paidSandboxRestrictedProcedure, protectedSandboxRestrictedProcedure } from "./_core/trpc";
 import { getOrgMembershipForUser, getOrgMemberRecord } from "./db";
 import {
   getTrainingModulesByOrgOrGlobal,
@@ -84,7 +84,8 @@ function parseCourseLink(linkText: string | null, dirName: string): {
 }
 
 export const trainingModuleRouter = router({
-  list: protectedProcedure
+  // Sandbox / demo users are blocked from Training (handled via a separate LMS demo).
+  list: protectedSandboxRestrictedProcedure
     .query(async ({ ctx }) => {
       const memberships = await getOrgMembershipForUser(ctx.user.id);
       const orgId = memberships[0]?.orgId ?? 0;
@@ -253,7 +254,7 @@ export const trainingModuleRouter = router({
       return getTrainingModulesByOrgOrGlobal(orgId);
     }),
 
-  get: paidProcedure
+  get: paidSandboxRestrictedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
       const module = await getTrainingModuleById(input.id);
@@ -510,7 +511,7 @@ export const trainingModuleRouter = router({
       return { success: true, courseTitle, storagePrefix, uploadedFiles: uploadedFiles.length, fileCount: uploadedFiles.length, errorCount: errors.length, errors: errors.length > 0 ? errors : undefined };
     }),
 
-  getLaunchUrl: paidProcedure
+  getLaunchUrl: paidSandboxRestrictedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
       const mod = await getTrainingModuleById(input.id);

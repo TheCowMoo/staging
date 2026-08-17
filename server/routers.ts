@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, protectedProcedure, auditorProcedure, adminProcedure, ultraAdminProcedure, superAdminProcedure, orgAdminProcedure, paidProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, auditorProcedure, adminProcedure, ultraAdminProcedure, superAdminProcedure, orgAdminProcedure, paidProcedure, router, paidSandboxRestrictedProcedure } from "./_core/trpc";
 import {
   createFacility, getFacilitiesByUser, getFacilityById, updateFacility, duplicateFacility, deleteFacility,
   createAudit, getAuditsByFacility, getAuditsByUser, getAuditById, updateAudit, duplicateAuditResponses, deleteAudit,
@@ -746,7 +746,7 @@ const reportRouter = router({
       };
     }),
 
-  generateEAP: paidProcedure
+  generateEAP: paidSandboxRestrictedProcedure
     .input(z.object({ auditId: z.number() }))
     .mutation(async ({ ctx, input }) => {
       const audit = await getAuditById(input.auditId);
@@ -1892,7 +1892,7 @@ const orgRouter = router({
     .input(z.object({
       orgId: z.number(),
       email: z.string().email(),
-      role: z.enum(["super_admin", "admin", "auditor", "user", "viewer"]).default("auditor"),
+      role: z.enum(["super_admin", "admin", "auditor", "user", "viewer", "sandbox"]).default("auditor"),
       origin: z.string(),
     }))
     .mutation(async ({ ctx, input }) => {
@@ -1969,7 +1969,7 @@ const orgRouter = router({
     }),
   // Update a member's role
   updateMemberRole: paidProcedure
-    .input(z.object({ orgId: z.number(), userId: z.number(), role: z.enum(["super_admin", "admin", "auditor", "user", "viewer"]) }))
+    .input(z.object({ orgId: z.number(), userId: z.number(), role: z.enum(["super_admin", "admin", "auditor", "user", "viewer", "sandbox"]) }))
     .mutation(async ({ ctx, input }) => {
       const member = await getOrgMemberRecord(input.orgId, ctx.user.id);
       const isOrgSuperAdmin2 = member?.role === "super_admin";
@@ -2485,7 +2485,7 @@ const adminUserRouter = router({
   updateRole: adminProcedure
     .input(z.object({
       userId: z.number(),
-      role: z.enum(["ultra_admin", "admin", "super_admin", "auditor", "viewer", "user"]),
+      role: z.enum(["ultra_admin", "admin", "super_admin", "auditor", "viewer", "user", "sandbox"]),
     }))
     .mutation(async ({ ctx, input }) => {
       // Only ultra_admin can assign ultra_admin role
@@ -2557,7 +2557,7 @@ const adminUserRouter = router({
   inviteUser: ultraAdminProcedure
     .input(z.object({
       email: z.string().email(),
-      role: z.enum(["ultra_admin", "super_admin", "admin", "auditor", "user", "viewer"]).default("user"),
+      role: z.enum(["ultra_admin", "super_admin", "admin", "auditor", "user", "viewer", "sandbox"]).default("user"),
       origin: z.string(),
     }))
     .mutation(async ({ ctx, input }) => {
@@ -2586,6 +2586,23 @@ const adminUserRouter = router({
       });
       const newUser = await getUserByEmail(email);
       if (!newUser) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create user." });
+
+      // ── Sandbox provisioning ─────────────────────────────────────────────
+      // Give the sandbox invitee an isolated org on the 'paid' plan so the
+      // standard paidProcedure modules are reachable. Granular sandbox locks
+      // are enforced separately (nav / route / procedure level).
+      if (input.role === "sandbox") {
+        const org = await createOrganization({
+          name: `Sandbox — ${email.split("@")[0]}`,
+          slug: `sandbox-${rb(4).toString("hex")}`,
+          createdByUserId: newUser.id,
+          contactEmail: email,
+          plan: "paid",
+        });
+        if (org) {
+          await addOrgMember({ orgId: org.id, userId: newUser.id, role: "sandbox", joinedAt: new Date() });
+        }
+      }
       // Set a password-reset token (48-hour expiry) used as the set-password link
       const setPasswordToken = rb(32).toString("hex");
       await setPasswordResetToken(email, setPasswordToken);
@@ -2609,6 +2626,7 @@ const adminUserRouter = router({
         auditor: "Auditor",
         user: "Staff",
         viewer: "Viewer",
+        sandbox: "Sandbox (Demo)",
       };
       // Send invite email via GHL
       try {
@@ -2669,7 +2687,7 @@ const adminUserRouter = router({
     .input(z.object({
       userId: z.number(),
       orgId: z.number(),
-      role: z.enum(["super_admin", "admin", "auditor", "user", "viewer"]),
+      role: z.enum(["super_admin", "admin", "auditor", "user", "viewer", "sandbox"]),
     }))
     .mutation(async ({ input }) => {
       const existing = await getOrgMemberRecord(input.orgId, input.userId);
@@ -2693,7 +2711,7 @@ const adminUserRouter = router({
     .input(z.object({
       userId: z.number(),
       orgId: z.number(),
-      role: z.enum(["super_admin", "admin", "auditor", "user", "viewer"]),
+      role: z.enum(["super_admin", "admin", "auditor", "user", "viewer", "sandbox"]),
     }))
     .mutation(async ({ input }) => {
       await updateOrgMemberRole(input.orgId, input.userId, input.role);
@@ -3816,7 +3834,7 @@ JSON SCHEMA (return ONLY valid JSON matching this schema)
     }),
 
   /** Schedule a drill session from a template */
-  schedule: paidProcedure
+  schedule: paidSandboxRestrictedProcedure
     .input(z.object({
       templateId: z.number(),
       facilityId: z.number().optional(),
@@ -3852,7 +3870,7 @@ JSON SCHEMA (return ONLY valid JSON matching this schema)
     }),
 
   /** Mark a session as in_progress */
-  start: paidProcedure
+  start: paidSandboxRestrictedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
       const session = await getDrillSessionById(input.id);
@@ -3862,7 +3880,7 @@ JSON SCHEMA (return ONLY valid JSON matching this schema)
     }),
 
   /** Complete a drill session and save participant list */
-  complete: paidProcedure
+  complete: paidSandboxRestrictedProcedure
     .input(z.object({
       id: z.number(),
       participantCount: z.number().optional(),
@@ -3890,7 +3908,7 @@ JSON SCHEMA (return ONLY valid JSON matching this schema)
     }),
 
   /** Save after-action debrief data and generate system intelligence */
-  debrief: paidProcedure
+  debrief: paidSandboxRestrictedProcedure
     .input(z.object({
       id: z.number(),
       debriefAnswers: z.record(z.string(), z.string()),

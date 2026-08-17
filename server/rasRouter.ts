@@ -19,7 +19,7 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { router, protectedProcedure, paidProcedure, publicProcedure } from "./_core/trpc";
+import { router, protectedProcedure, paidProcedure, publicProcedure, paidSandboxRestrictedProcedure } from "./_core/trpc";
 import { writeAuditLog, buildLogContext } from "./auditLogger";
 import { fanoutAlertPush } from "./push";
 import { storageGet, storagePut } from "./storage";
@@ -171,7 +171,8 @@ export const rasRouter = router({
     }),
 
   // ── Activate alert (Lockdown or Lockout) ──────────────────────────────────
-  activateAlert: paidProcedure
+  // Sandbox / demo users may view RAS but cannot initiate emergency communications.
+  activateAlert: paidSandboxRestrictedProcedure
     .input(z.object({
       facilityId: z.number().int().positive(),
       alertType: z.enum(["lockdown", "lockout", "fire", "weather"]),
@@ -537,7 +538,8 @@ export const rasRouter = router({
     }),
 
   // ── Get installer download URL for this org ──────────────────────────────
-  getInstallerDownload: paidProcedure
+  // Installer downloads are disabled for sandbox / demo users.
+  getInstallerDownload: paidSandboxRestrictedProcedure
     .query(async ({ ctx }) => {
       const db = await getDb();
       const orgId = await getUserOrgId(db, ctx.user.id);

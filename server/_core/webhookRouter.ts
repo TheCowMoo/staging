@@ -10,7 +10,10 @@
  *
  * ─── Webhook Register ────────────────────────────────────────────────────────
  * Request body (JSON):
- *   { "name": "John Doe", "email": "john@example.com" }
+ *   { "name": "John Doe", "email": "john@example.com", "role": "sandbox" }
+ *   role is optional. "sandbox" provisions a restricted demo user with its own
+ *   isolated org on the 'paid' plan; any other value (or omitted) creates a
+ *   regular 'user' account.
  *
  * Response 201 JSON: { "ok": true, "message": "...", "userId": 123 }
  * Response 409 JSON: { "error": "..." }   — email already exists
@@ -55,7 +58,7 @@
 
 import { Router } from "express";
 import { randomBytes, createHash } from "crypto";
-import { updateOrgPlan, getUserByEmail, upsertUser, setPasswordResetToken, setGhlContactId, updateUserRole } from "../db";
+import { updateOrgPlan, getUserByEmail, upsertUser, setPasswordResetToken, setGhlContactId, updateUserRole, createOrganization, addOrgMember } from "../db";
 import { createGhlContact, sendGhlEmail } from "./ghl";
 import { ENV } from "./env";
 
@@ -115,10 +118,14 @@ webhookRouter.post("/api/webhook/register", async (req, res) => {
     return res.status(401).json({ error: "Unauthorized: invalid or missing x-webhook-secret header." });
   }
 
-  const { name, email } = req.body ?? {};
+  const { name, email, role } = req.body ?? {};
   if (!name || !email) {
     return res.status(400).json({ error: "'name' and 'email' are required." });
   }
+
+  // Only safe role values may be assigned via webhook. "sandbox" is the
+  // restricted demo role; anything else defaults to a regular 'user' account.
+  const requestedRole: "user" | "sandbox" = role === "sandbox" ? "sandbox" : "user";
 
   const normalizedEmail = (email as string).toLowerCase().trim();
   const normalizedName = (name as string).trim();
@@ -154,6 +161,31 @@ webhookRouter.post("/api/webhook/register", async (req, res) => {
     const newUser = await getUserByEmail(normalizedEmail);
     if (!newUser) throw new Error("User creation failed — could not retrieve newly created user.");
 
+    // ── Sandbox provisioning ──────────────────────────────────────────────────
+    // Each sandbox user gets an isolated org on the 'paid' plan so the standard
+    // paidProcedure modules are reachable. Granular sandbox locks are enforced
+    // separately at the nav / route / procedure level.
+    let orgId: number | null = null;
+    if (requestedRole === "sandbox") {
+      await updateUserRole(newUser.id, "sandbox");
+      const org = await createOrganization({
+        name: `Sandbox — ${normalizedName}`,
+        slug: `sandbox-${randomBytes(4).toString("hex")}`,
+        createdByUserId: newUser.id,
+        contactEmail: normalizedEmail,
+        plan: "paid",
+      });
+      if (org) {
+        orgId = org.id;
+        await addOrgMember({
+          orgId: org.id,
+          userId: newUser.id,
+          role: "sandbox",
+          joinedAt: new Date(),
+        });
+      }
+    }
+
     // Generate a password-reset token (48-hour expiry) used as the set-password link
     const setPasswordToken = generateToken();
     await setPasswordResetToken(normalizedEmail, setPasswordToken);
@@ -188,6 +220,8 @@ webhookRouter.post("/api/webhook/register", async (req, res) => {
       ok: true,
       message: `Account created. A set-password email has been sent to ${normalizedEmail}.`,
       userId: newUser.id,
+      role: requestedRole,
+      orgId,
     });
   } catch (err: any) {
     console.error("[webhook/register] Failed:", err?.message ?? err);

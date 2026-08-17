@@ -25,8 +25,8 @@ interface NavItem {
   href: string;
   label: string;
   icon: React.ReactNode;
-  /** "coming-soon" = feature not built yet; "paid" = requires paid plan */
-  locked?: "coming-soon" | "paid";
+  /** "coming-soon" = feature not built yet; "paid" = requires paid plan; "sandbox" = hidden for sandbox users */
+  locked?: "coming-soon" | "paid" | "sandbox";
   beta?: boolean;
 }
 
@@ -78,6 +78,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   });
   // Ultra admins see everything unlocked — no paywall, no coming-soon blocks
   const isPaid = isUltraAdmin ? true : orgPlan === "paid";
+
+  // Sandbox users must complete facility onboarding before using the platform.
+  const { data: sandboxFacilities } = trpc.facility.list.useQuery(undefined, {
+    enabled: isAuthenticated && user?.role === "sandbox",
+    retry: false,
+  });
+  useEffect(() => {
+    if (
+      isAuthenticated &&
+      user?.role === "sandbox" &&
+      sandboxFacilities &&
+      sandboxFacilities.length === 0 &&
+      location !== "/facilities/onboarding"
+    ) {
+      navigate("/facilities/onboarding");
+    }
+  }, [isAuthenticated, user?.role, sandboxFacilities, location, navigate]);
   const utils = trpc.useUtils();
   const stopImpersonationMutation = trpc.adminUser.stopImpersonation.useMutation({
     onSuccess: async () => {
@@ -135,11 +152,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     : "?";
 
   const isViewer = user?.role === "viewer";
+  const isSandbox = user?.role === "sandbox";
   const isAdmin  = effectiveRole === "admin" || effectiveRole === "ultra_admin" || user?.role === "admin" || user?.role === "ultra_admin";
   const roleBadge = ROLE_BADGE[user?.role ?? "auditor"] ?? ROLE_BADGE.auditor;
 
   const NavLink = ({ item }: { item: NavItem }) => {
     const isActive = location === item.href || (item.href !== "/dashboard" && item.href !== "/liability-scan" && item.href !== "/scan-history" && location.startsWith(item.href));
+
+    // Sandbox users: items locked to the sandbox role are hidden entirely
+    // (e.g. the Training module, which is handled via a separate LMS demo).
+    if (item.locked === "sandbox" && isSandbox) {
+      return null;
+    }
 
     // Ultra admins bypass all locks — show every nav item as clickable
     if (item.locked === "coming-soon" && !isUltraAdmin) {
@@ -305,7 +329,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       label: "Training & Drills",
       icon: <GraduationCap size={18} />,
       items: [
-        { href: "/training-modules", label: "Training",                 icon: <BookMarked size={15} />,    locked: isPaid ? undefined : "paid" },
+        { href: "/training-modules", label: "Training",                 icon: <BookMarked size={15} />,    locked: isSandbox ? "sandbox" : (isPaid ? undefined : "paid") },
         { href: "/drills", label: "Drill Planner",                    icon: <ClipboardList size={15} />, locked: isPaid ? undefined : "paid" },
         { href: "/drills/after-action", label: "Drill After-Action",              icon: <TrendingUp size={15} />,    locked: isPaid ? undefined : "paid" },
         { href: "/ras", label: "Drill Response Activation System", icon: <AlertCircle size={15} />,   locked: isPaid ? undefined : "paid" },
@@ -362,12 +386,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <p className="text-[10px] font-semibold text-sidebar-foreground/50 uppercase tracking-wider px-3 mb-1">Resources</p>
         </div>
         <NavLink item={{ href: "/standards",      label: "Standards & Regs", icon: <ShieldCheck size={18} /> }} />
+        {(isAdmin || isSandbox) && (
+          <>
+            <div className="pt-2 pb-1">
+              <p className="text-[10px] font-semibold text-sidebar-foreground/50 uppercase tracking-wider px-3 mb-1">Analytics</p>
+            </div>
+            <NavLink item={{ href: "/analytics", label: "Analytics Dashboard", icon: <BarChart3 size={18} /> }} />
+          </>
+        )}
         {isAdmin && (
           <>
             <div className="pt-2 pb-1">
               <p className="text-[10px] font-semibold text-sidebar-foreground/50 uppercase tracking-wider px-3 mb-1">Admin</p>
             </div>
-            <NavLink item={{ href: "/analytics",     label: "Analytics Dashboard", icon: <BarChart3 size={18} /> }} />
             <NavLink item={{ href: "/organizations", label: "Organizations",      icon: <Network size={18} /> }} />
             <NavLink item={{ href: "/admin/users",   label: "User Management",    icon: <UserCog size={18} /> }} />
             <NavLink item={{ href: "/admin/api-keys", label: "API Keys",          icon: <Key size={18} />, beta: true }} />

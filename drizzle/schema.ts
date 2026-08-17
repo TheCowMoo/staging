@@ -44,7 +44,7 @@ export const orgMembers = mysqlTable("org_members", {
   id: int("id").autoincrement().primaryKey(),
   orgId: int("orgId").notNull(),
   userId: int("userId").notNull(),
-  role: mysqlEnum("orgRole", ["super_admin", "admin", "auditor", "user", "viewer"]).default("user").notNull(),
+  role: mysqlEnum("orgRole", ["super_admin", "admin", "auditor", "user", "viewer", "sandbox"]).default("user").notNull(),
   invitedAt: timestamp("invitedAt").defaultNow().notNull(),
   joinedAt: timestamp("joinedAt"),
   // Optional permission flags
@@ -99,7 +99,7 @@ export const orgInvites = mysqlTable("org_invites", {
   id: int("id").autoincrement().primaryKey(),
   orgId: int("orgId").notNull(),
   email: varchar("email", { length: 320 }).notNull(),
-  role: mysqlEnum("inviteRole", ["super_admin", "admin", "auditor", "user", "viewer"]).default("user").notNull(),
+  role: mysqlEnum("inviteRole", ["super_admin", "admin", "auditor", "user", "viewer", "sandbox"]).default("user").notNull(),
   token: varchar("token", { length: 64 }).notNull().unique(),
   expiresAt: timestamp("expiresAt").notNull(),
   usedAt: timestamp("usedAt"),
@@ -115,7 +115,7 @@ export const userInvites = mysqlTable("user_invites", {
   id: int("id").autoincrement().primaryKey(),
   email: varchar("email", { length: 320 }).notNull(),
   // The platform role to assign upon signup
-  role: mysqlEnum("inviteRole", ["ultra_admin", "super_admin", "admin", "auditor", "user", "viewer"]).default("user").notNull(),
+  role: mysqlEnum("inviteRole", ["ultra_admin", "super_admin", "admin", "auditor", "user", "viewer", "sandbox"]).default("user").notNull(),
   token: varchar("token", { length: 64 }).notNull().unique(),
   invitedByUserId: int("invitedByUserId").notNull(),
   expiresAt: timestamp("expiresAt").notNull(),
@@ -133,7 +133,7 @@ export const users = mysqlTable("users", {
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
   // Platform-level role: ultra_admin = Pursuit Pathways staff; super_admin = full org control; admin = operational owner; auditor = read/validate; user = general staff; viewer = read-only
-  role: mysqlEnum("role", ["ultra_admin", "admin", "super_admin", "auditor", "viewer", "user"]).default("user").notNull(),
+  role: mysqlEnum("role", ["ultra_admin", "admin", "super_admin", "auditor", "viewer", "user", "sandbox"]).default("user").notNull(),
   // Impersonation support for ultra_admin
   impersonatingUserId: int("impersonatingUserId"),
   // RAS role: separate from platform role. null = no RAS access assigned.

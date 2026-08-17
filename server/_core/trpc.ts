@@ -149,3 +149,27 @@ const requirePaidPlan = t.middleware(async opts => {
 });
 
 export const paidProcedure = t.procedure.use(requirePaidPlan);
+
+// ─── requireNotSandbox ───────────────────────────────────────────────────────
+// Blocks sandbox / demo users from operational features they are meant to
+// only preview (training, EAP generation, RAS activation/installer, drills
+// launch/complete, etc.). Regular users are unaffected.
+export const requireNotSandbox = t.middleware(async opts => {
+  const { ctx, next } = opts;
+  if (!ctx.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
+  }
+  if (ctx.user.role === "sandbox") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "This action is disabled in the sandbox environment. Full access requires standard setup.",
+    });
+  }
+  return next({ ctx: { ...ctx, user: ctx.user } });
+});
+
+/** Paid-required procedure that also blocks sandbox users (operational actions). */
+export const paidSandboxRestrictedProcedure = paidProcedure.use(requireNotSandbox);
+
+/** Authenticated procedure that also blocks sandbox users. */
+export const protectedSandboxRestrictedProcedure = protectedProcedure.use(requireNotSandbox);

@@ -6,6 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import AnalyticsProvider from "@/components/AnalyticsProvider";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import AppLayout from "./components/AppLayout";
+import SandboxBlocked from "./components/SandboxBlocked";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -129,10 +130,10 @@ function Router() {
               <Route path="/drills/:id/run" component={DrillRunner} />
               <Route path="/drills/:id/debrief" component={DrillAfterAction} />
               <Route path="/ras" component={EmergencyAlerts} />
-              <Route path="/ras/activate" component={RASActivation} />
+              <Route path="/ras/activate"><SandboxBlocked><RASActivation /></SandboxBlocked></Route>
               <Route path="/staff-checkin" component={StaffCheckin} />
-              <Route path="/training-modules" component={TrainingModules} />
-              <Route path="/training/:id" component={TrainingPlayer} />
+              <Route path="/training-modules"><SandboxBlocked><TrainingModules /></SandboxBlocked></Route>
+              <Route path="/training/:id"><SandboxBlocked><TrainingPlayer /></SandboxBlocked></Route>
               <Route path="/personnel-tracking" component={PersonnelTracking} />
               <Route path="/btam" component={BtamDashboard} />
               <Route path="/btam/new" component={BtamIntake} />

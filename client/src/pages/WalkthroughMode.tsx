@@ -1,4 +1,5 @@
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { useParams, useLocation, Link } from "wouter";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
@@ -80,10 +81,15 @@ export default function WalkthroughMode() {
     onError: (e) => toast.error(e.message),
   });
 
+  const { user } = useAuth();
   const categories = useMemo(() => {
-    if (!facility) return AUDIT_CATEGORIES;
-    return getQuestionsForFacility(facility.facilityType);
-  }, [facility]);
+    let cats = facility ? getQuestionsForFacility(facility.facilityType) : AUDIT_CATEGORIES;
+    // Sandbox users may only view one CPTED topic and one EAP topic.
+    if (user?.role === "sandbox") {
+      cats = cats.filter((c) => c.id === "cpted_physical" || c.id === "eap_development");
+    }
+    return cats;
+  }, [facility, user?.role]);
 
   // Flatten all scored questions across all categories (skip facility_profile)
   const allQuestions = useMemo(() => {

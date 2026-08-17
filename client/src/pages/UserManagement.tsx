@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
-  UserCog, ShieldCheck, Eye, Pencil, Crown, Shield, User, Users, Settings, ArrowLeft, Radio, Mail, Plus, X, Building2, Trash2,
+  UserCog, ShieldCheck, Eye, Pencil, Crown, Shield, User, Users, Settings, ArrowLeft, Radio, Mail, Plus, X, Building2, Trash2, FlaskConical,
 } from "lucide-react";
 import { ROLE_META, type PlatformRole } from "@shared/permissions";
 
@@ -31,6 +31,7 @@ const PLATFORM_ROLES: PlatformRole[] = [
   "auditor",
   "user",
   "viewer",
+  "sandbox",
 ];
 
 const ROLE_ICONS: Record<PlatformRole, React.ComponentType<{ size?: number }>> = {
@@ -40,6 +41,7 @@ const ROLE_ICONS: Record<PlatformRole, React.ComponentType<{ size?: number }>> =
   auditor: Pencil,
   user: User,
   viewer: Eye,
+  sandbox: FlaskConical,
 };
 
 const RAS_ROLE_OPTIONS = [

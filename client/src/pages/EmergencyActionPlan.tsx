@@ -600,6 +600,7 @@ export default function EmergencyActionPlan() {
     const auditId = isNaN(rawId) ? 0 : rawId;
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "admin";
+  const isSandbox = user?.role === "sandbox";
 
   const { data: audit } = trpc.audit.get.useQuery({ id: auditId });
   const { data: savedSections, refetch: refetchSections } = trpc.eap.getSections.useQuery({ auditId });
@@ -798,10 +799,16 @@ export default function EmergencyActionPlan() {
                   : "Generate facility-specific content for all sections based on your audit findings. You can then edit each section individually."}
               </p>
             </div>
-            <Button onClick={handleGenerateEAP} variant={eapData ? "outline" : "default"} className="flex items-center gap-1.5 flex-shrink-0">
-              <Shield size={14} />
-              {eapData ? "Regenerate EAP" : "Generate EAP"}
-            </Button>
+            {isSandbox ? (
+              <p className="text-xs text-muted-foreground flex-shrink-0">
+                EAP generation is disabled in the sandbox environment.
+              </p>
+            ) : (
+              <Button onClick={handleGenerateEAP} variant={eapData ? "outline" : "default"} className="flex items-center gap-1.5 flex-shrink-0">
+                <Shield size={14} />
+                {eapData ? "Regenerate EAP" : "Generate EAP"}
+              </Button>
+            )}
           </div>
         )}
         {(eapLoading || eapGenerating) && (

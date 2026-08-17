@@ -1,4 +1,5 @@
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { useParams, Link } from "wouter";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -252,6 +253,8 @@ function RecommendedActionCard({ action }: { action: RecommendedAction }) {
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 export default function AuditReport() {
+  const { user } = useAuth();
+  const isSandbox = user?.role === "sandbox";
     const params = useParams<{ id: string }>();
     const rawId = parseInt(params.id ?? "", 10);
     const auditId = isNaN(rawId) ? 0 : rawId;
@@ -1249,9 +1252,11 @@ export default function AuditReport() {
                           ? <><Loader2 size={12} className="animate-spin" /> Generating…</>
                           : <><Download size={12} /> Download PDF</>}
                       </Button>
-                      <Button size="sm" variant="outline" onClick={handleGenerateEAP} disabled={eapGenerating} className="flex items-center gap-1.5">
-                        {eapGenerating ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />} Regenerate
-                      </Button>
+                      {!isSandbox && (
+                        <Button size="sm" variant="outline" onClick={handleGenerateEAP} disabled={eapGenerating} className="flex items-center gap-1.5">
+                          {eapGenerating ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />} Regenerate
+                        </Button>
+                      )}
                     </div>
                   </div>
 
@@ -1434,10 +1439,16 @@ export default function AuditReport() {
                 {eapGenError && (
                   <p className="text-xs text-red-600 mb-4 max-w-sm mx-auto bg-red-50 border border-red-200 rounded-lg p-3">{eapGenError}</p>
                 )}
-                <Button onClick={handleGenerateEAP} disabled={eapGenerating} className="flex items-center gap-2 mx-auto">
-                  {eapGenerating ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                  {eapGenerating ? "Generating EAP..." : "Generate Emergency Action Plan"}
-                </Button>
+                {isSandbox ? (
+                  <p className="text-xs text-muted-foreground mx-auto max-w-sm">
+                    EAP generation is disabled in the sandbox environment. Full access requires standard setup.
+                  </p>
+                ) : (
+                  <Button onClick={handleGenerateEAP} disabled={eapGenerating} className="flex items-center gap-2 mx-auto">
+                    {eapGenerating ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                    {eapGenerating ? "Generating EAP..." : "Generate Emergency Action Plan"}
+                  </Button>
+                )}
                 <p className="text-[10px] text-muted-foreground mt-3">This may take 45–90 seconds. Keep this page open.</p>
               </div>
             )}

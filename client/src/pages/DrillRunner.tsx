@@ -11,6 +11,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocation, useParams } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   Clock, Play, Pause, RotateCcw, ChevronRight, ChevronLeft,
   Users, CheckCircle2, AlertTriangle, Loader2, Plus, Trash2,
-  ArrowRight,
+  ArrowRight, Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -73,6 +74,7 @@ export default function DrillRunner() {
     const rawId = parseInt(params.id ?? "", 10);
     const sessionId = isNaN(rawId) ? 0 : rawId;
   const [, navigate] = useLocation();
+  const { user } = useAuth();
 
   const [currentStep, setCurrentStep] = useState<Step>("briefing");
   const [participants, setParticipants] = useState<Participant[]>([{ name: "", role: "", attended: true, observations: "" }]);
@@ -485,17 +487,24 @@ export default function DrillRunner() {
               <p className="text-sm text-muted-foreground">
                 Click below to save the drill and open the After-Action Report where you will capture debrief responses, gaps, and follow-up actions.
               </p>
-              <Button
-                className="w-full"
-                onClick={handleComplete}
-                disabled={completeMutation.isPending}
-              >
-                {completeMutation.isPending ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving…</>
-                ) : (
-                  <><CheckCircle2 className="h-4 w-4 mr-2" />Complete & Open After-Action Report</>
-                )}
-              </Button>
+              {user?.role === "sandbox" ? (
+                <div className="w-full rounded-md border border-amber-300 bg-amber-50/60 px-4 py-3 text-sm text-amber-800">
+                  <p className="font-medium flex items-center gap-2"><Lock className="h-4 w-4" /> Completing drills is disabled in the sandbox</p>
+                  <p className="mt-1 text-amber-700/80">You can explore how drills work. Full execution requires standard setup.</p>
+                </div>
+              ) : (
+                <Button
+                  className="w-full"
+                  onClick={handleComplete}
+                  disabled={completeMutation.isPending}
+                >
+                  {completeMutation.isPending ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving…</>
+                  ) : (
+                    <><CheckCircle2 className="h-4 w-4 mr-2" />Complete & Open After-Action Report</>
+                  )}
+                </Button>
+              )}
             </CardContent>
           </Card>
         )}

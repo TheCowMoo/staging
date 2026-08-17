@@ -955,6 +955,16 @@ export default function EmergencyAlerts() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      {/* Sandbox view-only notice */}
+      {user.role === "sandbox" && (
+        <div className="rounded-md border border-sky-300 bg-sky-50/70 px-4 py-3 text-sm text-sky-800">
+          <p className="font-medium flex items-center gap-2"><Lock className="h-4 w-4" /> Sandbox mode — view only</p>
+          <p className="mt-1 text-sky-700/80">
+            You can explore how the Response Activation System works, but initiating emergency communications
+            and downloading the installer require standard setup. Full access comes with a paid plan.
+          </p>
+        </div>
+      )}
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>

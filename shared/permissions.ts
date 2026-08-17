@@ -17,7 +17,8 @@ export type PlatformRole =
   | "admin"         // Operational owner
   | "auditor"       // Read + validate (with optional write)
   | "user"          // General staff / end-user
-  | "viewer";       // Legacy read-only
+  | "viewer"        // Legacy read-only
+  | "sandbox";     // Sandbox / demo user (guided access, mostly view-only)
 
 /** Org-level roles stored on the org_members table */
 export type OrgRole =
@@ -25,7 +26,8 @@ export type OrgRole =
   | "admin"
   | "auditor"
   | "user"
-  | "viewer";
+  | "viewer"
+  | "sandbox";
 
 // ─── Optional Permission Flags ────────────────────────────────────────────────
 
@@ -352,6 +354,60 @@ const VIEWER_PERMISSIONS: RolePermissions = {
   canViewReports: true,
 };
 
+/**
+ * Sandbox / demo role — guided prospect access.
+ *
+ * Full access: Readiness Scan, Visitor Mgmt, Incidents, Tracking, BTAM,
+ * Communication, Mapping, Analytics (view), Standards & Regs (view).
+ * View-only (content-locked): Site Assessments (1 CPTED + 1 EAP topic only),
+ * EAP (no generation), Drills (no launch/complete), RAS (no activation/installer).
+ * Blocked: Training module (handled via LMS demo).
+ */
+const SANDBOX_PERMISSIONS: RolePermissions = {
+  canManageOrganization: false,
+  canManageAllUsers: false,
+  canManageAdminsAndBelow: false,
+  canManageAuditorsAndBelow: false,
+  canManageUsersOnly: false,
+  canAssignRoles: false,
+  canViewAuditLogs: false,
+  canOverrideSystemSettings: false,
+  canManageIntegrations: false,
+  canViewSystemAnalytics: true,
+  canViewLiabilityScans: true,
+  canEditLiabilityScans: true,
+  canDeleteLiabilityScans: true,
+  canRunLiabilityScans: true,
+  canViewEaps: true,
+  canCreateEaps: false,
+  canEditEaps: false,
+  canDeleteEaps: false,
+  canExportEaps: false,
+  canViewSiteAssessments: true,
+  canCreateSiteAssessments: false,
+  canEditSiteAssessments: false,
+  canDeleteSiteAssessments: false,
+  canViewDrills: true,
+  canCreateDrills: false,
+  canEditDrills: false,
+  canDeleteDrills: false,
+  canLaunchDrills: false,
+  canScheduleDrills: false,
+  canViewDrillResults: true,
+  canTriggerRasAlerts: false,
+  canViewRasAlertHistory: true,
+  canGetAlertResponses: true,
+  canViewIncidents: true,
+  canLogIncidents: true,
+  canEditIncidents: true,
+  canDeleteIncidents: true,
+  canReviewIncidentReports: true,
+  canSubmitIncidentReports: true,
+  canViewReports: true,
+  canExportReports: true,
+  canImpersonateUsers: false,
+};
+
 export const BASE_ROLE_PERMISSIONS: Record<PlatformRole | OrgRole, RolePermissions> = {
   ultra_admin: ULTRA_ADMIN_PERMISSIONS,
   super_admin: SUPER_ADMIN_PERMISSIONS,
@@ -359,6 +415,7 @@ export const BASE_ROLE_PERMISSIONS: Record<PlatformRole | OrgRole, RolePermissio
   auditor: AUDITOR_PERMISSIONS,
   user: USER_PERMISSIONS,
   viewer: VIEWER_PERMISSIONS,
+  sandbox: SANDBOX_PERMISSIONS,
 };
 
 // ─── Permission Resolver ──────────────────────────────────────────────────────
@@ -443,6 +500,13 @@ export const ROLE_META: Record<PlatformRole | OrgRole, RoleMeta> = {
     description: "Read-only access — cannot create or modify any data",
     color: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20",
     badgeColor: "bg-slate-500 text-white",
+    level: 0,
+  },
+  sandbox: {
+    label: "Sandbox",
+    description: "Sandbox / demo user — guided access; most operational modules view-only",
+    color: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20",
+    badgeColor: "bg-sky-600 text-white",
     level: 0,
   },
 };
