@@ -9,6 +9,25 @@ const NOT_ORG_ADMIN_ERR_MSG = "You must be an Admin or higher to perform this ac
 
 const t = initTRPC.context<TrpcContext>().create({
   transformer: superjson,
+  // Surface the REAL underlying error server-side. tRPC only serializes
+  // error.message to clients — drizzle's opaque "Failed query: <sql>" hides the
+  // actual MySQL cause in error.cause (and error.cause.cause), which is never
+  // sent over the wire. Logging it here puts e.g.
+  // "Unknown column 'concernLevel' in 'field list'" into pm2/node logs.
+  errorFormatter: ({ shape, error }) => {
+    const cause = error.cause as
+      | { message?: string; cause?: { code?: string; message?: string } }
+      | null
+      | undefined;
+    if (cause) {
+      const nested = cause.cause;
+      const path = shape.data?.path ? ` @${shape.data.path}` : "";
+      const code = nested?.code ? ` [${nested.code}]` : "";
+      const msg = `${cause.message ?? String(cause)}${nested?.message ? ` :: ${nested.message}` : ""}`;
+      console.error(`[tRPC] ${error.code}${path}${code}: ${msg}`);
+    }
+    return shape;
+  },
 });
 
 export const router = t.router;
