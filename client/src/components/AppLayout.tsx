@@ -283,7 +283,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       label: "Visitor Management",
       icon: <Users size={18} />,
       items: [
-        { href: "/visitors", label: "Visitor Log", icon: <Users size={15} />, locked: isPaid ? undefined : "paid" },
+        { href: "/visitors", label: "Visitor Log", icon: <Users size={15} />, locked: undefined },
         { href: "/admin/flagged-visitors", label: "Flagged Visitors", icon: <Flag size={15} />, locked: isPaid ? undefined : "paid" },
       ],
     },
@@ -302,7 +302,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       icon: <UserX size={18} />,
       items: [
         { href: "/btam",     label: "BTAM Cases",  icon: <ShieldAlert size={15} />, locked: isPaid ? undefined : "paid" },
-        { href: "/btam/new", label: "New Referral", icon: <FilePlus size={15} />,    locked: isPaid ? undefined : "paid" },
+        { href: "/btam/new", label: "New Referral", icon: <FilePlus size={15} />,    locked: undefined },
       ],
     },
     {

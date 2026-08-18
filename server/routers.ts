@@ -2320,14 +2320,14 @@ Return only valid JSON. No markdown fences. No extra keys.`;
 });
 const visitorRouter = router({
   // List all visitor logs for the current user (optionally filtered by facility)
-  list: paidProcedure
+  list: protectedProcedure
     .input(z.object({ facilityId: z.number().optional() }))
     .query(async ({ ctx, input }) => {
       return getVisitorLogs(ctx.user.id, input.facilityId);
     }),
 
   // Log a new visitor in
-  create: paidProcedure
+  create: protectedProcedure
     .input(z.object({
       facilityId: z.number().optional(),
       visitorName: z.string().min(1),
@@ -2359,7 +2359,7 @@ const visitorRouter = router({
     }),
 
   // Record time-out for a visitor
-  checkOut: paidProcedure
+  checkOut: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
       await checkOutVisitor(input.id);
@@ -2367,7 +2367,7 @@ const visitorRouter = router({
     }),
 
   // Update visitor record (e.g., add notes or correct details)
-  update: paidProcedure
+  update: protectedProcedure
     .input(z.object({
       id: z.number(),
       visitorName: z.string().optional(),
@@ -2385,7 +2385,7 @@ const visitorRouter = router({
     }),
 
   // Delete a visitor log entry
-  delete: paidProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
       await deleteVisitorLog(input.id);
@@ -2439,7 +2439,7 @@ const flaggedVisitorRouter = router({
       await deleteFlaggedVisitor(input.id);
       return { success: true };
     }),
-  checkName: paidProcedure
+  checkName: protectedProcedure
     .input(z.object({ name: z.string().min(1) }))
     .query(async ({ input }) => {
       const match = await checkVisitorAgainstWatchlist(input.name);
@@ -4060,7 +4060,7 @@ const btamRouter = router({
     }),
 
   // Create a new referral (intake + subject + case in one transaction)
-  createReferral: paidProcedure
+  createReferral: protectedProcedure
     .input(z.object({
       // Intake fields
       reporterRole: z.enum(["hr", "manager", "coworker", "self", "anonymous"]),

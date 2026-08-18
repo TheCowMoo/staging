@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -123,6 +124,9 @@ export default function BtamIntake() {
     onSuccess: (data) => {
       setNewCaseId(data.caseId);
       setSubmitted(true);
+    },
+    onError: (e) => {
+      toast.error(e.message || "Failed to submit referral. Please try again.");
     },
   });
 
