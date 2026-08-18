@@ -17,7 +17,7 @@
  *  - Category descriptions start as the exact operational-interpretation
  *    outputs (categoryInsight()) but are editable per the template requirement.
  */
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { loadScanSession } from "@/lib/scanSession";
 import { categoryInsight } from "@/components/assessment/CategoryBreakdownBar";
@@ -266,6 +266,7 @@ const REPORT_CSS = `
   width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid var(--fs-neutral);
   font-family: 'Open Sans', system-ui, sans-serif; font-size: 12px; background-color: #fcfcfc; resize: none; border-radius: 4px;
 }
+.advisory-root textarea { overflow: hidden; }
 .advisory-root input[type="text"]:focus, .advisory-root input[type="number"]:focus, .advisory-root textarea:focus, .advisory-root select:focus { outline: 1px solid var(--fs-mid-blue); background-color: #fff; }
 .advisory-root .score-box { background-color: var(--fs-light-blue); border: 1px solid var(--fs-mid-blue); padding: 15px; border-radius: 6px; text-align: center; margin-bottom: 20px; }
 .advisory-root .gauge { position: relative; width: 150px; height: 150px; margin: 2px auto 0; }
@@ -484,6 +485,17 @@ export default function AdvisoryReport() {
   // ── Export mode: advisor = full report, client = hides admin-only ─────
   const [exportMode, setExportMode] = useState<"advisor" | "client">("advisor");
 
+  // ── Auto-grow every textarea so the printed PDF never clips scrollable content ──
+  const rootRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    root.querySelectorAll("textarea").forEach((ta) => {
+      ta.style.height = "auto";
+      ta.style.height = `${ta.scrollHeight + 2}px`;
+    });
+  });
+
   if (!result) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-center px-4 bg-background">
@@ -542,7 +554,7 @@ export default function AdvisoryReport() {
   }
 
   return (
-    <div className={`advisory-root${exportMode === "client" ? " client-mode" : ""}`}>
+    <div ref={rootRef} className={`advisory-root${exportMode === "client" ? " client-mode" : ""}`}>
       <style>{REPORT_CSS}</style>
 
       {/* Floating export buttons (hidden when printing) */}
