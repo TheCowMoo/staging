@@ -10,8 +10,8 @@
  *
  * Compliance (executive directive):
  *  - Discovery Call Notes, Advisor Insight, Current Organizational Exposure,
- *    Strategic Priorities, Roadmap, and Investment Range are MANUAL fields —
- *    never AI-generated.
+ *    Strategic Priorities, Recommended Solution Options, Roadmap, and
+ *    Investment Range are MANUAL fields — never AI-generated.
  *  - Category descriptions start as the exact operational-interpretation
  *    outputs (categoryInsight()) but are editable per the template requirement.
  */
@@ -75,6 +75,11 @@ const DEFAULT_ROADMAP = {
   phase3: "Phase 3 — Implementation & Validation:\nStaff training, facilitated drills, and system handover with routine monitoring.",
 };
 
+const DEFAULT_SOLUTION_1 =
+  "Engage Five Stones Technology for an on-site, third-party assessment that produces a defensible, documented record of your organization's workplace violence risk posture.";
+const DEFAULT_SOLUTION_2 =
+  "Commission a customized Active Threat Response Plan and Emergency Action Plan aligned to your facility, workforce, and jurisdiction — the foundation of a legally defensible safety program.";
+
 const REPORT_CSS = `
 .advisory-root {
   --fs-navy: ${FS.navy}; --fs-steel: ${FS.steel}; --fs-gold: ${FS.gold};
@@ -135,10 +140,14 @@ const REPORT_CSS = `
 }
 .advisory-root input[type="text"]:focus, .advisory-root input[type="number"]:focus, .advisory-root textarea:focus, .advisory-root select:focus { outline: 1px solid var(--fs-mid-blue); background-color: #fff; }
 .advisory-root .score-box { background-color: var(--fs-light-blue); border: 1px solid var(--fs-mid-blue); padding: 15px; border-radius: 6px; text-align: center; margin-bottom: 20px; }
-.advisory-root .overall-score-row { display: flex; align-items: baseline; justify-content: center; gap: 6px; }
-.advisory-root .overall-score-input { width: 130px; font-size: 36px; font-weight: 700; color: var(--fs-navy); text-align: center; border: 1px solid transparent; background: transparent; }
+.advisory-root .gauge { position: relative; width: 150px; height: 150px; margin: 2px auto 0; }
+.advisory-root .gauge svg { width: 150px; height: 150px; display: block; }
+.advisory-root .gauge-track { fill: none; stroke: #E0E0E0; stroke-width: 12; }
+.advisory-root .gauge-arc { fill: none; stroke-width: 12; stroke-linecap: round; transition: stroke-dashoffset 0.3s ease; }
+.advisory-root .gauge-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.advisory-root .overall-score-input { width: 90px; font-size: 32px; font-weight: 700; color: var(--fs-navy); text-align: center; border: 1px solid transparent; background: transparent; }
 .advisory-root .overall-score-input:focus { outline: none; border-color: var(--fs-mid-blue); background: #fff; }
-.advisory-root .overall-score-denom { font-size: 16px; color: var(--fs-navy); }
+.advisory-root .overall-score-denom { font-size: 15px; color: var(--fs-navy); margin-top: -2px; }
 .advisory-root .chart-row { margin-bottom: 15px; }
 .advisory-root .phase-block, .advisory-root .chart-row, .advisory-root .exposure-grid,
 .advisory-root .client-info-grid, .advisory-root .score-box { break-inside: avoid; page-break-inside: avoid; }
@@ -223,6 +232,8 @@ export default function AdvisoryReport() {
   const [phase2, setPhase2] = useState("");
   const [phase3, setPhase3] = useState("");
   const [roadmap, setRoadmap] = useState(DEFAULT_ROADMAP);
+  const [solution1, setSolution1] = useState(DEFAULT_SOLUTION_1);
+  const [solution2, setSolution2] = useState(DEFAULT_SOLUTION_2);
   const [timeline, setTimeline] = useState("");
   const [outcomes, setOutcomes] = useState("");
   const [investmentMin, setInvestmentMin] = useState("");
@@ -253,6 +264,12 @@ export default function AdvisoryReport() {
     score: Number(catScores[c.scoreKey]) || 0,
     desc: catDescs[c.scoreKey] ?? "",
   }));
+
+  // ── Overall score radial gauge ──────────────────────────────────────────
+  const scoreNum = Math.max(0, Math.min(100, Number(overallScore) || 0));
+  const GAUGE_R = 56;
+  const GAUGE_CIRC = 2 * Math.PI * GAUGE_R;
+  const arcColor = scoreNum < 40 ? FS.orange : scoreNum <= 75 ? FS.citrus : FS.darkTeal;
 
   function exportPdf(mode: "advisor" | "client") {
     setExportMode(mode);
@@ -347,7 +364,7 @@ export default function AdvisoryReport() {
         {/* Footer */}
         <div className="report-footer">
           <span>Five Stones Technology</span>
-          <span className="footer-page">Page 1 of 4</span>
+          <span className="footer-page">Page 1 of 5</span>
         </div>
       </div>
 
@@ -358,16 +375,31 @@ export default function AdvisoryReport() {
         <h2 className="highlight" style={{ marginTop: 0 }}>Readiness Scan Insights</h2>
         <div className="score-box">
           <h3>Overall Readiness Score</h3>
-          <div className="overall-score-row">
-            <input
-              className="overall-score-input"
-              type="number"
-              min={0}
-              max={100}
-              value={overallScore}
-              onChange={(e) => setOverallScore(e.target.value)}
-            />
-            <span className="overall-score-denom">/ 100</span>
+          <div className="gauge">
+            <svg viewBox="0 0 140 140" aria-hidden="true">
+              <circle className="gauge-track" cx="70" cy="70" r={GAUGE_R} />
+              <circle
+                className="gauge-arc"
+                cx="70"
+                cy="70"
+                r={GAUGE_R}
+                stroke={arcColor}
+                strokeDasharray={GAUGE_CIRC}
+                strokeDashoffset={GAUGE_CIRC * (1 - scoreNum / 100)}
+                transform="rotate(-90 70 70)"
+              />
+            </svg>
+            <div className="gauge-center">
+              <input
+                className="overall-score-input"
+                type="number"
+                min={0}
+                max={100}
+                value={overallScore}
+                onChange={(e) => setOverallScore(e.target.value)}
+              />
+              <span className="overall-score-denom">/ 100</span>
+            </div>
           </div>
         </div>
 
@@ -400,7 +432,7 @@ export default function AdvisoryReport() {
         {/* Footer */}
         <div className="report-footer">
           <span>Five Stones Technology</span>
-          <span className="footer-page">Page 2 of 4</span>
+          <span className="footer-page">Page 2 of 5</span>
         </div>
       </div>
 
@@ -464,14 +496,38 @@ export default function AdvisoryReport() {
         {/* Footer */}
         <div className="report-footer">
           <span>Five Stones Technology</span>
-          <span className="footer-page">Page 3 of 4</span>
+          <span className="footer-page">Page 3 of 5</span>
         </div>
       </div>
 
 
-      {/* PAGE 4: ROADMAP & INVESTMENT */}
+      {/* PAGE 4: RECOMMENDED SOLUTION OPTIONS */}
       <div className="page">
-        {/* Section 7 — Implementation Roadmap & Outcomes (prefilled text + manual) */}
+        {/* Section 7 — Recommended Solution Options (manual, prefilled editable) */}
+        <h2 className="highlight" style={{ marginTop: 0 }}>Recommended Solution Options</h2>
+        <p style={{ fontSize: 13 }}>Select and edit the recommended solution for this organization.</p>
+
+        <div className="phase-block">
+          <h3>Option 1 — Full Liability Assessment</h3>
+          <textarea rows={4} value={solution1} onChange={(e) => setSolution1(e.target.value)} />
+        </div>
+
+        <div className="phase-block">
+          <h3>Option 2 — Site-Specific Plan Development</h3>
+          <textarea rows={4} value={solution2} onChange={(e) => setSolution2(e.target.value)} />
+        </div>
+
+        {/* Footer */}
+        <div className="report-footer">
+          <span>Five Stones Technology</span>
+          <span className="footer-page">Page 4 of 5</span>
+        </div>
+      </div>
+
+
+      {/* PAGE 5: ROADMAP & INVESTMENT */}
+      <div className="page">
+        {/* Section 8 — Implementation Roadmap & Outcomes (prefilled text + manual) */}
         <h2 className="highlight" style={{ marginTop: 0 }}>Implementation Roadmap &amp; Outcomes</h2>
         <div className="phase-block">
           <h3>Phase 1</h3>
@@ -498,7 +554,7 @@ export default function AdvisoryReport() {
 
         <hr />
 
-        {/* Section 8 — Estimated Investment Range (manual) */}
+        {/* Section 9 — Estimated Investment Range (manual) */}
         <h3>Estimated Investment Range</h3>
         <div className="investment-group">
           $ <input type="text" placeholder="Min Amount" value={investmentMin} onChange={(e) => setInvestmentMin(e.target.value)} />
@@ -509,7 +565,7 @@ export default function AdvisoryReport() {
         {/* Footer */}
         <div className="report-footer">
           <span>Five Stones Technology</span>
-          <span className="footer-page">Page 4 of 4</span>
+          <span className="footer-page">Page 5 of 5</span>
         </div>
       </div>
     </div>
