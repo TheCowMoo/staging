@@ -577,6 +577,10 @@ export const liabilityScans = mysqlTable("liability_scans", {
   riskMapDescriptor: text("riskMapDescriptor"),
   jurisdiction: varchar("jurisdiction", { length: 128 }).notNull(),
   industry: varchar("industry", { length: 128 }).notNull(),
+  // Scan context metadata (editable in the assessment form, saved with the result)
+  organization: varchar("organization", { length: 255 }),
+  employeeCount: varchar("employeeCount", { length: 64 }),
+  facilityLocation: text("facilityLocation"),
   // JSON blobs for structured result data
   topGaps: json("topGaps").notNull(),
   categoryBreakdown: json("categoryBreakdown").notNull(),

@@ -18,6 +18,7 @@ import { US_STATES, ONTARIO_PROVINCES } from "../../../shared/stateProvinces";
 import { INDUSTRY_LIST } from "../../../shared/industryOverlayContent";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -34,7 +35,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   ShieldAlert,
-  ShieldCheck,
   CheckCircle2,
   XCircle,
   RotateCcw,
@@ -151,6 +151,12 @@ const CATEGORY_INTRO_BY_INDUSTRY: Record<string, Partial<Record<CategoryKey, str
 };
 
 // --- Main page ---
+// ── Hidden result sections — kept for future re-enable (flip flag to true to restore) ──
+const SHOW_WHAT_THIS_MEANS = false;
+const SHOW_OPERATIONAL_INTERPRETATION = false;
+const SHOW_ACTION_ROADMAP = false;
+const SHOW_SERVICE_CARDS = false;
+
 export default function LiabilityScan() {
   const [, navigate] = useLocation();
   const { user } = useAuth();
@@ -160,6 +166,9 @@ export default function LiabilityScan() {
 
   const [jurisdiction, setJurisdiction] = useState(session.jurisdiction);
   const [industry, setIndustry] = useState(session.industry);
+  const [organization, setOrganization] = useState(session.organization);
+  const [employeeCount, setEmployeeCount] = useState(session.employeeCount);
+  const [facilityLocation, setFacilityLocation] = useState(session.facilityLocation);
   const [lateNightOperations, setLateNightOperations] = useState<boolean | undefined>(session.lateNightOperations);
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>(session.answers);
   const [result, setResult] = useState<AssessmentOutput | null>(session.result);
@@ -213,6 +222,36 @@ export default function LiabilityScan() {
 
   const computeScoreMutation = trpc.liabilityScan.computeScore.useMutation();
 
+  // ── Pre-fill assessment context from existing org/facility data (logged-in users) ──
+  const { data: memberships = [] } = trpc.org.myMemberships.useQuery(undefined, {
+    enabled: !!user,
+  });
+  const firstOrgId = memberships[0]?.orgId ?? 0;
+  const { data: currentOrg } = trpc.org.get.useQuery(
+    { orgId: firstOrgId },
+    { enabled: !!user && firstOrgId > 0 }
+  );
+  const { data: orgFacilities = [] } = trpc.facility.list.useQuery(undefined, {
+    enabled: !!user,
+  });
+
+  const facilityLabel = useMemo(
+    () =>
+      orgFacilities
+        .map((f) => [f.name, f.city, f.state].filter(Boolean).join(", "))
+        .join("; "),
+    [orgFacilities]
+  );
+
+  // Only pre-fill when the field is still empty so user edits are never overwritten
+  useEffect(() => {
+    if (currentOrg?.name && !organization) setOrganization(currentOrg.name);
+  }, [currentOrg?.name, organization]);
+
+  useEffect(() => {
+    if (facilityLabel && !facilityLocation) setFacilityLocation(facilityLabel);
+  }, [facilityLabel, facilityLocation]);
+
 
 
   // Navigate to Defensibility Plan carrying full assessment context
@@ -256,6 +295,9 @@ export default function LiabilityScan() {
         riskMapDescriptor: result.riskMap.descriptor,
         jurisdiction,
         industry,
+        organization,
+        employeeCount,
+        facilityLocation,
         topGaps: result.topGaps.map((g) => ({
           ...g,
           weight: weightById[g.id] ?? 0,
@@ -284,7 +326,7 @@ export default function LiabilityScan() {
     } finally {
       setExportLoading(false);
     }
-  }, [result, jurisdiction, industry, savedScanId, weightById]);
+  }, [result, jurisdiction, industry, organization, employeeCount, facilityLocation, savedScanId, weightById]);
 
   const totalAnswered = Object.keys(answers).length;
   const totalQuestions = QUESTIONS.length;
@@ -313,6 +355,9 @@ export default function LiabilityScan() {
         answers,
         jurisdiction: jurisdiction || "Not specified",
         industry: industry || "Not specified",
+        organization,
+        employeeCount,
+        facilityLocation,
         lateNightOperations: !!lateNightOperations,
         scanId: null,
       });
@@ -327,6 +372,9 @@ export default function LiabilityScan() {
           riskMapDescriptor: output.riskMap.descriptor,
           jurisdiction: jurisdiction || "Not specified",
           industry: industry || "Not specified",
+          organization: organization || undefined,
+          employeeCount: employeeCount || undefined,
+          facilityLocation: facilityLocation || undefined,
           topGaps: output.topGaps,
           categoryBreakdown: output.categoryScores as unknown as Record<string, unknown>,
           immediateActions: output.immediateActionPlan,
@@ -472,6 +520,18 @@ export default function LiabilityScan() {
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+              <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
+              Organization
+            </label>
+            <Input
+              type="text"
+              value={organization}
+              onChange={(e) => setOrganization(e.target.value)}
+              placeholder="Your organization name"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
               Jurisdiction
             </label>
@@ -505,6 +565,31 @@ export default function LiabilityScan() {
               </SelectContent>
             </Select>
           </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                Number of employees
+              </label>
+              <Input
+                type="text"
+                inputMode="numeric"
+                value={employeeCount}
+                onChange={(e) => setEmployeeCount(e.target.value)}
+                placeholder="e.g. 250"
+              />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+                Facility / Location(s)
+              </label>
+              <Input
+                type="text"
+                value={facilityLocation}
+                onChange={(e) => setFacilityLocation(e.target.value)}
+                placeholder="e.g. Main Campus — 123 Main St, Springfield, IL"
+              />
+            </div>
               {industry === "Retail" && (
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
@@ -787,43 +872,6 @@ export default function LiabilityScan() {
                 {result.interpretation}
               </p>
             </div>
-            <div className="rounded-xl border border-border p-5 bg-card space-y-3">
-              <p className="text-sm font-semibold text-foreground">Top 3 readiness gaps</p>
-              <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
-                {gapItems.slice(0, 3).map((gap, i) => (
-                  <li key={i}>{gap.gap}</li>
-                ))}
-              </ul>
-            </div>
-            <div className="rounded-xl border border-border p-5 bg-card space-y-3">
-              <p className="text-sm font-semibold text-foreground">Recommended starting point</p>
-              <p className="text-sm text-muted-foreground">
-                Start with a site-specific readiness assessment and action plan. This creates the structure needed for reporting, response, training, and review.
-              </p>
-            </div>
-            <div className="rounded-xl border border-border p-5 bg-card space-y-4">
-              <p className="text-sm font-semibold text-foreground">Your next step</p>
-              <p className="text-sm text-muted-foreground">
-                Build your readiness plan to turn these gaps into structured improvement actions.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <AssessmentCTAButton
-                  variant="primary"
-                  size="lg"
-                  iconLeft={<ShieldCheck className="w-4 h-4" />}
-                  onClick={handleDefensibilityPlan}
-                >
-                  {planVisited ? "View Your Readiness Plan" : "Build Your Readiness Plan"}
-                </AssessmentCTAButton>
-                <AssessmentCTAButton
-                  variant="secondary"
-                  size="lg"
-                  onClick={handleExportReport}
-                >
-                  Export Executive Summary
-                </AssessmentCTAButton>
-              </div>
-            </div>
           </div>
 
           {/* -- Sections 2-7: Collapsible Accordion (all results sections) */}
@@ -886,80 +934,92 @@ export default function LiabilityScan() {
             </AccordionItem>
 
             {/* What This Means */}
-            <AccordionItem
-              value="interpretation"
-              className="border border-border rounded-xl overflow-hidden shadow-sm"
+            {SHOW_WHAT_THIS_MEANS && (
+              <AccordionItem
+                value="interpretation"
+                className="border border-border rounded-xl overflow-hidden shadow-sm"
+              >
+                <AccordionTrigger className="px-5 py-3.5 bg-card hover:bg-muted/40 hover:no-underline font-semibold text-foreground text-sm">
+                  <span className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#3A5F7D] flex-shrink-0" />
+                    What This Means
+                  </span>
+                </AccordionTrigger>
+                <AccordionContent className="px-5 pb-4 pt-2 bg-card">
+                  <InterpretationCard text={result.interpretation} withCard={false} />
+                </AccordionContent>
+              </AccordionItem>
+            )}
+
+            {/* ROI Calculator */}
+            <a
+              href="https://roi.pursuitpathways.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl border border-border bg-card hover:bg-muted/40 font-semibold text-foreground text-sm shadow-sm"
             >
-              <AccordionTrigger className="px-5 py-3.5 bg-card hover:bg-muted/40 hover:no-underline font-semibold text-foreground text-sm">
-                <span className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#3A5F7D] flex-shrink-0" />
-                  What This Means
-                </span>
-              </AccordionTrigger>
-              <AccordionContent className="px-5 pb-4 pt-2 bg-card">
-                <InterpretationCard text={result.interpretation} withCard={false} />
-              </AccordionContent>
-            </AccordionItem>
+              ROI Calculator
+            </a>
 
             {/* Advisor Insight */}
-            <AccordionItem
-              value="advisor-insight"
-              className="border border-border rounded-xl overflow-hidden shadow-sm"
-            >
-              <AccordionTrigger className="px-5 py-3.5 bg-card hover:bg-muted/40 hover:no-underline font-semibold text-foreground text-sm">
-                <span className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />
-                  Operational Interpretation
-                </span>
-              </AccordionTrigger>
-              <AccordionContent className="px-5 pb-4 pt-2 bg-card">
-                <AdvisorInsightCard
-                  advisorSummary={result.advisorSummary}
-                  topGaps={result.topGaps}
-                  withCard={false}
-                />
-              </AccordionContent>
-            </AccordionItem>
+            {SHOW_OPERATIONAL_INTERPRETATION && (
+              <AccordionItem
+                value="advisor-insight"
+                className="border border-border rounded-xl overflow-hidden shadow-sm"
+              >
+                <AccordionTrigger className="px-5 py-3.5 bg-card hover:bg-muted/40 hover:no-underline font-semibold text-foreground text-sm">
+                  <span className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />
+                    Operational Interpretation
+                  </span>
+                </AccordionTrigger>
+                <AccordionContent className="px-5 pb-4 pt-2 bg-card">
+                  <AdvisorInsightCard
+                    advisorSummary={result.advisorSummary}
+                    topGaps={result.topGaps}
+                    withCard={false}
+                  />
+                </AccordionContent>
+              </AccordionItem>
+            )}
 
             {/* Priority Action Plan */}
-            <AccordionItem
-              value="priority-actions"
-              className="border border-border rounded-xl overflow-hidden shadow-sm"
-            >
-              <AccordionTrigger className="px-5 py-3.5 bg-card hover:bg-muted/40 hover:no-underline font-semibold text-foreground text-sm">
-                <span className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#E5484D] flex-shrink-0" />
-                  Action Roadmap
-                  {result.immediateActionPlan.length > 0 && (
-                    <span className="ml-1 text-xs font-normal text-muted-foreground">
-                      ({result.immediateActionPlan.length} actions)
-                    </span>
-                  )}
-                </span>
-              </AccordionTrigger>
-              <AccordionContent className="px-5 pb-4 pt-2 bg-card">
-                <ActionPlanSection
-                  actions={result.immediateActionPlan}
-                  sectionId="priority-actions"
-                />
-              </AccordionContent>
-            </AccordionItem>
+            {SHOW_ACTION_ROADMAP && (
+              <AccordionItem
+                value="priority-actions"
+                className="border border-border rounded-xl overflow-hidden shadow-sm"
+              >
+                <AccordionTrigger className="px-5 py-3.5 bg-card hover:bg-muted/40 hover:no-underline font-semibold text-foreground text-sm">
+                  <span className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#E5484D] flex-shrink-0" />
+                    Action Roadmap
+                    {result.immediateActionPlan.length > 0 && (
+                      <span className="ml-1 text-xs font-normal text-muted-foreground">
+                        ({result.immediateActionPlan.length} actions)
+                      </span>
+                    )}
+                  </span>
+                </AccordionTrigger>
+                <AccordionContent className="px-5 pb-4 pt-2 bg-card">
+                  <ActionPlanSection
+                    actions={result.immediateActionPlan}
+                    sectionId="priority-actions"
+                  />
+                </AccordionContent>
+              </AccordionItem>
+            )}
           </Accordion>
 
           {/* -- Section 8: Service Cards (gap-map-driven, pasted_content_36 §4-§6) */}
-          <ServiceCardsSection
-            topGaps={result.topGaps}
-            onServiceCTA={(service) => navigate(`/how-we-help#${service}`)}
-          />
+          {SHOW_SERVICE_CARDS && (
+            <ServiceCardsSection
+              topGaps={result.topGaps}
+              onServiceCTA={(service) => navigate(`/how-we-help#${service}`)}
+            />
+          )}
 
           {/* ── Section 9: Final CTA ──────────────────────────────────────────── */}
-          <FinalCTABanner
-            classification={classToStatus(result.classification)}
-            riskColor={result.riskMap.color}
-            primaryLabel={planVisited ? "View Your Readiness Plan" : "Build Your Readiness Plan"}
-            onPrimary={handleDefensibilityPlan}
-            onSecondary={handleExportReport}
-          />
+          <FinalCTABanner onSecondary={handleExportReport} />
 
           {/* CRM payload is available via engine output for API/automation use — not shown in UI */}
         </div>

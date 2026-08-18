@@ -418,6 +418,29 @@ All tables defined in `drizzle/schema.ts` (~1019 lines). Key tables:
 - MySQL 8.0.13+ rejects literal `TEXT DEFAULT '[]'` — must be parenthesized `TEXT DEFAULT ('[]')`. Fixed in `full_sync.sql`, migration `0038`, and the `organizations.websiteResourceLinks` in-code bootstrap (`server/routers.ts`).
 - **Existing databases** are not upgraded by `full_sync.sql` (CREATE TABLE IF NOT EXISTS skips existing tables) — use the drizzle migrations (`0000`–`0042`) or `ALTER TABLE … ADD COLUMN`/`DROP`+recreate for stale tables (e.g. `flagged_visitors`).
 
+### 🐛 Schema Drift — Known Bugs & Prevention
+
+**The bugs we hit (symptom → root cause):**
+
+1. **`Unknown column 'flagLevel' in 'field list'`** (plus the same class of insert errors on `personnel_locations`, drills, EAP, BTAM) — **root cause**: the DB was built from **stale** `split_*.sql` / `full_sync*.sql` import files that predated the schema redesign. Those files were *legacy copies* of the schema, so every time `drizzle/schema.ts` changed without them being updated, live tables diverged from the code's source of truth.
+2. **`BLOB, TEXT, GEOMETRY or JSON column can't have a default value`** — **root cause**: MySQL 8.0.13+ only allows BLOB/TEXT/JSON defaults written as *expressions* (`DEFAULT ('[]')`), not literals (`DEFAULT '[]'`). The literal form was in migration `0038` and the in-code bootstrap (`server/routers.ts`), so that column could never be added.
+3. **`photoKey` vs `photoFileKey`** — `run_migration.sql` used the outdated name `photoKey`; the current schema and code use `photoFileKey`.
+4. **Stale documentation** — the reference file itself listed tables that don't exist (`terms_acceptance`, `training_progress`, `notification_preferences`, `micro_drill_responses`) and old names (`audit_attachments`, `btam_assessments`, `liability_scan_tier_scores`). Docs drift exactly like SQL files do.
+5. **Orphan legacy tables** (`btam_assessments`, `in_app_notifications`, `notification_recipients`) left behind in the live DB by earlier schema renames.
+
+**Prevention rules (follow on every future change):**
+
+1. **`drizzle/schema.ts` is the single source of truth.** Never hand-edit `.sql` schema files to "fix" drift — change `schema.ts` and regenerate.
+2. After **any** change to `schema.ts`, regenerate the authoritative dump: `npx tsx scripts/dump-full-sync.ts --write`.
+3. Verify the dump: `node scripts/verify-full-sync.mjs` (imports into a scratch DB, then drops it).
+4. Before/after every deploy, diff the live DB: `node scripts/diff-live-schema.mjs --write-fixes` → review `drizzle/live_schema_fixes.sql` → `mysql < drizzle/live_schema_fixes.sql`. ADD COLUMN fixes are safe; MODIFY fixes may need data cleanup first.
+5. **Evolving an existing DB**: use drizzle migrations (`0000`–`0042`) / `ALTER TABLE`. `full_sync.sql` only creates *missing* tables — it will NOT add columns to existing tables.
+6. **Fresh DBs only**: use `full_sync.sql`. Never use `split_*.sql` (deprecated, stale).
+7. **MySQL 8.0.13+ LOB defaults**: parenthesize — `TEXT DEFAULT ('[]')`.
+8. **Renames**: keep helper files like `run_migration.sql` in sync or delete them — never leave two names for one column.
+9. **Orphan tables**: only drop after confirming nothing references them (`grep -rn "btam_assessments\|in_app_notifications\|notification_recipients" server/ client/ shared/`).
+10. **Keep this file honest**: when a table is added/removed in `schema.ts`, update the table map in section 6 the same day.
+
 ---
 
 ## 7. Shared Logic Map

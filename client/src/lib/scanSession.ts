@@ -23,6 +23,9 @@ const KEYS = {
   answers: "pp_scan_answers",
   jurisdiction: "pp_scan_jurisdiction",
   industry: "pp_scan_industry",
+  organization: "pp_scan_organization",
+  employeeCount: "pp_scan_employee_count",
+  facilityLocation: "pp_scan_facility_location",
   lateNight: "pp_scan_late_night",
   scanId: "pp_scan_id",
   planVisited: "pp_plan_visited",
@@ -35,6 +38,9 @@ export function saveScanSession(params: {
   answers: Record<string, AnswerValue>;
   jurisdiction: string;
   industry: string;
+  organization?: string;
+  employeeCount?: string;
+  facilityLocation?: string;
   scanId?: number | null;
   lateNightOperations?: boolean;
 }) {
@@ -43,6 +49,15 @@ export function saveScanSession(params: {
     sessionStorage.setItem(KEYS.answers, JSON.stringify(params.answers));
     sessionStorage.setItem(KEYS.jurisdiction, params.jurisdiction);
     sessionStorage.setItem(KEYS.industry, params.industry);
+    if (params.organization !== undefined) {
+      sessionStorage.setItem(KEYS.organization, params.organization);
+    }
+    if (params.employeeCount !== undefined) {
+      sessionStorage.setItem(KEYS.employeeCount, params.employeeCount);
+    }
+    if (params.facilityLocation !== undefined) {
+      sessionStorage.setItem(KEYS.facilityLocation, params.facilityLocation);
+    }
     if (typeof params.lateNightOperations === "boolean") {
       sessionStorage.setItem(KEYS.lateNight, params.lateNightOperations ? "1" : "0");
     }
@@ -73,6 +88,9 @@ export interface ScanSession {
   answers: Record<string, AnswerValue>;
   jurisdiction: string;
   industry: string;
+  organization: string;
+  employeeCount: string;
+  facilityLocation: string;
   scanId: number | null;
   lateNightOperations?: boolean;
   planVisited: boolean;
@@ -88,12 +106,15 @@ export function loadScanSession(): ScanSession {
       answers: rawAnswers ? (JSON.parse(rawAnswers) as Record<string, AnswerValue>) : {},
       jurisdiction: sessionStorage.getItem(KEYS.jurisdiction) ?? "",
       industry: sessionStorage.getItem(KEYS.industry) ?? "",
+      organization: sessionStorage.getItem(KEYS.organization) ?? "",
+      employeeCount: sessionStorage.getItem(KEYS.employeeCount) ?? "",
+      facilityLocation: sessionStorage.getItem(KEYS.facilityLocation) ?? "",
       scanId: rawScanId ? Number(rawScanId) : null,
       lateNightOperations: sessionStorage.getItem(KEYS.lateNight) === "1",
       planVisited: sessionStorage.getItem(KEYS.planVisited) === "1",
     };
   } catch {
-    return { result: null, answers: {}, jurisdiction: "", industry: "", scanId: null, planVisited: false };
+    return { result: null, answers: {}, jurisdiction: "", industry: "", organization: "", employeeCount: "", facilityLocation: "", scanId: null, planVisited: false };
   }
 }
 

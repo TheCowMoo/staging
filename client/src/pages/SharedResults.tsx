@@ -4,7 +4,6 @@ import { useParams } from "wouter";
 import { trpc } from "@/lib/trpc";
 import {
   ShieldAlert,
-  ShieldCheck,
   Clock,
   AlertTriangle,
   CheckCircle2,
@@ -47,6 +46,12 @@ import type { AssessmentOutput } from "../../../shared/assessmentEngine";
 // replaced by a Calendly CTA.
 // Single source of truth: assessmentEngine classification (same as main scan page).
 // ─────────────────────────────────────────────────────────────────────────────
+// ── Hidden result sections — kept for future re-enable (flip flag to true to restore) ──
+const SHOW_WHAT_THIS_MEANS = false;
+const SHOW_OPERATIONAL_INTERPRETATION = false;
+const SHOW_ACTION_ROADMAP = false;
+const SHOW_SERVICE_CARDS = false;
+
 export default function SharedResults() {
   const params = useParams<{ token: string }>();
   const token = params.token ?? "";
@@ -421,49 +426,6 @@ export default function SharedResults() {
               Your program includes some foundational elements, but the system is not yet complete enough to ensure consistent action, documentation, and follow-through.
             </p>
           </div>
-          <div className="rounded-xl border border-border p-5 bg-card space-y-3">
-            <p className="text-sm font-semibold text-foreground">Top 3 readiness gaps</p>
-            <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
-              {gapItems.slice(0, 3).map((gap, i) => (
-                <li key={i}>{gap.gap}</li>
-              ))}
-            </ul>
-          </div>
-          <div className="rounded-xl border border-border p-5 bg-card space-y-3">
-            <p className="text-sm font-semibold text-foreground">Recommended starting point</p>
-            <p className="text-sm text-muted-foreground">
-              Start with a site-specific readiness assessment and action plan. This creates the structure needed for reporting, response, training, and review.
-            </p>
-          </div>
-          <div className="rounded-xl border border-border p-5 bg-card space-y-4">
-            <p className="text-sm font-semibold text-foreground">Your next step</p>
-            <p className="text-sm text-muted-foreground">
-              Take the next step to translate gaps into a structured improvement roadmap.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <AssessmentCTAButton
-                variant="primary"
-                size="lg"
-                iconLeft={<ShieldCheck className="w-4 h-4" />}
-                onClick={() =>
-                  window.open(
-                    "https://calendly.com/dave-962/engagement-call?month=2026-04",
-                    "_blank",
-                    "noopener,noreferrer"
-                  )
-                }
-              >
-                Review Readiness with a Specialist
-              </AssessmentCTAButton>
-              <AssessmentCTAButton
-                variant="secondary"
-                size="lg"
-                onClick={() => window.print()}
-              >
-                Export Executive Summary
-              </AssessmentCTAButton>
-            </div>
-          </div>
         </div>
 
         {/* ── Sections 2–7: Accordion — identical structure to LiabilityScan.tsx ── */}
@@ -526,83 +488,91 @@ export default function SharedResults() {
           </AccordionItem>
 
           {/* What This Means */}
-          <AccordionItem
-            value="interpretation"
-            className="border border-border rounded-xl overflow-hidden shadow-sm"
+          {SHOW_WHAT_THIS_MEANS && (
+            <AccordionItem
+              value="interpretation"
+              className="border border-border rounded-xl overflow-hidden shadow-sm"
+            >
+              <AccordionTrigger className="px-5 py-3.5 bg-card hover:bg-muted/40 hover:no-underline font-semibold text-foreground text-sm">
+                <span className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#3A5F7D] flex-shrink-0" />
+                  What This Means
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="px-5 pb-4 pt-2 bg-card">
+                <InterpretationCard text={interpretation} withCard={false} />
+              </AccordionContent>
+            </AccordionItem>
+          )}
+
+          {/* ROI Calculator */}
+          <a
+            href="https://roi.pursuitpathways.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl border border-border bg-card hover:bg-muted/40 font-semibold text-foreground text-sm shadow-sm"
           >
-            <AccordionTrigger className="px-5 py-3.5 bg-card hover:bg-muted/40 hover:no-underline font-semibold text-foreground text-sm">
-              <span className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#3A5F7D] flex-shrink-0" />
-                What This Means
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className="px-5 pb-4 pt-2 bg-card">
-              <InterpretationCard text={interpretation} withCard={false} />
-            </AccordionContent>
-          </AccordionItem>
+            ROI Calculator
+          </a>
 
           {/* Advisor Insight */}
-          <AccordionItem
-            value="advisor-insight"
-            className="border border-border rounded-xl overflow-hidden shadow-sm"
-          >
-            <AccordionTrigger className="px-5 py-3.5 bg-card hover:bg-muted/40 hover:no-underline font-semibold text-foreground text-sm">
-              <span className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />
-                Operational Interpretation
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className="px-5 pb-4 pt-2 bg-card">
-              <AdvisorInsightCard
-                advisorSummary={advisorSummary}
-                topGaps={topGapsForAdvisor}
-                withCard={false}
-              />
-            </AccordionContent>
-          </AccordionItem>
+          {SHOW_OPERATIONAL_INTERPRETATION && (
+            <AccordionItem
+              value="advisor-insight"
+              className="border border-border rounded-xl overflow-hidden shadow-sm"
+            >
+              <AccordionTrigger className="px-5 py-3.5 bg-card hover:bg-muted/40 hover:no-underline font-semibold text-foreground text-sm">
+                <span className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />
+                  Operational Interpretation
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="px-5 pb-4 pt-2 bg-card">
+                <AdvisorInsightCard
+                  advisorSummary={advisorSummary}
+                  topGaps={topGapsForAdvisor}
+                  withCard={false}
+                />
+              </AccordionContent>
+            </AccordionItem>
+          )}
 
           {/* Priority Action Plan */}
-          <AccordionItem
-            value="priority-actions"
-            className="border border-border rounded-xl overflow-hidden shadow-sm"
-          >
-            <AccordionTrigger className="px-5 py-3.5 bg-card hover:bg-muted/40 hover:no-underline font-semibold text-foreground text-sm">
-              <span className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#E5484D] flex-shrink-0" />
-                Action Roadmap
-                {immediateActions.length > 0 && (
-                  <span className="ml-1 text-xs font-normal text-muted-foreground">
-                    ({immediateActions.length} actions)
-                  </span>
-                )}
-              </span>
-            </AccordionTrigger>
-            <AccordionContent className="px-5 pb-4 pt-2 bg-card">
-              <ActionPlanSection
-                actions={immediateActions}
-                sectionId="priority-actions"
-              />
-            </AccordionContent>
-          </AccordionItem>
+          {SHOW_ACTION_ROADMAP && (
+            <AccordionItem
+              value="priority-actions"
+              className="border border-border rounded-xl overflow-hidden shadow-sm"
+            >
+              <AccordionTrigger className="px-5 py-3.5 bg-card hover:bg-muted/40 hover:no-underline font-semibold text-foreground text-sm">
+                <span className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#E5484D] flex-shrink-0" />
+                  Action Roadmap
+                  {immediateActions.length > 0 && (
+                    <span className="ml-1 text-xs font-normal text-muted-foreground">
+                      ({immediateActions.length} actions)
+                    </span>
+                  )}
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="px-5 pb-4 pt-2 bg-card">
+                <ActionPlanSection
+                  actions={immediateActions}
+                  sectionId="priority-actions"
+                />
+              </AccordionContent>
+            </AccordionItem>
+          )}
         </Accordion>
 
         {/* Section 8: Service Cards */}
-        <ServiceCardsSection topGaps={topGapsForAdvisor} />
+        {SHOW_SERVICE_CARDS && (
+          <ServiceCardsSection topGaps={topGapsForAdvisor} />
+        )}
 
         {/* Section 9: Final CTA — mirrors FinalCTABanner from LiabilityScan.tsx */}
         <FinalCTABanner
-          classification={displayClassification}
-          riskColor={riskMapColor}
-          primaryLabel="Review Your Facility's Risk Gaps with a Specialist"
-          onPrimary={() =>
-            window.open(
-              "https://calendly.com/dave-962/engagement-call?month=2026-04",
-              "_blank",
-              "noopener,noreferrer"
-            )
-          }
           onSecondary={handleDownloadReport}
-          secondaryLabel={exportLoading ? "Generating PDF..." : "Download Report"}
+          secondaryLabel={exportLoading ? "Downloading..." : "Download"}
         />
       </main>
     </div>

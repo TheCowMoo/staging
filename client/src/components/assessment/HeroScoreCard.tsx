@@ -5,7 +5,7 @@
  */
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { AlertTriangle, ShieldCheck, Download, MapPin, Building2 } from "lucide-react";
+import { ShieldCheck, Download, MapPin, Building2 } from "lucide-react";
 import { AssessmentCTAButton } from "./AssessmentCTAButton";
 import {
   riskHex,
@@ -127,14 +127,6 @@ export function HeroScoreCard({
               </div>
             )}
 
-            {/* Supporting insight */}
-            <p className="text-xs font-semibold text-[#E5484D] flex items-center gap-1.5">
-              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-              {criticalGapCount !== undefined && criticalGapCount > 0
-                ? `${criticalGapCount} priority gap${criticalGapCount !== 1 ? "s" : ""} and ${gapCount - criticalGapCount} additional area${gapCount - criticalGapCount !== 1 ? "s" : ""} identified for improvement.`
-                : `${gapCount} area${gapCount !== 1 ? "s" : ""} identified for improvement.`
-              }
-            </p>
             <p className="text-xs text-muted-foreground leading-relaxed mt-1">
               This score reflects how well your program currently supports planning, reporting, training, and response. Use the priority actions to turn gaps into a more reliable, documented readiness system.
             </p>

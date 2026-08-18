@@ -55,6 +55,9 @@ interface PdfInput {
   riskMapDescriptor: string;
   jurisdiction?: string;
   industry?: string;
+  organization?: string;
+  employeeCount?: string;
+  facilityLocation?: string;
   topGaps: TopGap[];
   interpretation?: string;
   advisorSummary?: string;
@@ -189,8 +192,11 @@ function buildPdf(input: PdfInput): Promise<Buffer> {
 
     const contextItems: [string, string][] = [
       ["Assessment Date", dateStr],
+      ["Organization", input.organization || "Not specified"],
       ["Jurisdiction", input.jurisdiction || "Not specified"],
       ["Industry", input.industry || "Not specified"],
+      ["Number of Employees", input.employeeCount || "Not specified"],
+      ["Facility / Location(s)", input.facilityLocation || "Not specified"],
     ];
 
     contextItems.forEach(([k, v]) => {

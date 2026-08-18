@@ -9,7 +9,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, Download, ShieldCheck, BookOpen, Building2, Calendar, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { AssessmentCTAButton } from "./AssessmentCTAButton";
-import { riskHex, HEADING_FONT } from "./brandUtils";
+import { HEADING_FONT } from "./brandUtils";
 import type { ReactNode } from "react";
 import {
   resolveGaps,
@@ -303,22 +303,14 @@ export function ServiceCardsSection({
 
 // ─── Final CTA banner ─────────────────────────────────────────────────────────
 interface FinalCTABannerProps {
-  classification: string;
-  riskColor: string;
-  supportingText?: string;
-  primaryLabel?: string;
+  /** Label for the single Download button */
   secondaryLabel?: string;
-  onPrimary?: () => void;
+  /** Download/export action */
   onSecondary?: () => void;
 }
 
 export function FinalCTABanner({
-  classification,
-  riskColor,
-  supportingText = "Turn this assessment into a structured readiness roadmap.",
-  primaryLabel = "Build Your Readiness Plan",
-  secondaryLabel = "Export Report",
-  onPrimary,
+  secondaryLabel = "Download",
   onSecondary,
 }: FinalCTABannerProps) {
   return (
@@ -327,22 +319,12 @@ export function FinalCTABanner({
       style={{ background: "linear-gradient(135deg, #0B1F33 0%, #3A5F7D 100%)" }}
     >
       <p className="text-lg font-bold leading-snug" style={HEADING_FONT}>
-        Your organization is <span style={{ color: riskHex(riskColor) }}>{classification}</span>.
+        Executive Report
       </p>
-      <p className="text-sm text-blue-100 max-w-md mx-auto leading-relaxed">{supportingText}</p>
       <div className="flex flex-col sm:flex-row gap-3 justify-center pt-1">
         <AssessmentCTAButton
           variant="primary"
           size="lg"
-          iconLeft={<ShieldCheck className="w-4 h-4" />}
-          onClick={onPrimary}
-        >
-          {primaryLabel}
-        </AssessmentCTAButton>
-        <AssessmentCTAButton
-          variant="secondary"
-          size="lg"
-          darkBg
           iconLeft={<Download className="w-4 h-4" />}
           onClick={onSecondary}
         >
