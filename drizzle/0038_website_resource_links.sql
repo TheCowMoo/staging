@@ -4,4 +4,4 @@
 -- when generating an Emergency Action Plan for a facility in that org.
 
 ALTER TABLE organizations
-  ADD COLUMN IF NOT EXISTS website_resource_links TEXT DEFAULT '[]';
+  ADD COLUMN IF NOT EXISTS website_resource_links TEXT DEFAULT ('[]');

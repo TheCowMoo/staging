@@ -352,49 +352,66 @@ All tables defined in `drizzle/schema.ts` (~1019 lines). Key tables:
 
 | Table                      | Description                                                           |
 |----------------------------|-----------------------------------------------------------------------|
-| `organizations`            | Client agencies/companies. Has `plan` (free/paid) + `externalSubscriptionId` |
-| `org_members`              | Links users → orgs with role + permission flags                       |
-| `users`                    | User accounts (email, password hash, platform role)                    |
-| `user_invites`             | Pending org invitation tokens                                          |
+| `organizations`            | Client agencies/companies. `plan` (free/paid), `externalSubscriptionId`, `websiteResourceLinks` |
+| `org_members`              | Links users → orgs with role (incl. `sandbox`) + permission flags      |
+| `personnel_locations`      | Staff location tracking during incidents                               |
+| `training_modules`         | Uploaded training content (`playerType`, `trackingType`, `thumbnailUrl`) |
+| `org_invites`              | Pending org invitation tokens (incl. `sandbox`)                        |
+| `user_invites`             | Platform-level invitation tokens (role incl. `sandbox`)                |
+| `users`                    | User accounts (openId, email, password hash, platform role incl. `sandbox`, rasRole, btamRole) |
+| `api_keys`                 | Hashed API keys for programmatic access                                |
 | `facilities`               | Physical locations being assessed (name, address, type, size, hours)   |
 | `audits`                   | Assessment sessions (status, scores, EAP data, contacts)               |
 | `audit_responses`          | Individual question responses per audit (score, notes, photos)         |
 | `threat_findings`          | Threat severity assessments (QRA: likelihood, impact, preparedness)    |
 | `audit_photos`             | Photo evidence linked to audit responses                               |
-| `audit_attachments`        | Uploaded facility documents (with AI analysis)                         |
-| `audit_tester_feedback`    | Beta tester feedback on audits                                         |
-| `audit_question_flags`     | User-flagged questions for review                                      |
+| `tester_feedback`          | Beta tester feedback on audits                                         |
+| `question_flags`           | User-flagged questions for review                                      |
+| `incident_reports`         | Incident reports (anonymous token, OSHA fields, threat flags, repeat tracking) |
+| `facility_attachments`     | Uploaded facility documents (with AI analysis)                         |
 | `corrective_action_checks` | Tracking items marked as complete in action plan                       |
 | `audit_logs`               | Immutable audit trail of user actions                                  |
-| `incident_reports`         | Incident reports (anonymous token, OSHA fields, threat flags)          |
-| `incident_communications`  | Real-time incident comms messages                                      |
-| `visitor_logs`             | Visitor sign-in/out records                                            |
-| `flagged_visitors`         | Watchlist entries with escalation status                               |
-| `personnel_locations`      | Staff location tracking during incidents                                |
-| `eap_sections`             | EAP document sections with versioning                                  |
-| `drill_templates`          | Reusable drill templates                                               |
-| `drill_sessions`           | Completed drill sessions                                                |
+| `visitor_logs`             | Visitor sign-in/out records (photo ID verification)                    |
+| `liability_scans`          | AI liability exposure scans (tier scoring, risk map, advisor summary)  |
+| `scan_share_tokens`        | Public share tokens for scans (expiry/revocation/label)                |
+| `eap_sections`             | EAP document sections with per-section auditor overrides               |
+| `eap_section_versions`     | Version history for EAP section overrides                              |
+| `flagged_visitors`         | Watchlist entries (`flagLevel` red/yellow, escalation, photoFileKey)    |
+| `drill_templates`          | Reusable drill templates (micro/guided/operational/extended)           |
+| `drill_sessions`           | Drill sessions (scheduled/completed, debrief data, intelligence)       |
 | `drill_participants`       | Staff who participated in a drill                                      |
+| `alert_events`             | Emergency alert events (lockdown/lockout/fire/weather)                 |
+| `alert_recipients`         | Per-user alert delivery/ack/response tracking                          |
+| `alert_status_updates`     | Authorized alert status changes (active/response_in_progress/resolved) |
+| `facility_alert_settings`  | Per-facility RAS templates (lockdown/lockout, push, escalation prefs)  |
+| `push_subscriptions`       | Browser/PWA Web Push subscriptions (unique endpoint per org+user)      |
 | `staff_checkins`           | Staff accountability check-ins                                         |
 | `btam_cases`               | Behavioral Threat Assessment Management cases                          |
-| `btam_subjects`            | BTAM subjects (individuals of concern)                                  |
-| `btam_assessments`         | WAVR-21 assessment results per case                                     |
-| `btam_management_plans`    | Mitigation/management plan items                                        |
-| `btam_case_notes`          | Case notes and observations                                             |
-| `btam_status_history`      | Case status change history                                              |
-| `btam_referral_intake`     | Referral intake forms                                                   |
-| `liability_scans`          | AI-powered liability exposure scans                                     |
-| `liability_scan_tier_scores`| Per-tier scoring for liability scans                                  |
-| `scan_share_tokens`        | Public share tokens for scans                                           |
-| `facility_floor_maps`      | Floor plan data (GeoJSON)                                               |
-| `micro_drill_assignments`  | Micro-drill assignments to users                                        |
-| `micro_drill_responses`    | User responses to micro-drills                                          |
-| `training_modules`         | Uploaded training content                                                |
-| `training_progress`        | User training completion tracking                                       |
-| `notifications`            | In-app notification records                                             |
-| `notification_preferences` | User notification preferences                                           |
-| `api_keys`                 | Hashed API keys for programmatic access                                  |
-| `terms_acceptance`         | Record of terms/conditions acceptance by user                           |
+| `btam_subjects`            | BTAM subjects (AES-256-GCM encrypted alias/contact)                    |
+| `btam_referral_intake`     | Referral intake forms                                                  |
+| `btam_wavr_assessments`    | WAVR-21 assessment results per case (55 cols)                          |
+| `btam_management_plan`     | Mitigation/management plan items                                       |
+| `btam_case_notes`          | Case notes and observations (privileged flags)                         |
+| `btam_status_history`      | Case status change history                                             |
+| `micro_drill_assignments`  | Micro-drill assignments to users (snake_case columns)                  |
+| `facility_floor_maps`      | Floor plan data (GeoJSON, snake_case columns)                          |
+| `incident_communications`  | Real-time incident comms messages                                      |
+| `notifications`            | In-app notification records (snake_case columns)                       |
+
+---
+
+### ✅ `full_sync.sql` is now the SINGLE authoritative schema
+
+**`drizzle/full_sync.sql` was regenerated from `drizzle/schema.ts`** by `scripts/dump-full-sync.ts` and contains the complete, idempotent DDL for **all 45 tables** (verified by importing into a scratch MySQL 9.7 DB via `scripts/verify-full-sync.mjs`). It is safe to run multiple times (`CREATE TABLE IF NOT EXISTS`).
+
+**`full_sync_remainder.sql` is now a no-op** (kept so existing deployment scripts don't break).
+
+**⚠️ `split_01…split_05.sql` remain STALE** — `split_04` was hand-corrected (all 8 tables match `schema.ts`), but `split_01/02/03/05` still carry legacy definitions (`organizations`, `facilities`, `audits`, `audit_responses`, `threat_findings`, `audit_photos`, `tester_feedback`, `question_flags`, `facility_attachments`, `corrective_action_checks`, `audit_logs`, `visitor_logs`, all `alert_*`, `push_subscriptions`, `staff_checkins`, and all `btam_*`). **Never use the split files for a fresh DB — use `full_sync.sql`.**
+
+**Notes**
+- `flagged_visitors` uses `photoFileKey` (drizzle) — `run_migration.sql`'s `photoKey` is an outdated name.
+- MySQL 8.0.13+ rejects literal `TEXT DEFAULT '[]'` — must be parenthesized `TEXT DEFAULT ('[]')`. Fixed in `full_sync.sql`, migration `0038`, and the `organizations.websiteResourceLinks` in-code bootstrap (`server/routers.ts`).
+- **Existing databases** are not upgraded by `full_sync.sql` (CREATE TABLE IF NOT EXISTS skips existing tables) — use the drizzle migrations (`0000`–`0042`) or `ALTER TABLE … ADD COLUMN`/`DROP`+recreate for stale tables (e.g. `flagged_visitors`).
 
 ---
 
