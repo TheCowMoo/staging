@@ -67,12 +67,18 @@ The application will be available at `http://localhost:5000`.
 
 ### Production Deployment
 
-1. Build the application:
+1. Apply any pending database migrations (required whenever the schema changed):
+   ```bash
+   mysql -u root -p safeguard < drizzle/<migration>.sql
+   ```
+   For a full drift check/fix, run `node scripts/diff-live-schema.mjs --write-fixes` and then `mysql -u root -p safeguard < drizzle/live_schema_fixes.sql`.
+
+2. Build the application:
    ```bash
    npm run build
    ```
 
-2. Start the production server:
+3. Start the production server:
    ```bash
    npm start
    ```

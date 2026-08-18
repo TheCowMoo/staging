@@ -90,6 +90,9 @@ export default function ScanHistory() {
         answers: rawAnswers,
         jurisdiction: scan.jurisdiction,
         industry: scan.industry,
+        organization: scan.organization ?? "",
+        employeeCount: scan.employeeCount ?? "",
+        facilityLocation: scan.facilityLocation ?? "",
         scanId: scan.id,
       });
     } catch {

@@ -282,51 +282,10 @@ export default function LiabilityScan() {
     return m;
   }, []);
 
-  // Export report as a downloadable PDF via the server-side PDF endpoint
-  const [exportLoading, setExportLoading] = useState(false);
-  const handleExportReport = useCallback(async () => {
-    if (!result) return;
-    setExportLoading(true);
-    try {
-      const payload = {
-        score: result.score,
-        classification: result.classification,
-        riskMapColor: result.riskMap.color,
-        riskMapDescriptor: result.riskMap.descriptor,
-        jurisdiction,
-        industry,
-        organization,
-        employeeCount,
-        facilityLocation,
-        topGaps: result.topGaps.map((g) => ({
-          ...g,
-          weight: weightById[g.id] ?? 0,
-        })),
-        interpretation: result.interpretation,
-        advisorSummary: result.advisorSummary,
-        immediateActions: result.immediateActionPlan,
-        scanId: savedScanId ?? undefined,
-        createdAt: Date.now(),
-      };
-      const res = await fetch("/api/liability-scan/pdf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error("PDF generation failed");
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `FiveStonesWPV_LiabilityScan_${savedScanId ?? "Report"}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      toast.error("Export failed. Please try again.");
-    } finally {
-      setExportLoading(false);
-    }
-  }, [result, jurisdiction, industry, organization, employeeCount, facilityLocation, savedScanId, weightById]);
+  // Open the printable Executive Advisory Report page (replaces the old server-side PDF download)
+  const handleExportReport = useCallback(() => {
+    navigate("/scan-report");
+  }, [navigate]);
 
   const totalAnswered = Object.keys(answers).length;
   const totalQuestions = QUESTIONS.length;

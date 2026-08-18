@@ -38,6 +38,7 @@ import OshaReference from "./pages/OshaReference";
 import Standards from "./pages/Standards";
 import LiabilityScan from "./pages/LiabilityScan";
 import ScanHistory from "./pages/ScanHistory";
+import AdvisoryReport from "./pages/AdvisoryReport";
 import DefensibilityPlan from "./pages/DefensibilityPlan";
 import HowWeHelp from "./pages/HowWeHelp";
 import SharedResults from "./pages/SharedResults";
@@ -122,6 +123,7 @@ function Router() {
               <Route path="/osha" component={OshaReference} />
               <Route path="/standards" component={Standards} />
               <Route path="/liability-scan" component={LiabilityScan} />
+<Route path="/scan-report" component={AdvisoryReport} />
               <Route path="/scan-history" component={ScanHistory} />
               <Route path="/defensibility-plan" component={DefensibilityPlan} />
               <Route path="/how-we-help" component={HowWeHelp} />
