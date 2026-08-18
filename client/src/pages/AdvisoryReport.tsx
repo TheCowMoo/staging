@@ -1,18 +1,21 @@
 /**
  * AdvisoryReport
- * Executive Advisory Report — printable HTML report for the Readiness Scan.
+ * Executive Advisory Report — a fully EDITABLE printable template for the
+ * Readiness Scan. Every value (intake, stats, category text, manual fields)
+ * is pre-filled and editable before export.
  *
- * Reads the completed scan from sessionStorage (lib/scanSession.ts).
+ * Two exports:
+ *  - "Save Advisor PDF" — full report (includes admin-only Discovery Call Notes).
+ *  - "Save Client PDF" — hides `.admin-only` sections (Discovery Call Notes).
+ *
  * Compliance (executive directive):
- *  - "Advisor Insight", "Current Owner", "Status", "Executive Observations",
- *    "Strategic Priorities", and "Estimated Investment Range" are MANUAL fields
- *    (advisor types into the inputs/dropdowns) — never AI-generated.
- *  - Category descriptions are the exact operational-interpretation outputs
- *    (categoryInsight()) — not summarized or reworded.
- *  - All pre-scan intake fields are captured exactly as submitted.
+ *  - Discovery Call Notes, Advisor Insight, Current Organizational Exposure,
+ *    Strategic Priorities, Roadmap, and Investment Range are MANUAL fields —
+ *    never AI-generated.
+ *  - Category descriptions start as the exact operational-interpretation
+ *    outputs (categoryInsight()) but are editable per the template requirement.
  */
 import { useMemo, useState } from "react";
-import type { ChangeEvent, Dispatch, SetStateAction } from "react";
 import { useLocation } from "wouter";
 import { loadScanSession } from "@/lib/scanSession";
 import { categoryInsight } from "@/components/assessment/CategoryBreakdownBar";
@@ -63,6 +66,12 @@ const PHASE_3_OPTIONS = [
   "System Handover & Routine Monitoring",
 ];
 
+const DEFAULT_ROADMAP = {
+  phase1: "Phase 1 — Discovery & Assessment:\nSite Threat Assessment and stakeholder meetings to baseline the current operating state.",
+  phase2: "Phase 2 — Planning & Development:\nEmergency Response Plan and Workplace Violence Prevention Plan development aligned to the facility.",
+  phase3: "Phase 3 — Implementation & Validation:\nStaff training, facilitated drills, and system handover with routine monitoring.",
+};
+
 const REPORT_CSS = `
 .advisory-root {
   --fs-navy: ${FS.navy}; --fs-steel: ${FS.steel}; --fs-gold: ${FS.gold};
@@ -79,6 +88,7 @@ const REPORT_CSS = `
   box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 1000; display: flex; align-items: center; gap: 10px;
 }
 .advisory-root .print-btn:hover { background-color: var(--fs-navy); transform: translateY(-2px); }
+.advisory-root .print-btn.client-export { right: 215px; background-color: var(--fs-navy); }
 .advisory-root .page {
   background-color: #fff; width: 8.5in; min-height: 11in; box-sizing: border-box;
   padding: 0.75in; box-shadow: 0 4px 15px rgba(0,0,0,0.3); position: relative;
@@ -96,21 +106,29 @@ const REPORT_CSS = `
   padding: 15px; border: 1px solid var(--fs-neutral); border-radius: 4px; margin-bottom: 20px; font-size: 13px;
 }
 .advisory-root .client-info-grid strong { color: var(--fs-navy); }
-.advisory-root input[type="text"], .advisory-root textarea, .advisory-root select {
+.advisory-root input[type="text"], .advisory-root input[type="number"], .advisory-root textarea, .advisory-root select {
   width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid var(--fs-neutral);
   font-family: 'Open Sans', system-ui, sans-serif; font-size: 12px; background-color: #fcfcfc; resize: none; border-radius: 4px;
 }
-.advisory-root input[type="text"]:focus, .advisory-root textarea:focus, .advisory-root select:focus { outline: 1px solid var(--fs-mid-blue); background-color: #fff; }
+.advisory-root input[type="text"]:focus, .advisory-root input[type="number"]:focus, .advisory-root textarea:focus, .advisory-root select:focus { outline: 1px solid var(--fs-mid-blue); background-color: #fff; }
 .advisory-root .score-box { background-color: var(--fs-light-blue); border: 1px solid var(--fs-mid-blue); padding: 15px; border-radius: 6px; text-align: center; margin-bottom: 20px; }
-.advisory-root .score-box h1 { font-size: 36px; color: var(--fs-navy); margin-bottom: 5px; }
+.advisory-root .overall-score-row { display: flex; align-items: baseline; justify-content: center; gap: 6px; }
+.advisory-root .overall-score-input { width: 130px; font-size: 36px; font-weight: 700; color: var(--fs-navy); text-align: center; border: 1px solid transparent; background: transparent; }
+.advisory-root .overall-score-input:focus { outline: none; border-color: var(--fs-mid-blue); background: #fff; }
+.advisory-root .overall-score-denom { font-size: 16px; color: var(--fs-navy); }
 .advisory-root .chart-row { margin-bottom: 15px; }
-.advisory-root .chart-header { display: flex; justify-content: space-between; font-size: 14px; color: var(--fs-navy); margin-bottom: 4px; }
+.advisory-root .chart-header { display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: var(--fs-navy); margin-bottom: 4px; }
+.advisory-root .score-input { width: 64px; padding: 4px 6px; font-size: 13px; text-align: right; border: 1px solid var(--fs-neutral); border-radius: 4px; background: #fcfcfc; }
 .advisory-root .bar-track { width: 100%; height: 12px; background-color: #e0e0e0; border-radius: 6px; overflow: hidden; margin-bottom: 4px; }
 .advisory-root .bar-fill { height: 100%; width: 0%; border-radius: 6px; }
 .advisory-root .bar-fill.low { background-color: var(--fs-orange); }
 .advisory-root .bar-fill.mid { background-color: var(--fs-citrus); }
 .advisory-root .bar-fill.high { background-color: var(--fs-dark-teal); }
-.advisory-root .chart-desc { font-size: 12px; color: #666; font-style: italic; }
+
+.advisory-root textarea.chart-desc { width: 100%; padding: 6px; border: 1px solid var(--fs-neutral); border-radius: 4px; background: #fcfcfc; color: #666; font-style: italic; }
+.advisory-root .private-tag { font-size: 10px; color: #fff; background: var(--fs-dark-teal); padding: 2px 6px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.5px; vertical-align: middle; }
+.advisory-root .exposure-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.advisory-root .exposure-grid label { font-size: 12px; font-weight: 600; color: var(--fs-navy); display: block; margin-bottom: 4px; }
 .advisory-root table { width: 100%; border-collapse: collapse; margin-top: 15px; table-layout: fixed; }
 .advisory-root th, .advisory-root td { border: 1px solid var(--fs-neutral); padding: 10px; text-align: left; vertical-align: top; font-size: 13px; }
 .advisory-root th { background-color: var(--fs-navy); color: #fff; }
@@ -119,6 +137,7 @@ const REPORT_CSS = `
 .advisory-root .investment-group { display: flex; align-items: center; gap: 10px; background-color: var(--fs-light-blue); padding: 15px; border-radius: 4px; font-weight: 600; color: var(--fs-navy); width: max-content; margin-top: 10px; }
 .advisory-root .investment-group input { width: 120px; padding: 8px; font-size: 14px; }
 .advisory-root hr { border: 0; border-top: 1px solid var(--fs-neutral); margin: 30px 0; }
+.advisory-root.client-mode .admin-only { display: none !important; }
 @media print {
   @page { size: letter; margin: 0.5in 0.75in; }
   body { background-color: transparent; }
@@ -126,9 +145,10 @@ const REPORT_CSS = `
   .advisory-root .page { width: 100%; min-height: auto; padding: 0; box-shadow: none; margin: 0; page-break-after: always; }
   .advisory-root .page:last-child { page-break-after: auto; }
   .advisory-root * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  .advisory-root input[type="text"], .advisory-root textarea, .advisory-root select { border: 1px solid #ddd !important; background-color: transparent !important; }
+  .advisory-root input[type="text"], .advisory-root input[type="number"], .advisory-root textarea, .advisory-root select { border: 1px solid #ddd !important; background-color: transparent !important; }
   .advisory-root input::placeholder, .advisory-root textarea::placeholder { color: transparent !important; }
   .advisory-root .no-print { display: none !important; }
+  .advisory-root.client-mode .admin-only { display: none !important; }
 }
 `;
 
@@ -138,16 +158,49 @@ export default function AdvisoryReport() {
   const [, navigate] = useLocation();
   const result = session.result;
 
-  // ── Manual advisor fields (Rule #1: never AI-generated) ────────────────
+  // ── Auto-populated intake fields (editable before export) ──────────────
+  const [organization, setOrganization] = useState(session.organization);
+  const [jurisdiction, setJurisdiction] = useState(session.jurisdiction);
+  const [industry, setIndustry] = useState(session.industry);
+  const [employees, setEmployees] = useState(session.employeeCount);
+  const [locations, setLocations] = useState(session.facilityLocation);
+  const [lateNight, setLateNight] = useState(session.lateNightOperations ? "Yes" : "No");
+
+  // ── Stats (editable before export) ─────────────────────────────────────
+  const [overallScore, setOverallScore] = useState(result ? String(result.score) : "");
+  const [catScores, setCatScores] = useState<Record<string, string>>(() => {
+    const out: Record<string, string> = {};
+    for (const c of CATEGORIES) {
+      out[c.scoreKey] = result
+        ? String((result.categoryScores as unknown as Record<string, number>)[c.scoreKey] ?? 0)
+        : "";
+    }
+    return out;
+  });
+  const [catDescs, setCatDescs] = useState<Record<string, string>>(() => {
+    const out: Record<string, string> = {};
+    for (const c of CATEGORIES) {
+      const score = result ? (result.categoryScores as unknown as Record<string, number>)[c.scoreKey] ?? 0 : 0;
+      out[c.scoreKey] = categoryInsight(c.key, score);
+    }
+    return out;
+  });
+
+  // ── Manual advisor fields (never AI-generated) ─────────────────────────
+  const [discoveryNotes, setDiscoveryNotes] = useState("");
   const [advisorInsight, setAdvisorInsight] = useState("");
-  const [owner, setOwner] = useState<Record<string, string>>({});
-  const [status, setStatus] = useState<Record<string, string>>({});
-  const [observation, setObservation] = useState<Record<string, string>>({});
+  const [exposure, setExposure] = useState({ legal: "", time: "", downtime: "", roi: "" });
   const [phase1, setPhase1] = useState("");
   const [phase2, setPhase2] = useState("");
   const [phase3, setPhase3] = useState("");
+  const [roadmap, setRoadmap] = useState(DEFAULT_ROADMAP);
+  const [timeline, setTimeline] = useState("");
+  const [outcomes, setOutcomes] = useState("");
   const [investmentMin, setInvestmentMin] = useState("");
   const [investmentMax, setInvestmentMax] = useState("");
+
+  // ── Export mode: advisor = full report, client = hides admin-only ─────
+  const [exportMode, setExportMode] = useState<"advisor" | "client">("advisor");
 
   if (!result) {
     return (
@@ -166,30 +219,33 @@ export default function AdvisoryReport() {
     );
   }
 
-  const rows = CATEGORIES.map((c) => {
-    const score = (result.categoryScores as unknown as Record<string, number>)[c.scoreKey] ?? 0;
-    return { ...c, score, desc: categoryInsight(c.key, score) };
-  });
+  const rows = CATEGORIES.map((c) => ({
+    ...c,
+    score: Number(catScores[c.scoreKey]) || 0,
+    desc: catDescs[c.scoreKey] ?? "",
+  }));
 
-  const setRow =
-    (setter: Dispatch<SetStateAction<Record<string, string>>>) =>
-    (key: string) =>
-    (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-      setter((prev) => ({ ...prev, [key]: e.target.value }));
+  function exportPdf(mode: "advisor" | "client") {
+    setExportMode(mode);
+    // Wait for React to re-render (hides .admin-only in client mode), then print, then reset.
+    setTimeout(() => {
+      window.print();
+      setExportMode("advisor");
+    }, 150);
+  }
 
   return (
-    <div className="advisory-root">
+    <div className={`advisory-root${exportMode === "client" ? " client-mode" : ""}`}>
       <style>{REPORT_CSS}</style>
 
-      {/* Floating Save-as-PDF button (hidden when printing) */}
-      <button className="print-btn no-print" onClick={() => window.print()}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="6 9 6 2 18 2 18 9" />
-          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-          <rect x="6" y="14" width="12" height="8" />
-        </svg>
-        Save as PDF
+      {/* Floating export buttons (hidden when printing) */}
+      <button className="print-btn no-print" onClick={() => exportPdf("advisor")}>
+        Save Advisor PDF
       </button>
+      <button className="print-btn client-export no-print" onClick={() => exportPdf("client")}>
+        Save Client PDF
+      </button>
+
 
       {/* PAGE 1: INTAKE & SCAN DATA */}
       <div className="page">
@@ -197,20 +253,53 @@ export default function AdvisoryReport() {
           <div className="brand-wordmark">Five Stones Technology</div>
           <h1>Executive Advisory Report</h1>
           <h3 style={{ color: "var(--fs-dark-teal)", marginTop: 5 }}>
-            Prepared for: {session.organization || "Not specified"}
+            Prepared for: {organization || "Not specified"}
           </h3>
         </div>
 
-        {/* Intake fields — captured exactly as submitted */}
+        {/* Section 1 — Pre-Assessment & Organization Overview (auto-populated, editable) */}
         <div className="client-info-grid">
-          <div><strong>Jurisdiction:</strong> {session.jurisdiction || "—"}</div>
-          <div><strong>Industry:</strong> {session.industry || "—"}</div>
-          <div><strong>Employees:</strong> {session.employeeCount || "—"}</div>
-          <div><strong>Late-Night Operations:</strong> {session.lateNightOperations ? "Yes" : "No"}</div>
-          <div style={{ gridColumn: "span 2" }}><strong>Facility / Locations:</strong> {session.facilityLocation || "—"}</div>
+          <div>
+            <strong>Organization:</strong>{" "}
+            <input type="text" value={organization} onChange={(e) => setOrganization(e.target.value)} />
+          </div>
+          <div>
+            <strong>Jurisdiction:</strong>{" "}
+            <input type="text" value={jurisdiction} onChange={(e) => setJurisdiction(e.target.value)} />
+          </div>
+          <div>
+            <strong>Industry:</strong>{" "}
+            <input type="text" value={industry} onChange={(e) => setIndustry(e.target.value)} />
+          </div>
+          <div>
+            <strong>Employees:</strong>{" "}
+            <input type="text" value={employees} onChange={(e) => setEmployees(e.target.value)} />
+          </div>
+          <div>
+            <strong>Late-Night Operations:</strong>{" "}
+            <input type="text" value={lateNight} onChange={(e) => setLateNight(e.target.value)} />
+          </div>
+          <div style={{ gridColumn: "span 2" }}>
+            <strong>Facility / Locations:</strong>{" "}
+            <input type="text" value={locations} onChange={(e) => setLocations(e.target.value)} />
+          </div>
         </div>
 
-        {/* Advisor Insight — manual */}
+        {/* Section 2 — Discovery Call Notes (admin-only; hidden in client PDF) */}
+        <div className="admin-only">
+          <h2 style={{ marginTop: 0 }}>
+            Discovery Call Notes <span className="private-tag">Private — Advisor only</span>
+          </h2>
+          <textarea
+            rows={4}
+            value={discoveryNotes}
+            onChange={(e) => setDiscoveryNotes(e.target.value)}
+            placeholder="Client's current reasons for engaging and primary organizational concerns (capture the client's own language)..."
+          />
+        </div>
+        <hr className="admin-only" />
+
+        {/* Section 3 — Advisor Insight / Executive Summary (manual) */}
         <h2 style={{ marginTop: 0 }}>Advisor Insight / Executive Summary</h2>
         <textarea
           rows={4}
@@ -221,61 +310,77 @@ export default function AdvisoryReport() {
 
         <hr />
 
+        {/* Section 4 — Category Breakdown (auto-populated, editable) */}
         <h2 className="highlight" style={{ marginTop: 0 }}>Readiness Scan Insights</h2>
         <div className="score-box">
           <h3>Overall Readiness Score</h3>
-          <h1>{result.score} / 100</h1>
+          <div className="overall-score-row">
+            <input
+              className="overall-score-input"
+              type="number"
+              min={0}
+              max={100}
+              value={overallScore}
+              onChange={(e) => setOverallScore(e.target.value)}
+            />
+            <span className="overall-score-denom">/ 100</span>
+          </div>
         </div>
 
         <h3>Category Breakdown &amp; Operational Interpretation</h3>
         {rows.map((r) => (
-          <div className="chart-row" key={r.key}>
+          <div className="chart-row" key={r.scoreKey}>
             <div className="chart-header">
               <span>{r.label}</span>
-              <span>{r.score}%</span>
+              <input
+                className="score-input"
+                type="number"
+                min={0}
+                max={100}
+                value={catScores[r.scoreKey]}
+                onChange={(e) => setCatScores((prev) => ({ ...prev, [r.scoreKey]: e.target.value }))}
+              />
             </div>
             <div className="bar-track">
               <div className={`bar-fill ${scoreClass(r.score)}`} style={{ width: `${r.score}%` }} />
             </div>
-            <div className="chart-desc">{r.desc}</div>
+            <textarea
+              className="chart-desc"
+              rows={2}
+              value={catDescs[r.scoreKey]}
+              onChange={(e) => setCatDescs((prev) => ({ ...prev, [r.scoreKey]: e.target.value }))}
+            />
           </div>
         ))}
       </div>
 
 
-      {/* PAGE 2: STRATEGIC PRIORITIES & OPERATING MODEL */}
+      {/* PAGE 2: EXPOSURE, STRATEGIC PRIORITIES, ROADMAP, INVESTMENT */}
       <div className="page">
-        <h2 className="highlight" style={{ marginTop: 0 }}>Current State Operating Model</h2>
-        <table>
-          <thead>
-            <tr>
-              <th style={{ width: "25%" }}>Program Component</th>
-              <th style={{ width: "20%" }}>Current Owner</th>
-              <th style={{ width: "20%" }}>Status</th>
-              <th style={{ width: "35%" }}>Executive Observation</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.key}>
-                <td><strong>{r.label}</strong></td>
-                <td>
-                  <input type="text" placeholder="Advisor Input" value={owner[r.key] ?? ""} onChange={setRow(setOwner)(r.key)} />
-                </td>
-                <td>
-                  <input type="text" placeholder="Advisor Input" value={status[r.key] ?? ""} onChange={setRow(setStatus)(r.key)} />
-                </td>
-                <td>
-                  <textarea rows={2} placeholder="Advisor Input" value={observation[r.key] ?? ""} onChange={setRow(setObservation)(r.key)} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {/* Section 5 — Current Organizational Exposure (manual) */}
+        <h2 className="highlight" style={{ marginTop: 0 }}>Current Organizational Exposure</h2>
+        <div className="exposure-grid">
+          <div>
+            <label>Legal Defensibility</label>
+            <textarea rows={2} value={exposure.legal} onChange={(e) => setExposure((p) => ({ ...p, legal: e.target.value }))} placeholder="Advisor input..." />
+          </div>
+          <div>
+            <label>Time Impact</label>
+            <textarea rows={2} value={exposure.time} onChange={(e) => setExposure((p) => ({ ...p, time: e.target.value }))} placeholder="Advisor input..." />
+          </div>
+          <div>
+            <label>Operational Downtime</label>
+            <textarea rows={2} value={exposure.downtime} onChange={(e) => setExposure((p) => ({ ...p, downtime: e.target.value }))} placeholder="Advisor input..." />
+          </div>
+          <div>
+            <label>Quantified ROI</label>
+            <textarea rows={2} value={exposure.roi} onChange={(e) => setExposure((p) => ({ ...p, roi: e.target.value }))} placeholder="Advisor input..." />
+          </div>
+        </div>
 
         <hr />
 
-        {/* Strategic Priorities — manual dropdowns */}
+        {/* Section 6 — Recommended Solution & Strategic Priorities (manual dropdowns) */}
         <h2 className="highlight">Strategic Priorities</h2>
         <p style={{ fontSize: 13 }}>Select the recommended phased approach for this organization.</p>
 
@@ -308,7 +413,34 @@ export default function AdvisoryReport() {
 
         <hr />
 
-        {/* Estimated Investment Range — manual */}
+        {/* Section 7 — Implementation Roadmap & Outcomes (prefilled text + manual) */}
+        <h2 className="highlight">Implementation Roadmap &amp; Outcomes</h2>
+        <div className="phase-block">
+          <h3>Phase 1</h3>
+          <textarea rows={3} value={roadmap.phase1} onChange={(e) => setRoadmap((p) => ({ ...p, phase1: e.target.value }))} />
+        </div>
+        <div className="phase-block">
+          <h3>Phase 2</h3>
+          <textarea rows={3} value={roadmap.phase2} onChange={(e) => setRoadmap((p) => ({ ...p, phase2: e.target.value }))} />
+        </div>
+        <div className="phase-block">
+          <h3>Phase 3</h3>
+          <textarea rows={3} value={roadmap.phase3} onChange={(e) => setRoadmap((p) => ({ ...p, phase3: e.target.value }))} />
+        </div>
+        <div className="client-info-grid">
+          <div>
+            <strong>Estimated Timeline:</strong>{" "}
+            <input type="text" value={timeline} onChange={(e) => setTimeline(e.target.value)} placeholder="e.g. 12–16 weeks" />
+          </div>
+          <div>
+            <strong>Expected Organizational Outcomes:</strong>{" "}
+            <input type="text" value={outcomes} onChange={(e) => setOutcomes(e.target.value)} placeholder="e.g. Documented plan, trained staff, validated drills" />
+          </div>
+        </div>
+
+        <hr />
+
+        {/* Section 8 — Estimated Investment Range (manual) */}
         <h3>Estimated Investment Range</h3>
         <div className="investment-group">
           $ <input type="text" placeholder="Min Amount" value={investmentMin} onChange={(e) => setInvestmentMin(e.target.value)} />
