@@ -15,15 +15,19 @@ import { encryptPII, decryptPII } from "./btamEncryption";
 
 // ─── Case Number Generator ────────────────────────────────────────────────────
 
-export async function generateCaseNumber(orgId: number): Promise<string> {
+export async function generateCaseNumber(_orgId?: number): Promise<string> {
   const db = await getDb();
   if (!db) return `BTAM-${new Date().getFullYear()}-0001`;
   const year = new Date().getFullYear();
   const prefix = `BTAM-${year}-`;
+  // caseNumber has a GLOBAL unique constraint (btam_cases_caseNumber_unique),
+  // so the next number must be computed across ALL orgs, not just the caller's
+  // org. Scanning the whole table prevents a cross-org collision (org 1 and
+  // org 2 would otherwise both generate BTAM-2026-0001, and the 2nd insert
+  // would fail with ER_DUP_ENTRY).
   const existing = await db
     .select({ caseNumber: btamCases.caseNumber })
     .from(btamCases)
-    .where(eq(btamCases.orgId, orgId))
     .orderBy(desc(btamCases.createdAt));
   let maxSeq = 0;
   for (const row of existing) {

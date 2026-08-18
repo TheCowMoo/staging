@@ -16,15 +16,17 @@ const t = initTRPC.context<TrpcContext>().create({
   // "Unknown column 'concernLevel' in 'field list'" into pm2/node logs.
   errorFormatter: ({ shape, error }) => {
     const cause = error.cause as
-      | { message?: string; cause?: { code?: string; message?: string } }
+      | { message?: string; cause?: { code?: string; errno?: number; sqlMessage?: string; message?: string } }
       | null
       | undefined;
     if (cause) {
       const nested = cause.cause;
       const path = shape.data?.path ? ` @${shape.data.path}` : "";
-      const code = nested?.code ? ` [${nested.code}]` : "";
-      const msg = `${cause.message ?? String(cause)}${nested?.message ? ` :: ${nested.message}` : ""}`;
-      console.error(`[tRPC] ${error.code}${path}${code}: ${msg}`);
+      const codeVal = nested?.code ?? nested?.errno;
+      const code = codeVal ? ` [${codeVal}]` : "";
+      const detailVal = nested?.sqlMessage ?? nested?.message;
+      const detail = detailVal ? ` :: ${detailVal}` : "";
+      console.error(`[tRPC] ${error.code}${path}${code}: ${cause.message ?? String(cause)}${detail}`);
     }
     return shape;
   },
