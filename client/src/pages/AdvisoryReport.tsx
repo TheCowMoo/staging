@@ -111,6 +111,11 @@ const REPORT_CSS = `
   font-size: 9px; color: #777;
 }
 .advisory-root .report-footer .footer-page { font-weight: 600; color: var(--fs-navy); }
+.advisory-root .logo-band {
+  background: #4B5563; border-radius: 8px; display: flex; justify-content: center; align-items: center;
+  padding: 18px 16px; margin: 0 0 18px;
+}
+.advisory-root .logo-band img { max-width: 280px; height: auto; display: block; }
 .advisory-root .header-section { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 3px solid var(--fs-mid-blue); }
 .advisory-root .brand-wordmark { font-weight: 700; font-size: 20px; letter-spacing: 3px; color: var(--fs-navy); text-transform: uppercase; margin-bottom: 12px; }
 .advisory-root h1, .advisory-root h2, .advisory-root h3, .advisory-root h4, .advisory-root th { color: var(--fs-navy); margin: 0; }
@@ -135,6 +140,8 @@ const REPORT_CSS = `
 .advisory-root .overall-score-input:focus { outline: none; border-color: var(--fs-mid-blue); background: #fff; }
 .advisory-root .overall-score-denom { font-size: 16px; color: var(--fs-navy); }
 .advisory-root .chart-row { margin-bottom: 15px; }
+.advisory-root .phase-block, .advisory-root .chart-row, .advisory-root .exposure-grid,
+.advisory-root .client-info-grid, .advisory-root .score-box { break-inside: avoid; page-break-inside: avoid; }
 .advisory-root .chart-header { display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: var(--fs-navy); margin-bottom: 4px; }
 .advisory-root .score-input { width: 64px; padding: 4px 6px; font-size: 13px; text-align: right; border: 1px solid var(--fs-neutral); border-radius: 4px; background: #fcfcfc; }
 .advisory-root .bar-track { width: 100%; height: 12px; background-color: #e0e0e0; border-radius: 6px; overflow: hidden; margin-bottom: 4px; }
@@ -167,6 +174,10 @@ const REPORT_CSS = `
   .advisory-root input::placeholder, .advisory-root textarea::placeholder { color: transparent !important; }
   .advisory-root .no-print { display: none !important; }
   .advisory-root.client-mode .admin-only { display: none !important; }
+  .advisory-root hr { margin: 20px 0; }
+  .advisory-root .phase-block { padding: 10px; margin-bottom: 14px; }
+  .advisory-root .client-info-grid { padding: 10px; margin-bottom: 12px; }
+  .advisory-root textarea { padding: 6px; }
 }
 `;
 
@@ -273,11 +284,9 @@ export default function AdvisoryReport() {
       {/* PAGE 1: INTAKE & SCAN DATA */}
       <div className="page">
         <div className="header-section">
-          <img
-            src={LOGO_URL}
-            alt="Five Stones Technology"
-            style={{ maxWidth: 260, height: "auto", marginBottom: 12 }}
-          />
+          <div className="logo-band">
+            <img src={LOGO_URL} alt="Five Stones Technology" />
+          </div>
           <h1>Executive Advisory Report</h1>
           <h3 style={{ color: "var(--fs-dark-teal)", marginTop: 5 }}>
             Prepared for: {organization || "Not specified"}
@@ -335,9 +344,17 @@ export default function AdvisoryReport() {
           placeholder="Advisor to fill out insight after the call..."
         />
 
-        <hr />
+        {/* Footer */}
+        <div className="report-footer">
+          <span>Five Stones Technology</span>
+          <span className="footer-page">Page 1 of 4</span>
+        </div>
+      </div>
 
-        {/* Section 4 — Category Breakdown (auto-populated, editable) */}
+
+      {/* PAGE 2: READINESS SCAN INSIGHTS */}
+      <div className="page">
+        {/* Section 4 — Readiness Scan Insights (auto-populated, editable) */}
         <h2 className="highlight" style={{ marginTop: 0 }}>Readiness Scan Insights</h2>
         <div className="score-box">
           <h3>Overall Readiness Score</h3>
@@ -383,12 +400,12 @@ export default function AdvisoryReport() {
         {/* Footer */}
         <div className="report-footer">
           <span>Five Stones Technology</span>
-          <span className="footer-page">Page 1 of 2</span>
+          <span className="footer-page">Page 2 of 4</span>
         </div>
       </div>
 
 
-      {/* PAGE 2: EXPOSURE, STRATEGIC PRIORITIES, ROADMAP, INVESTMENT */}
+      {/* PAGE 3: EXPOSURE & STRATEGIC PRIORITIES */}
       <div className="page">
         {/* Section 5 — Current Organizational Exposure (manual) */}
         <h2 className="highlight" style={{ marginTop: 0 }}>Current Organizational Exposure</h2>
@@ -444,10 +461,18 @@ export default function AdvisoryReport() {
           </select>
         </div>
 
-        <hr />
+        {/* Footer */}
+        <div className="report-footer">
+          <span>Five Stones Technology</span>
+          <span className="footer-page">Page 3 of 4</span>
+        </div>
+      </div>
 
+
+      {/* PAGE 4: ROADMAP & INVESTMENT */}
+      <div className="page">
         {/* Section 7 — Implementation Roadmap & Outcomes (prefilled text + manual) */}
-        <h2 className="highlight">Implementation Roadmap &amp; Outcomes</h2>
+        <h2 className="highlight" style={{ marginTop: 0 }}>Implementation Roadmap &amp; Outcomes</h2>
         <div className="phase-block">
           <h3>Phase 1</h3>
           <textarea rows={3} value={roadmap.phase1} onChange={(e) => setRoadmap((p) => ({ ...p, phase1: e.target.value }))} />
@@ -484,7 +509,7 @@ export default function AdvisoryReport() {
         {/* Footer */}
         <div className="report-footer">
           <span>Five Stones Technology</span>
-          <span className="footer-page">Page 2 of 2</span>
+          <span className="footer-page">Page 4 of 4</span>
         </div>
       </div>
     </div>
