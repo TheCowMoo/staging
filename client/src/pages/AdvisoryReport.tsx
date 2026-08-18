@@ -9,10 +9,11 @@
  *  - "Save Client PDF" — hides `.admin-only` sections (Discovery Call Notes).
  *
  * Compliance (executive directive):
- *  - Discovery Call Notes, Advisor Insight, Current Organizational Exposure,
- *    Strategic Priorities, Expected Organizational Outcomes, Investment Range,
- *    and Section 2 (owner / status / observation) are MANUAL fields — never
- *    AI-generated. Strategic Priorities pre-fill from the scan's Action Roadmap.
+ *  - Discovery Call Notes, Advisor Insight, Strategic Priorities, Expected
+ *    Organizational Outcomes, Investment Range, and Sections 2–6 (operating
+ *    model, exposure, recommended solution, roadmap, ROI) are MANUAL fields —
+ *    never AI-generated. Strategic Priorities pre-fill from the scan's
+ *    Action Roadmap; Sections 4–6 pre-fill from editable templates.
  *  - Category descriptions start as the exact operational-interpretation
  *    outputs (categoryInsight()) but are editable per the template requirement.
  */
@@ -88,6 +89,124 @@ function statusFromScore(score: number): StatusLevel {
   if (score <= 75) return "partial";
   return "complete";
 }
+
+// ── Section 4 — Recommended Solution (prefilled, add/remove options) ──────
+interface SolutionOption {
+  id: string;
+  label: string;        // "Option 1"
+  title: string;        // "Guided Implementation"
+  description: string;  // one-line pitch
+  provides: string;     // multi-line list (one item per line)
+  owns: string;         // multi-line list (one item per line)
+}
+
+const DEFAULT_OPTIONS: SolutionOption[] = [
+  {
+    id: "opt-1",
+    label: "Option 1",
+    title: "Guided Implementation",
+    description:
+      "Best suited for organizations wanting to build internal capability while leveraging Pursuit Pathways as an extension of their team.",
+    provides: "Five Stones Platform\nTemplates\nAdvisory support\nReviews\nGuidance",
+    owns: "Assessments\nInternal coordination\nProgram management\nAnnual reviews",
+  },
+  {
+    id: "opt-2",
+    label: "Option 2",
+    title: "Full Service Implementation",
+    description: "Best suited for organizations seeking expert-led implementation.",
+    provides:
+      "Site Threat Assessments\nFacility walkthroughs\nExecutive reporting\nEmergency Response Plans\nWorkplace Violence Prevention Plans\nFive Stones deliverables\nAdvisory support",
+    owns: "Internal approvals\nOngoing ownership",
+  },
+];
+
+const DEFAULT_ADDITIONAL_SERVICES =
+  "Site Threat Assessment\nActive Threat Emergency Response Plan\nWorkplace Violence Prevention Plan\nExecutive Leadership Training\nEmployee Training\nTabletop Exercises\nActive Threat Drills\nFive Stones Platform\nAnnual Reviews";
+
+// ── Section 5 — Implementation Roadmap (prefilled, add/remove phases) ─────
+interface RoadmapPhase {
+  id: string;
+  name: string;         // "Phase 1"
+  title: string;        // "Discovery & Assessment"
+  timeline: string;     // "Week 1–2"
+  deliverables: string; // multi-line list
+  outcome: string;      // "Clear understanding of ..."
+}
+
+const DEFAULT_PHASES: RoadmapPhase[] = [
+  {
+    id: "phase-1",
+    name: "Phase 1",
+    title: "Discovery & Assessment",
+    timeline: "Week 1–2",
+    deliverables: "Project kickoff\nStakeholder meetings\nDocumentation review\nSite Threat Assessment\nExecutive observations",
+    outcome: "Clear understanding of organizational readiness and implementation priorities.",
+  },
+  {
+    id: "phase-2",
+    name: "Phase 2",
+    title: "Planning & Development",
+    timeline: "Week 3–6",
+    deliverables: "Emergency Response Plan\nWorkplace Violence Prevention Plan\nFive Stones configuration\nLeadership review",
+    outcome: "Documented plans aligned with operational needs.",
+  },
+  {
+    id: "phase-3",
+    name: "Phase 3",
+    title: "Implementation & Validation",
+    timeline: "Week 7–10",
+    deliverables: "Leadership training\nEmployee training\nTabletop exercises\nActive threat drills\nFinal recommendations",
+    outcome: "Operational readiness validated through training and exercises.",
+  },
+  {
+    id: "phase-4",
+    name: "Phase 4",
+    title: "Sustainment & Continuous Improvement",
+    timeline: "Ongoing",
+    deliverables: "Annual reviews\nFive Stones updates\nRefresher training\nAdditional assessments\nAdvisory support",
+    outcome: "Preparedness becomes an ongoing organizational capability.",
+  },
+];
+
+const DEFAULT_PURPOSE =
+  "Provide leadership with a clear understanding of the implementation process, expected deliverables, and project visibility.";
+
+const DEFAULT_COMMUNICATION =
+  "Leadership receives regular project updates, milestone reviews, and implementation status throughout the engagement.\n\nProgress may be communicated through Five Stones, Microsoft Teams, Slack, email, scheduled project meetings, or executive status reports, based on the organization's preferred communication method.";
+
+// ── Section 6 — Quantified Return on Investment (prefilled template, editable) ──
+interface RoiLine {
+  id: string;
+  label: string;   // "Employee Attrition Savings"
+  value: string;   // raw "$" amount text (the "$" prefix is rendered separately)
+  total?: boolean; // true for the "Total Estimated Annual Value" row
+}
+
+const DEFAULT_ROI_LINES: RoiLine[] = [
+  { id: "roi-1", label: "Employee Attrition Savings", value: "" },
+  { id: "roi-2", label: "Insurance Premium Impact", value: "" },
+  { id: "roi-3", label: "Lost Production Avoidance", value: "" },
+  { id: "roi-4", label: "Litigation Risk Reduction", value: "" },
+  { id: "roi-5", label: "Leadership Time Savings", value: "" },
+  { id: "roi-total", label: "Total Estimated Annual Value", value: "", total: true },
+];
+
+interface CapacityLine {
+  id: string;
+  label: string;   // "Leadership time returned"
+  value: string;   // hours number
+  unit: string;    // "hours/year"
+}
+
+const DEFAULT_CAPACITY: CapacityLine[] = [
+  { id: "cap-1", label: "Leadership time returned", value: "", unit: "hours/year" },
+  { id: "cap-2", label: "Administrative time reduced", value: "", unit: "hours/year" },
+  { id: "cap-3", label: "Operational efficiency gained", value: "", unit: "hours/year" },
+];
+
+const DEFAULT_ROI_NOTE =
+  "Based on conservative estimates generated through the Pursuit Pathways ROI Calculator using client-provided information.";
 
 const REPORT_CSS = `
 .advisory-root {
@@ -184,6 +303,33 @@ const REPORT_CSS = `
 .advisory-root .status-circle.partial { background-color: #F59E0B; border-color: #F59E0B; }
 .advisory-root .status-circle.not_in_place { background-color: #E5484D; border-color: #E5484D; }
 .advisory-root .status-label { font-size: 12px; color: var(--fs-navy); margin-left: 6px; }
+.advisory-root .add-btn {
+  display: inline-block; margin: 4px 0 14px; padding: 6px 14px; font-size: 12px;
+  border: 1px dashed var(--fs-mid-blue); border-radius: 6px; background: #fff;
+  color: var(--fs-navy); cursor: pointer;
+}
+.advisory-root .remove-btn {
+  display: inline-block; margin-left: 10px; padding: 4px 10px; font-size: 11px;
+  border: 1px solid #d7d7d7; border-radius: 4px; background: #fff; color: #b91c1c; cursor: pointer;
+}
+.advisory-root .option-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.advisory-root .option-head input[type="text"] { width: auto; padding: 4px 8px; }
+.advisory-root .option-head .opt-label { width: 96px; font-weight: 700; color: var(--fs-navy); }
+.advisory-root .option-head .opt-title { flex: 1; min-width: 140px; font-size: 14px; font-weight: 600; }
+.advisory-root .list-label { display: block; font-size: 11px; font-weight: 700; color: var(--fs-navy); margin: 10px 0 4px; text-transform: uppercase; letter-spacing: 0.4px; }
+.advisory-root .timeline-row { display: flex; align-items: center; gap: 6px; margin: 8px 0; }
+.advisory-root .timeline-row label { font-size: 12px; font-weight: 700; color: var(--fs-navy); white-space: nowrap; }
+.advisory-root .timeline-row input { flex: 1; }
+.advisory-root .money-row { display: flex; align-items: center; gap: 4px; }
+.advisory-root .money-row input { width: 150px; padding: 4px 8px; }
+.advisory-root .cap-row { display: flex; align-items: center; gap: 6px; margin: 6px 0; }
+.advisory-root .cap-label { width: auto; min-width: 240px; font-weight: 600; color: var(--fs-navy); }
+.advisory-root .cap-fixed-label { font-size: 13px; color: var(--fs-navy); min-width: 240px; font-weight: 600; }
+.advisory-root .cap-value { width: 90px; padding: 4px 8px; text-align: center; }
+.advisory-root .cap-unit { font-size: 12px; color: #666; }
+.advisory-root .roi-label { font-weight: 600; }
+.advisory-root .roi-total .roi-label { font-weight: 700; color: var(--fs-navy); }
+.advisory-root textarea.roi-note { font-size: 12px; color: #666; font-style: italic; margin-top: 16px; }
 .advisory-root .phase-block { margin-bottom: 20px; padding: 15px; border: 1px solid var(--fs-neutral); border-left: 5px solid var(--fs-dark-teal); border-radius: 4px; background-color: #fafafa; }
 .advisory-root .phase-block h3 { color: var(--fs-navy); margin-top: 0; margin-bottom: 10px; }
 .advisory-root .investment-group { display: flex; align-items: center; gap: 10px; background-color: var(--fs-light-blue); padding: 15px; border-radius: 4px; font-weight: 600; color: var(--fs-navy); width: max-content; margin-top: 10px; }
@@ -249,14 +395,12 @@ export default function AdvisoryReport() {
   // ── Manual advisor fields (never AI-generated) ─────────────────────────
   const [discoveryNotes, setDiscoveryNotes] = useState("");
   const [advisorInsight, setAdvisorInsight] = useState("");
-  const [exposure, setExposure] = useState({ legal: "", time: "", downtime: "", roi: "" });
-
   // ── Strategic Priorities — pre-filled from the scan's Action Roadmap ────
   const roadmapActions = result?.immediateActionPlan ?? [];
-  const [phase1, setPhase1] = useState(() => roadmapActions.slice(0, 2).filter(Boolean).join("\n\n"));
-  const [phase2, setPhase2] = useState(() => roadmapActions.slice(2, 4).filter(Boolean).join("\n\n"));
-  const [phase3, setPhase3] = useState(() => roadmapActions.slice(4, 6).filter(Boolean).join("\n\n"));
-  const [phaseExtra, setPhaseExtra] = useState(() => roadmapActions.slice(6).filter(Boolean).join("\n\n"));
+  const [priorities, setPriorities] = useState(() => roadmapActions.filter(Boolean).join("\n\n"));
+
+  // ── Section 3 — Current Organizational Exposure (manual placeholder) ────
+  const [exposure, setExposure] = useState("");
 
   // ── Expected Organizational Outcomes + Investment (manual placeholders) ──
   const [outcomes, setOutcomes] = useState("");
@@ -290,6 +434,53 @@ export default function AdvisoryReport() {
     });
   }
 
+  // ── Section 4 — Recommended Solution (prefilled, add/remove options) ────
+  const [solutionOptions, setSolutionOptions] = useState<SolutionOption[]>(DEFAULT_OPTIONS);
+  const [additionalServices, setAdditionalServices] = useState(DEFAULT_ADDITIONAL_SERVICES);
+
+  // ── Section 5 — Implementation Roadmap (prefilled, add/remove phases) ────
+  const [roadmapPhases, setRoadmapPhases] = useState<RoadmapPhase[]>(DEFAULT_PHASES);
+  const [purpose, setPurpose] = useState(DEFAULT_PURPOSE);
+  const [communication, setCommunication] = useState(DEFAULT_COMMUNICATION);
+
+  function updateOption(id: string, patch: Partial<SolutionOption>) {
+    setSolutionOptions((prev) => prev.map((o) => (o.id === id ? { ...o, ...patch } : o)));
+  }
+  function addOption() {
+    setSolutionOptions((prev) => [
+      ...prev,
+      { id: `opt-${Date.now()}`, label: `Option ${prev.length + 1}`, title: "", description: "", provides: "", owns: "" },
+    ]);
+  }
+  function removeOption(id: string) {
+    setSolutionOptions((prev) => prev.filter((o) => o.id !== id));
+  }
+  function updatePhase(id: string, patch: Partial<RoadmapPhase>) {
+    setRoadmapPhases((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+  }
+  function addPhase() {
+    setRoadmapPhases((prev) => [
+      ...prev,
+      { id: `phase-${Date.now()}`, name: `Phase ${prev.length + 1}`, title: "", timeline: "", deliverables: "", outcome: "" },
+    ]);
+  }
+  function removePhase(id: string) {
+    setRoadmapPhases((prev) => prev.filter((p) => p.id !== id));
+  }
+
+  // ── Section 6 — Quantified Return on Investment (prefilled, editable) ────
+  const [roiLines, setRoiLines] = useState<RoiLine[]>(DEFAULT_ROI_LINES);
+  const [capacityLines, setCapacityLines] = useState<CapacityLine[]>(DEFAULT_CAPACITY);
+  const [paybackMonths, setPaybackMonths] = useState("");
+  const [roiNote, setRoiNote] = useState(DEFAULT_ROI_NOTE);
+
+  function updateRoiLine(id: string, patch: Partial<RoiLine>) {
+    setRoiLines((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+  }
+  function updateCapacity(id: string, patch: Partial<CapacityLine>) {
+    setCapacityLines((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+  }
+
   // ── Export mode: advisor = full report, client = hides admin-only ─────
   const [exportMode, setExportMode] = useState<"advisor" | "client">("advisor");
 
@@ -315,6 +506,25 @@ export default function AdvisoryReport() {
     score: Number(catScores[c.scoreKey]) || 0,
     desc: catDescs[c.scoreKey] ?? "",
   }));
+
+  // ── Section 4/5 pagination (dynamic: options & phases can be added/removed) ─
+  const OPTIONS_PER_PAGE = 2;
+  const PHASES_PER_PAGE = 2;
+  const optionChunks: SolutionOption[][] = [];
+  for (let i = 0; i < solutionOptions.length; i += OPTIONS_PER_PAGE) {
+    optionChunks.push(solutionOptions.slice(i, i + OPTIONS_PER_PAGE));
+  }
+  const phaseChunks: RoadmapPhase[][] = [];
+  for (let i = 0; i < roadmapPhases.length; i += PHASES_PER_PAGE) {
+    phaseChunks.push(roadmapPhases.slice(i, i + PHASES_PER_PAGE));
+  }
+  const optionPages = optionChunks.length > 0 ? optionChunks : [[]];
+  const phasePages = phaseChunks.length > 0 ? phaseChunks : [[]];
+  const section4Pages = optionPages.length;
+  const section5Pages = phasePages.length;
+  const totalPages = 5 + section4Pages + section5Pages + 1; // +1 = Section 6 (Quantified ROI)
+  const section4StartPage = 6;
+  const section5StartPage = section4StartPage + section4Pages;
 
   // ── Overall score radial gauge ──────────────────────────────────────────
   const scoreNum = Math.max(0, Math.min(100, Number(overallScore) || 0));
@@ -415,7 +625,7 @@ export default function AdvisoryReport() {
         {/* Footer */}
         <div className="report-footer">
           <span>Five Stones Technology</span>
-          <span className="footer-page">Page 1 of 5</span>
+          <span className="footer-page">Page 1 of {totalPages}</span>
         </div>
       </div>
 
@@ -483,40 +693,17 @@ export default function AdvisoryReport() {
         {/* Footer */}
         <div className="report-footer">
           <span>Five Stones Technology</span>
-          <span className="footer-page">Page 2 of 5</span>
+          <span className="footer-page">Page 2 of {totalPages}</span>
         </div>
       </div>
 
 
-      {/* PAGE 3: EXPOSURE, EXPECTED OUTCOMES & INVESTMENT */}
+      {/* PAGE 3: EXPECTED OUTCOMES, INVESTMENT & STRATEGIC PRIORITIES */}
       <div className="page">
-        {/* Section 5 — Current Organizational Exposure (manual) */}
-        <h2 className="highlight" style={{ marginTop: 0 }}>Current Organizational Exposure</h2>
-        <div className="exposure-grid">
-          <div>
-            <label>Legal Defensibility</label>
-            <textarea rows={2} value={exposure.legal} onChange={(e) => setExposure((p) => ({ ...p, legal: e.target.value }))} placeholder="Advisor input..." />
-          </div>
-          <div>
-            <label>Time Impact</label>
-            <textarea rows={2} value={exposure.time} onChange={(e) => setExposure((p) => ({ ...p, time: e.target.value }))} placeholder="Advisor input..." />
-          </div>
-          <div>
-            <label>Operational Downtime</label>
-            <textarea rows={2} value={exposure.downtime} onChange={(e) => setExposure((p) => ({ ...p, downtime: e.target.value }))} placeholder="Advisor input..." />
-          </div>
-          <div>
-            <label>Quantified ROI</label>
-            <textarea rows={2} value={exposure.roi} onChange={(e) => setExposure((p) => ({ ...p, roi: e.target.value }))} placeholder="Advisor input..." />
-          </div>
-        </div>
-
-        <hr />
-
-        {/* Section 6 — Expected Organizational Outcomes (manual placeholder) */}
-        <h2 className="highlight">Expected Organizational Outcomes</h2>
+        {/* Section 5 — Expected Organizational Outcomes (manual placeholder) */}
+        <h2 className="highlight" style={{ marginTop: 0 }}>Expected Organizational Outcomes</h2>
         <textarea
-          rows={5}
+          rows={4}
           value={outcomes}
           onChange={(e) => setOutcomes(e.target.value)}
           placeholder="Describe the expected organizational outcomes for this engagement..."
@@ -524,76 +711,35 @@ export default function AdvisoryReport() {
 
         <hr />
 
-        {/* Section 7 — Estimated Investment Range (manual placeholder) */}
+        {/* Section 6 — Estimated Investment Range (manual placeholder) */}
         <h3>Estimated Investment Range</h3>
-        <div className="investment-group">
-          <input
-            type="text"
-            value={investment}
-            onChange={(e) => setInvestment(e.target.value)}
-            placeholder="Enter estimated investment range (e.g. $15,000 – $25,000)"
-          />
-        </div>
+        <textarea
+          rows={2}
+          value={investment}
+          onChange={(e) => setInvestment(e.target.value)}
+          placeholder="Enter estimated investment range (e.g. $15,000 – $25,000)"
+        />
+
+        <hr />
+
+        {/* Section 7 — Strategic Priorities (pre-filled from the scan's Action Roadmap, editable) */}
+        <h2 className="highlight">Strategic Priorities</h2>
+        <textarea
+          rows={16}
+          value={priorities}
+          onChange={(e) => setPriorities(e.target.value)}
+          placeholder="Recommended actions from the Action Roadmap..."
+        />
 
         {/* Footer */}
         <div className="report-footer">
           <span>Five Stones Technology</span>
-          <span className="footer-page">Page 3 of 5</span>
+          <span className="footer-page">Page 3 of {totalPages}</span>
         </div>
       </div>
 
 
-      {/* PAGE 4: STRATEGIC PRIORITIES (ACTION ROADMAP) */}
-      <div className="page">
-        {/* Section 8 — Strategic Priorities (pre-filled from the scan's Action Roadmap, editable) */}
-        <h2 className="highlight" style={{ marginTop: 0 }}>Strategic Priorities</h2>
-
-        <div className="phase-block">
-          <h3>Phase 1: Discovery &amp; Assessment</h3>
-          <textarea
-            rows={6}
-            value={phase1}
-            onChange={(e) => setPhase1(e.target.value)}
-            placeholder="Recommended actions from the Action Roadmap..."
-          />
-        </div>
-
-        <div className="phase-block">
-          <h3>Phase 2: Planning &amp; Development</h3>
-          <textarea
-            rows={6}
-            value={phase2}
-            onChange={(e) => setPhase2(e.target.value)}
-            placeholder="Recommended actions from the Action Roadmap..."
-          />
-        </div>
-
-        <div className="phase-block">
-          <h3>Phase 3: Implementation &amp; Validation</h3>
-          <textarea
-            rows={6}
-            value={phase3}
-            onChange={(e) => setPhase3(e.target.value)}
-            placeholder="Recommended actions from the Action Roadmap..."
-          />
-        </div>
-
-        {roadmapActions.length > 6 && (
-          <div className="phase-block">
-            <h3>Additional Actions</h3>
-            <textarea rows={4} value={phaseExtra} onChange={(e) => setPhaseExtra(e.target.value)} />
-          </div>
-        )}
-
-        {/* Footer */}
-        <div className="report-footer">
-          <span>Five Stones Technology</span>
-          <span className="footer-page">Page 4 of 5</span>
-        </div>
-      </div>
-
-
-      {/* PAGE 5: SECTION 2 — CURRENT STATE OPERATING MODEL */}
+      {/* PAGE 4: SECTION 2 — CURRENT STATE OPERATING MODEL */}
       <div className="page">
         {/* Section 2 — Current State Operating Model (category breakdown from the readiness scan) */}
         <h2 className="highlight" style={{ marginTop: 0 }}>Section 2: Current State Operating Model</h2>
@@ -651,7 +797,168 @@ export default function AdvisoryReport() {
         {/* Footer */}
         <div className="report-footer">
           <span>Five Stones Technology</span>
-          <span className="footer-page">Page 5 of 5</span>
+          <span className="footer-page">Page 4 of {totalPages}</span>
+        </div>
+      </div>
+
+
+      {/* PAGE 5: SECTION 3 — CURRENT ORGANIZATIONAL EXPOSURE */}
+      <div className="page">
+        {/* Section 3 — Current Organizational Exposure (manual placeholder) */}
+        <h2 className="highlight" style={{ marginTop: 0 }}>Section 3: Current Organizational Exposure</h2>
+        <textarea
+          rows={10}
+          value={exposure}
+          onChange={(e) => setExposure(e.target.value)}
+          placeholder="Describe the organization's current exposure — legal defensibility, time impact, operational downtime, and quantified ROI..."
+        />
+
+        {/* Footer */}
+        <div className="report-footer">
+          <span>Five Stones Technology</span>
+          <span className="footer-page">Page 5 of {totalPages}</span>
+        </div>
+      </div>
+
+
+      {/* SECTION 4 — RECOMMENDED SOLUTION */}
+      {optionPages.map((chunk, ci) => (
+        <div className="page" key={`s4-${ci}`}>
+          {ci === 0 && (
+            <>
+              <h2 className="highlight" style={{ marginTop: 0 }}>Section 4: Recommended Solution</h2>
+              <button type="button" className="add-btn no-print" onClick={addOption}>+ Add Option</button>
+            </>
+          )}
+
+          {chunk.map((opt) => (
+            <div className="phase-block" key={opt.id}>
+              <div className="option-head">
+                <input className="opt-label" type="text" value={opt.label} onChange={(e) => updateOption(opt.id, { label: e.target.value })} />
+                <input className="opt-title" type="text" value={opt.title} onChange={(e) => updateOption(opt.id, { title: e.target.value })} />
+                <button type="button" className="remove-btn no-print" onClick={() => removeOption(opt.id)}>Remove</button>
+              </div>
+              <textarea rows={2} value={opt.description} onChange={(e) => updateOption(opt.id, { description: e.target.value })} />
+              <label className="list-label">Pursuit Pathways Provides</label>
+              <textarea rows={4} value={opt.provides} onChange={(e) => updateOption(opt.id, { provides: e.target.value })} />
+              <label className="list-label">Client Owns</label>
+              <textarea rows={3} value={opt.owns} onChange={(e) => updateOption(opt.id, { owns: e.target.value })} />
+            </div>
+          ))}
+
+          {ci === optionPages.length - 1 && (
+            <>
+              <hr />
+              <h3>Additional Services</h3>
+              <textarea rows={9} value={additionalServices} onChange={(e) => setAdditionalServices(e.target.value)} />
+            </>
+          )}
+
+          <div className="report-footer">
+            <span>Five Stones Technology</span>
+            <span className="footer-page">Page {section4StartPage + ci} of {totalPages}</span>
+          </div>
+        </div>
+      ))}
+
+
+      {/* SECTION 5 — IMPLEMENTATION ROADMAP */}
+      {phasePages.map((chunk, ci) => (
+        <div className="page" key={`s5-${ci}`}>
+          {ci === 0 && (
+            <>
+              <h2 className="highlight" style={{ marginTop: 0 }}>Section 5: Implementation Roadmap</h2>
+              <label className="list-label">Purpose</label>
+              <textarea rows={2} value={purpose} onChange={(e) => setPurpose(e.target.value)} />
+              <button type="button" className="add-btn no-print" onClick={addPhase}>+ Add Phase</button>
+            </>
+          )}
+
+          {chunk.map((ph) => (
+            <div className="phase-block" key={ph.id}>
+              <div className="option-head">
+                <input className="opt-label" type="text" value={ph.name} onChange={(e) => updatePhase(ph.id, { name: e.target.value })} />
+                <input className="opt-title" type="text" value={ph.title} onChange={(e) => updatePhase(ph.id, { title: e.target.value })} />
+                <button type="button" className="remove-btn no-print" onClick={() => removePhase(ph.id)}>Remove</button>
+              </div>
+              <div className="timeline-row">
+                <label>Estimated Timeline:</label>
+                <input type="text" value={ph.timeline} onChange={(e) => updatePhase(ph.id, { timeline: e.target.value })} />
+              </div>
+              <label className="list-label">Deliverables</label>
+              <textarea rows={5} value={ph.deliverables} onChange={(e) => updatePhase(ph.id, { deliverables: e.target.value })} />
+              <label className="list-label">Client Outcome</label>
+              <textarea rows={2} value={ph.outcome} onChange={(e) => updatePhase(ph.id, { outcome: e.target.value })} />
+            </div>
+          ))}
+
+          {ci === phasePages.length - 1 && (
+            <>
+              <hr />
+              <h3>Communication &amp; Project Visibility</h3>
+              <textarea rows={3} value={communication} onChange={(e) => setCommunication(e.target.value)} />
+            </>
+          )}
+
+          <div className="report-footer">
+            <span>Five Stones Technology</span>
+            <span className="footer-page">Page {section5StartPage + ci} of {totalPages}</span>
+          </div>
+        </div>
+      ))}
+
+
+      {/* SECTION 6 — QUANTIFIED RETURN ON INVESTMENT */}
+      <div className="page">
+        {/* Section 6 — Quantified ROI (prefilled template, editable) */}
+        <h2 className="highlight" style={{ marginTop: 0 }}>Section 6: Quantified Return on Investment (ROI)</h2>
+
+        <h3>Estimated Annual Value</h3>
+        <table className="ops-table">
+          <thead>
+            <tr>
+              <th style={{ width: "70%" }}>Category</th>
+              <th>Estimated Annual Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {roiLines.map((line) => (
+              <tr key={line.id}>
+                <td className={line.total ? "roi-total" : undefined}>
+                  <input className="roi-label" type="text" value={line.label} onChange={(e) => updateRoiLine(line.id, { label: e.target.value })} />
+                </td>
+                <td>
+                  <div className="money-row">
+                    <span>$</span>
+                    <input type="text" value={line.value} onChange={(e) => updateRoiLine(line.id, { value: e.target.value })} placeholder="________" />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <h3>Estimated Capacity Created</h3>
+        {capacityLines.map((line) => (
+          <div className="cap-row" key={line.id}>
+            <input className="cap-label" type="text" value={line.label} onChange={(e) => updateCapacity(line.id, { label: e.target.value })} />
+            <input className="cap-value" type="text" value={line.value} onChange={(e) => updateCapacity(line.id, { value: e.target.value })} placeholder="_____" />
+            <span className="cap-unit">{line.unit}</span>
+          </div>
+        ))}
+
+        <h3>Estimated Payback Period</h3>
+        <div className="cap-row">
+          <span className="cap-fixed-label">Estimated Payback:</span>
+          <input className="cap-value" type="text" value={paybackMonths} onChange={(e) => setPaybackMonths(e.target.value)} placeholder="_____" />
+          <span className="cap-unit">months</span>
+        </div>
+
+        <textarea className="roi-note" rows={2} value={roiNote} onChange={(e) => setRoiNote(e.target.value)} />
+
+        <div className="report-footer">
+          <span>Five Stones Technology</span>
+          <span className="footer-page">Page {totalPages} of {totalPages}</span>
         </div>
       </div>
     </div>
