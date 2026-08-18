@@ -10,8 +10,9 @@
  *
  * Compliance (executive directive):
  *  - Discovery Call Notes, Advisor Insight, Current Organizational Exposure,
- *    Strategic Priorities, Recommended Solution Options, Roadmap, and
- *    Investment Range are MANUAL fields — never AI-generated.
+ *    Strategic Priorities, Expected Organizational Outcomes, Investment Range,
+ *    and Section 2 (owner / status / observation) are MANUAL fields — never
+ *    AI-generated. Strategic Priorities pre-fill from the scan's Action Roadmap.
  *  - Category descriptions start as the exact operational-interpretation
  *    outputs (categoryInsight()) but are editable per the template requirement.
  */
@@ -19,7 +20,7 @@ import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { loadScanSession } from "@/lib/scanSession";
 import { categoryInsight } from "@/components/assessment/CategoryBreakdownBar";
-import type { CategoryKey } from "../../../shared/assessmentEngine";
+import type { CategoryKey, CategoryScores } from "../../../shared/assessmentEngine";
 
 // Five Stones brand palette (platform was rebranded from Pursuit Pathways)
 const FS = {
@@ -50,35 +51,43 @@ function scoreClass(score: number): "low" | "mid" | "high" {
   return "high";
 }
 
-const PHASE_1_OPTIONS = [
-  "Select Phase 1 Deliverable...",
-  "Site Threat Assessment & Stakeholder Meetings",
-  "Documentation Review & Policy Audit",
-  "Executive Training Demonstration",
-];
-const PHASE_2_OPTIONS = [
-  "Select Phase 2 Deliverable...",
-  "Emergency Response Plan Creation",
-  "Workplace Violence Prevention Plan Drafting",
-  "Five Stones App Configuration & Onboarding",
-];
-const PHASE_3_OPTIONS = [
-  "Select Phase 3 Deliverable...",
-  "Staff Training & Drill Execution",
-  "Leadership Tabletop Exercise",
-  "System Handover & Routine Monitoring",
+// Section 2 — Current State Operating Model (program components → scan categories)
+const PROGRAM_COMPONENTS: { label: string; categoryKey: keyof CategoryScores }[] = [
+  { label: "Executive Oversight", categoryKey: "planningDocumentation" },
+  { label: "Site Risk Assessment", categoryKey: "planningDocumentation" },
+  { label: "Workplace Violence Prevention Plan", categoryKey: "planningDocumentation" },
+  { label: "Active Threat Emergency Response Plan", categoryKey: "planningDocumentation" },
+  { label: "Employee Reporting", categoryKey: "reportingCommunication" },
+  { label: "Employee Communication", categoryKey: "reportingCommunication" },
+  { label: "Employee Training", categoryKey: "trainingAwareness" },
+  { label: "Drills & Exercises", categoryKey: "responseReadiness" },
+  { label: "Incident Review & Continuous Improvement", categoryKey: "responseReadiness" },
 ];
 
-const DEFAULT_ROADMAP = {
-  phase1: "Phase 1 — Discovery & Assessment:\nSite Threat Assessment and stakeholder meetings to baseline the current operating state.",
-  phase2: "Phase 2 — Planning & Development:\nEmergency Response Plan and Workplace Violence Prevention Plan development aligned to the facility.",
-  phase3: "Phase 3 — Implementation & Validation:\nStaff training, facilitated drills, and system handover with routine monitoring.",
+const OWNER_OPTIONS = [
+  "Executive Leadership",
+  "Human Resources",
+  "Facilities / Operations",
+  "Security",
+  "EHS / Safety Manager",
+  "IT",
+  "Designated Safety Coordinator",
+  "Not Assigned",
+];
+
+type StatusLevel = "complete" | "partial" | "not_in_place";
+const STATUS_ORDER: StatusLevel[] = ["complete", "partial", "not_in_place"];
+const STATUS_LABELS: Record<StatusLevel, string> = {
+  complete: "Complete",
+  partial: "Partial",
+  not_in_place: "Not in Place",
 };
 
-const DEFAULT_SOLUTION_1 =
-  "Engage Five Stones Technology for an on-site, third-party assessment that produces a defensible, documented record of your organization's workplace violence risk posture.";
-const DEFAULT_SOLUTION_2 =
-  "Commission a customized Active Threat Response Plan and Emergency Action Plan aligned to your facility, workforce, and jurisdiction — the foundation of a legally defensible safety program.";
+function statusFromScore(score: number): StatusLevel {
+  if (score < 40) return "not_in_place";
+  if (score <= 75) return "partial";
+  return "complete";
+}
 
 const REPORT_CSS = `
 .advisory-root {
@@ -166,10 +175,19 @@ const REPORT_CSS = `
 .advisory-root table { width: 100%; border-collapse: collapse; margin-top: 15px; table-layout: fixed; }
 .advisory-root th, .advisory-root td { border: 1px solid var(--fs-neutral); padding: 10px; text-align: left; vertical-align: top; font-size: 13px; }
 .advisory-root th { background-color: var(--fs-navy); color: #fff; }
+.advisory-root .ops-table th { background-color: #f3f4f6; color: var(--fs-navy); }
+.advisory-root .status-circle {
+  width: 16px; height: 16px; border-radius: 50%; border: 1px solid #555;
+  display: inline-block; vertical-align: middle; cursor: pointer; padding: 0;
+}
+.advisory-root .status-circle.complete { background-color: #22C55E; border-color: #22C55E; }
+.advisory-root .status-circle.partial { background-color: #F59E0B; border-color: #F59E0B; }
+.advisory-root .status-circle.not_in_place { background-color: #E5484D; border-color: #E5484D; }
+.advisory-root .status-label { font-size: 12px; color: var(--fs-navy); margin-left: 6px; }
 .advisory-root .phase-block { margin-bottom: 20px; padding: 15px; border: 1px solid var(--fs-neutral); border-left: 5px solid var(--fs-dark-teal); border-radius: 4px; background-color: #fafafa; }
 .advisory-root .phase-block h3 { color: var(--fs-navy); margin-top: 0; margin-bottom: 10px; }
 .advisory-root .investment-group { display: flex; align-items: center; gap: 10px; background-color: var(--fs-light-blue); padding: 15px; border-radius: 4px; font-weight: 600; color: var(--fs-navy); width: max-content; margin-top: 10px; }
-.advisory-root .investment-group input { width: 120px; padding: 8px; font-size: 14px; }
+.advisory-root .investment-group input { width: 320px; padding: 8px; font-size: 14px; }
 .advisory-root hr { border: 0; border-top: 1px solid var(--fs-neutral); margin: 30px 0; }
 .advisory-root.client-mode .admin-only { display: none !important; }
 @media print {
@@ -179,14 +197,18 @@ const REPORT_CSS = `
   .advisory-root .page { width: 100%; min-height: auto; padding: 0; box-shadow: none; margin: 0; page-break-after: always; }
   .advisory-root .page:last-child { page-break-after: auto; }
   .advisory-root * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  .advisory-root input[type="text"], .advisory-root input[type="number"], .advisory-root textarea, .advisory-root select { border: 1px solid #ddd !important; background-color: transparent !important; }
+  .advisory-root input[type="text"], .advisory-root input[type="number"], .advisory-root textarea, .advisory-root select { border: none !important; background-color: transparent !important; box-shadow: none !important; border-radius: 0 !important; }
   .advisory-root input::placeholder, .advisory-root textarea::placeholder { color: transparent !important; }
   .advisory-root .no-print { display: none !important; }
   .advisory-root.client-mode .admin-only { display: none !important; }
   .advisory-root hr { margin: 20px 0; }
-  .advisory-root .phase-block { padding: 10px; margin-bottom: 14px; }
-  .advisory-root .client-info-grid { padding: 10px; margin-bottom: 12px; }
-  .advisory-root textarea { padding: 6px; }
+  .advisory-root .highlight { background: none !important; padding: 0 0 4px !important; display: block !important; border-bottom: 2px solid var(--fs-mid-blue) !important; margin-bottom: 10px !important; }
+  .advisory-root .phase-block { border: none !important; background: transparent !important; padding: 0 !important; margin-bottom: 16px; }
+  .advisory-root .client-info-grid { background: transparent !important; border: none !important; padding: 0 !important; margin-bottom: 16px; }
+  .advisory-root .score-box { background: transparent !important; border: none !important; padding: 0 !important; }
+  .advisory-root .investment-group { background: transparent !important; }
+  .advisory-root table th, .advisory-root table td { padding: 6px; }
+  .advisory-root textarea { padding: 4px 0; }
 }
 `;
 
@@ -228,16 +250,45 @@ export default function AdvisoryReport() {
   const [discoveryNotes, setDiscoveryNotes] = useState("");
   const [advisorInsight, setAdvisorInsight] = useState("");
   const [exposure, setExposure] = useState({ legal: "", time: "", downtime: "", roi: "" });
-  const [phase1, setPhase1] = useState("");
-  const [phase2, setPhase2] = useState("");
-  const [phase3, setPhase3] = useState("");
-  const [roadmap, setRoadmap] = useState(DEFAULT_ROADMAP);
-  const [solution1, setSolution1] = useState(DEFAULT_SOLUTION_1);
-  const [solution2, setSolution2] = useState(DEFAULT_SOLUTION_2);
-  const [timeline, setTimeline] = useState("");
+
+  // ── Strategic Priorities — pre-filled from the scan's Action Roadmap ────
+  const roadmapActions = result?.immediateActionPlan ?? [];
+  const [phase1, setPhase1] = useState(() => roadmapActions.slice(0, 2).filter(Boolean).join("\n\n"));
+  const [phase2, setPhase2] = useState(() => roadmapActions.slice(2, 4).filter(Boolean).join("\n\n"));
+  const [phase3, setPhase3] = useState(() => roadmapActions.slice(4, 6).filter(Boolean).join("\n\n"));
+  const [phaseExtra, setPhaseExtra] = useState(() => roadmapActions.slice(6).filter(Boolean).join("\n\n"));
+
+  // ── Expected Organizational Outcomes + Investment (manual placeholders) ──
   const [outcomes, setOutcomes] = useState("");
-  const [investmentMin, setInvestmentMin] = useState("");
-  const [investmentMax, setInvestmentMax] = useState("");
+  const [investment, setInvestment] = useState("");
+
+  // ── Section 2 — Current State Operating Model (status pre-filled from scan) ─
+  const [componentOwners, setComponentOwners] = useState<Record<string, string>>(() => {
+    const out: Record<string, string> = {};
+    for (const c of PROGRAM_COMPONENTS) out[c.label] = "";
+    return out;
+  });
+  const [componentStatus, setComponentStatus] = useState<Record<string, StatusLevel>>(() => {
+    const out: Record<string, StatusLevel> = {};
+    for (const c of PROGRAM_COMPONENTS) {
+      const score = result ? result.categoryScores[c.categoryKey] ?? 0 : 0;
+      out[c.label] = statusFromScore(Number(score) || 0);
+    }
+    return out;
+  });
+  const [componentNotes, setComponentNotes] = useState<Record<string, string>>(() => {
+    const out: Record<string, string> = {};
+    for (const c of PROGRAM_COMPONENTS) out[c.label] = "";
+    return out;
+  });
+
+  function cycleStatus(label: string) {
+    setComponentStatus((prev) => {
+      const cur = prev[label] ?? "not_in_place";
+      const next = STATUS_ORDER[(STATUS_ORDER.indexOf(cur) + 1) % STATUS_ORDER.length];
+      return { ...prev, [label]: next };
+    });
+  }
 
   // ── Export mode: advisor = full report, client = hides admin-only ─────
   const [exportMode, setExportMode] = useState<"advisor" | "client">("advisor");
@@ -437,7 +488,7 @@ export default function AdvisoryReport() {
       </div>
 
 
-      {/* PAGE 3: EXPOSURE & STRATEGIC PRIORITIES */}
+      {/* PAGE 3: EXPOSURE, EXPECTED OUTCOMES & INVESTMENT */}
       <div className="page">
         {/* Section 5 — Current Organizational Exposure (manual) */}
         <h2 className="highlight" style={{ marginTop: 0 }}>Current Organizational Exposure</h2>
@@ -462,34 +513,26 @@ export default function AdvisoryReport() {
 
         <hr />
 
-        {/* Section 6 — Recommended Solution & Strategic Priorities (manual dropdowns) */}
-        <h2 className="highlight">Strategic Priorities</h2>
+        {/* Section 6 — Expected Organizational Outcomes (manual placeholder) */}
+        <h2 className="highlight">Expected Organizational Outcomes</h2>
+        <textarea
+          rows={5}
+          value={outcomes}
+          onChange={(e) => setOutcomes(e.target.value)}
+          placeholder="Describe the expected organizational outcomes for this engagement..."
+        />
 
-        <div className="phase-block">
-          <h3>Phase 1: Discovery &amp; Assessment</h3>
-          <select value={phase1} onChange={(e) => setPhase1(e.target.value)}>
-            {PHASE_1_OPTIONS.map((o) => (
-              <option key={o} value={o}>{o}</option>
-            ))}
-          </select>
-        </div>
+        <hr />
 
-        <div className="phase-block">
-          <h3>Phase 2: Planning &amp; Development</h3>
-          <select value={phase2} onChange={(e) => setPhase2(e.target.value)}>
-            {PHASE_2_OPTIONS.map((o) => (
-              <option key={o} value={o}>{o}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="phase-block">
-          <h3>Phase 3: Implementation &amp; Validation</h3>
-          <select value={phase3} onChange={(e) => setPhase3(e.target.value)}>
-            {PHASE_3_OPTIONS.map((o) => (
-              <option key={o} value={o}>{o}</option>
-            ))}
-          </select>
+        {/* Section 7 — Estimated Investment Range (manual placeholder) */}
+        <h3>Estimated Investment Range</h3>
+        <div className="investment-group">
+          <input
+            type="text"
+            value={investment}
+            onChange={(e) => setInvestment(e.target.value)}
+            placeholder="Enter estimated investment range (e.g. $15,000 – $25,000)"
+          />
         </div>
 
         {/* Footer */}
@@ -500,20 +543,47 @@ export default function AdvisoryReport() {
       </div>
 
 
-      {/* PAGE 4: RECOMMENDED SOLUTION OPTIONS */}
+      {/* PAGE 4: STRATEGIC PRIORITIES (ACTION ROADMAP) */}
       <div className="page">
-        {/* Section 7 — Recommended Solution Options (manual, prefilled editable) */}
-        <h2 className="highlight" style={{ marginTop: 0 }}>Recommended Solution Options</h2>
+        {/* Section 8 — Strategic Priorities (pre-filled from the scan's Action Roadmap, editable) */}
+        <h2 className="highlight" style={{ marginTop: 0 }}>Strategic Priorities</h2>
 
         <div className="phase-block">
-          <h3>Option 1 — Full Liability Assessment</h3>
-          <textarea rows={4} value={solution1} onChange={(e) => setSolution1(e.target.value)} />
+          <h3>Phase 1: Discovery &amp; Assessment</h3>
+          <textarea
+            rows={6}
+            value={phase1}
+            onChange={(e) => setPhase1(e.target.value)}
+            placeholder="Recommended actions from the Action Roadmap..."
+          />
         </div>
 
         <div className="phase-block">
-          <h3>Option 2 — Site-Specific Plan Development</h3>
-          <textarea rows={4} value={solution2} onChange={(e) => setSolution2(e.target.value)} />
+          <h3>Phase 2: Planning &amp; Development</h3>
+          <textarea
+            rows={6}
+            value={phase2}
+            onChange={(e) => setPhase2(e.target.value)}
+            placeholder="Recommended actions from the Action Roadmap..."
+          />
         </div>
+
+        <div className="phase-block">
+          <h3>Phase 3: Implementation &amp; Validation</h3>
+          <textarea
+            rows={6}
+            value={phase3}
+            onChange={(e) => setPhase3(e.target.value)}
+            placeholder="Recommended actions from the Action Roadmap..."
+          />
+        </div>
+
+        {roadmapActions.length > 6 && (
+          <div className="phase-block">
+            <h3>Additional Actions</h3>
+            <textarea rows={4} value={phaseExtra} onChange={(e) => setPhaseExtra(e.target.value)} />
+          </div>
+        )}
 
         {/* Footer */}
         <div className="report-footer">
@@ -523,42 +593,60 @@ export default function AdvisoryReport() {
       </div>
 
 
-      {/* PAGE 5: ROADMAP & INVESTMENT */}
+      {/* PAGE 5: SECTION 2 — CURRENT STATE OPERATING MODEL */}
       <div className="page">
-        {/* Section 8 — Implementation Roadmap & Outcomes (prefilled text + manual) */}
-        <h2 className="highlight" style={{ marginTop: 0 }}>Implementation Roadmap &amp; Outcomes</h2>
-        <div className="phase-block">
-          <h3>Phase 1</h3>
-          <textarea rows={3} value={roadmap.phase1} onChange={(e) => setRoadmap((p) => ({ ...p, phase1: e.target.value }))} />
-        </div>
-        <div className="phase-block">
-          <h3>Phase 2</h3>
-          <textarea rows={3} value={roadmap.phase2} onChange={(e) => setRoadmap((p) => ({ ...p, phase2: e.target.value }))} />
-        </div>
-        <div className="phase-block">
-          <h3>Phase 3</h3>
-          <textarea rows={3} value={roadmap.phase3} onChange={(e) => setRoadmap((p) => ({ ...p, phase3: e.target.value }))} />
-        </div>
-        <div className="client-info-grid">
-          <div>
-            <strong>Estimated Timeline:</strong>{" "}
-            <input type="text" value={timeline} onChange={(e) => setTimeline(e.target.value)} placeholder="e.g. 12–16 weeks" />
-          </div>
-          <div>
-            <strong>Expected Organizational Outcomes:</strong>{" "}
-            <input type="text" value={outcomes} onChange={(e) => setOutcomes(e.target.value)} placeholder="e.g. Documented plan, trained staff, validated drills" />
-          </div>
-        </div>
+        {/* Section 2 — Current State Operating Model (category breakdown from the readiness scan) */}
+        <h2 className="highlight" style={{ marginTop: 0 }}>Section 2: Current State Operating Model</h2>
+        <p style={{ fontSize: 13 }}>
+          Provide leadership with a visual representation of the current Workplace Violence Prevention System,
+          identifying ownership, system gaps, and areas requiring executive attention.
+        </p>
 
-        <hr />
-
-        {/* Section 9 — Estimated Investment Range (manual) */}
-        <h3>Estimated Investment Range</h3>
-        <div className="investment-group">
-          $ <input type="text" placeholder="Min Amount" value={investmentMin} onChange={(e) => setInvestmentMin(e.target.value)} />
-          &mdash;
-          $ <input type="text" placeholder="Max Amount" value={investmentMax} onChange={(e) => setInvestmentMax(e.target.value)} />
-        </div>
+        <table className="ops-table">
+          <thead>
+            <tr>
+              <th style={{ width: "30%" }}>Program Component</th>
+              <th style={{ width: "18%" }}>Current Owner</th>
+              <th style={{ width: "18%" }}>Status</th>
+              <th>Executive Observation</th>
+            </tr>
+          </thead>
+          <tbody>
+            {PROGRAM_COMPONENTS.map((c) => (
+              <tr key={c.label}>
+                <td>{c.label}</td>
+                <td>
+                  <select
+                    value={componentOwners[c.label] ?? ""}
+                    onChange={(e) => setComponentOwners((prev) => ({ ...prev, [c.label]: e.target.value }))}
+                  >
+                    <option value="">Select owner...</option>
+                    {OWNER_OPTIONS.map((o) => (
+                      <option key={o} value={o}>{o}</option>
+                    ))}
+                  </select>
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    className={`status-circle ${componentStatus[c.label] ?? "not_in_place"}`}
+                    onClick={() => cycleStatus(c.label)}
+                    title="Click to change status"
+                  />
+                  <span className="status-label">{STATUS_LABELS[componentStatus[c.label] ?? "not_in_place"]}</span>
+                </td>
+                <td>
+                  <textarea
+                    rows={2}
+                    value={componentNotes[c.label] ?? ""}
+                    onChange={(e) => setComponentNotes((prev) => ({ ...prev, [c.label]: e.target.value }))}
+                    placeholder="Executive observation..."
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
         {/* Footer */}
         <div className="report-footer">
