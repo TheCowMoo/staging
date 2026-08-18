@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type React from "react";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { saveScanSession } from "@/lib/scanSession";
 import {
   ShieldAlert,
   Clock,
@@ -38,7 +39,7 @@ import {
   QUESTIONS,
 } from "../../../shared/assessmentEngine";
 import { BRAND, HEADING_FONT } from "@/components/assessment/brandUtils";
-import type { AssessmentOutput } from "../../../shared/assessmentEngine";
+import type { AssessmentOutput, AnswerValue } from "../../../shared/assessmentEngine";
 
 // ─── Shared Results Page ──────────────────────────────────────────────────────
 // Exact mirror of the LiabilityScan results section, accessible via share token.
@@ -55,13 +56,13 @@ const SHOW_SERVICE_CARDS = false;
 export default function SharedResults() {
   const params = useParams<{ token: string }>();
   const token = params.token ?? "";
+  const [, navigate] = useLocation();
 
   // ALL hooks declared unconditionally before any conditional returns
   const { data, isLoading, error } = trpc.liabilityScan.getByToken.useQuery(
     { token },
     { enabled: !!token, retry: false }
   );
-  const [exportLoading, setExportLoading] = useState(false);
 
   // Build weight lookup map from QUESTIONS (same as main scan page's weightById)
   const weightById = useMemo(() => {
@@ -171,50 +172,22 @@ export default function SharedResults() {
     });
   }, [data, weightById]);
 
-  async function handleDownloadReport() {
+  function handleOpenAdvisoryReport() {
     if (!data?.scan) return;
     const { scan } = data;
-    setExportLoading(true);
-    try {
-      const result = liveResult;
-      const payload = {
-        score: result?.score ?? scan.score,
-        classification: result?.classification ?? scan.classification,
-        riskMapColor: (result?.riskMap?.color ?? scan.riskMapColor ?? "green") as string,
-        riskMapDescriptor: result?.riskMap?.descriptor ?? scan.riskMapDescriptor ?? "",
-        jurisdiction: scan.jurisdiction ?? "",
-        industry: scan.industry ?? "",
-        topGaps: gapItems.map((g) => ({
-          ...g,
-          weight: weightById[g.id] ?? 0,
-        })),
-        interpretation: result?.interpretation ?? scan.interpretation ?? "",
-        advisorSummary: result?.advisorSummary ?? scan.advisorSummary ?? "",
-        immediateActions:
-          result?.immediateActionPlan ??
-          (scan.immediateActions as string[]) ??
-          [],
-        scanId: scan.id,
-        createdAt: scan.createdAt,
-      };
-      const res = await fetch("/api/liability-scan/pdf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error("Export failed");
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `FiveStonesWPV_LiabilityScan_${scan.id}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      /* silent */
-    } finally {
-      setExportLoading(false);
-    }
+    const result = liveResult;
+    if (!result) return; // no stored answers — nothing to build the report from
+    saveScanSession({
+      result,
+      answers: (scan.answers as Record<string, AnswerValue>) ?? {},
+      jurisdiction: scan.jurisdiction ?? "",
+      industry: scan.industry ?? "",
+      organization: scan.organization ?? "",
+      employeeCount: scan.employeeCount ?? "",
+      facilityLocation: scan.facilityLocation ?? "",
+      scanId: scan.id,
+    });
+    navigate("/scan-report");
   }
 
   // Conditional renders — all hooks already declared above
@@ -570,10 +543,7 @@ export default function SharedResults() {
         )}
 
         {/* Section 9: Final CTA — mirrors FinalCTABanner from LiabilityScan.tsx */}
-        <FinalCTABanner
-          onSecondary={handleDownloadReport}
-          secondaryLabel={exportLoading ? "Downloading..." : "Download"}
-        />
+        <FinalCTABanner onSecondary={handleOpenAdvisoryReport} />
       </main>
     </div>
   );

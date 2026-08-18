@@ -87,6 +87,7 @@ function Router() {
         <Route path="/legal/privacy" component={PrivacyPolicy} />
         <Route path="/legal/terms" component={TermsOfService} />
         <Route path="/shared/:token" component={SharedResults} />
+        <Route path="/scan-report" component={AdvisoryReport} />
 
         {/* Authenticated routes — wrapped in a single AppLayout so sidebar persists */}
         <Route>
@@ -123,7 +124,6 @@ function Router() {
               <Route path="/osha" component={OshaReference} />
               <Route path="/standards" component={Standards} />
               <Route path="/liability-scan" component={LiabilityScan} />
-<Route path="/scan-report" component={AdvisoryReport} />
               <Route path="/scan-history" component={ScanHistory} />
               <Route path="/defensibility-plan" component={DefensibilityPlan} />
               <Route path="/how-we-help" component={HowWeHelp} />

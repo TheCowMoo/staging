@@ -34,6 +34,9 @@ const FS = {
   orange: "#F0AD4E",
 };
 
+// Five Stones logo (same source used by AppLayout)
+const LOGO_URL = "https://pursuitpathways.com/content/logo%20five%20stones.png";
+
 const CATEGORIES: { key: CategoryKey; scoreKey: string; label: string }[] = [
   { key: "planning_documentation", scoreKey: "planningDocumentation", label: "Planning & Documentation" },
   { key: "training_awareness", scoreKey: "trainingAwareness", label: "Training & Awareness" },
@@ -89,10 +92,25 @@ const REPORT_CSS = `
 }
 .advisory-root .print-btn:hover { background-color: var(--fs-navy); transform: translateY(-2px); }
 .advisory-root .print-btn.client-export { right: 215px; background-color: var(--fs-navy); }
+.advisory-root .back-btn {
+  position: fixed; bottom: 30px; left: 30px; background-color: #fff; color: var(--fs-navy);
+  border: 1px solid var(--fs-mid-blue); padding: 12px 18px; font-size: 14px; border-radius: 8px;
+  cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 1000;
+}
+.advisory-root .back-btn:hover { background-color: var(--fs-light-blue); }
 .advisory-root .page {
   background-color: #fff; width: 8.5in; min-height: 11in; box-sizing: border-box;
   padding: 0.75in; box-shadow: 0 4px 15px rgba(0,0,0,0.3); position: relative;
+  display: flex; flex-direction: column;
 }
+.advisory-root .report-footer {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--fs-neutral);
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 9px; color: #777;
+}
+.advisory-root .report-footer .footer-page { font-weight: 600; color: var(--fs-navy); }
 .advisory-root .header-section { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 3px solid var(--fs-mid-blue); }
 .advisory-root .brand-wordmark { font-weight: 700; font-size: 20px; letter-spacing: 3px; color: var(--fs-navy); text-transform: uppercase; margin-bottom: 12px; }
 .advisory-root h1, .advisory-root h2, .advisory-root h3, .advisory-root h4, .advisory-root th { color: var(--fs-navy); margin: 0; }
@@ -246,11 +264,20 @@ export default function AdvisoryReport() {
         Save Client PDF
       </button>
 
+      {/* Back to results (hidden when printing) */}
+      <button className="back-btn no-print" onClick={() => navigate("/liability-scan")}>
+        &larr; Back to Results
+      </button>
+
 
       {/* PAGE 1: INTAKE & SCAN DATA */}
       <div className="page">
         <div className="header-section">
-          <div className="brand-wordmark">Five Stones Technology</div>
+          <img
+            src={LOGO_URL}
+            alt="Five Stones Technology"
+            style={{ maxWidth: 260, height: "auto", marginBottom: 12 }}
+          />
           <h1>Executive Advisory Report</h1>
           <h3 style={{ color: "var(--fs-dark-teal)", marginTop: 5 }}>
             Prepared for: {organization || "Not specified"}
@@ -352,6 +379,12 @@ export default function AdvisoryReport() {
             />
           </div>
         ))}
+
+        {/* Footer */}
+        <div className="report-footer">
+          <span>Five Stones Technology</span>
+          <span className="footer-page">Page 1 of 2</span>
+        </div>
       </div>
 
 
@@ -446,6 +479,12 @@ export default function AdvisoryReport() {
           $ <input type="text" placeholder="Min Amount" value={investmentMin} onChange={(e) => setInvestmentMin(e.target.value)} />
           &mdash;
           $ <input type="text" placeholder="Max Amount" value={investmentMax} onChange={(e) => setInvestmentMax(e.target.value)} />
+        </div>
+
+        {/* Footer */}
+        <div className="report-footer">
+          <span>Five Stones Technology</span>
+          <span className="footer-page">Page 2 of 2</span>
         </div>
       </div>
     </div>
