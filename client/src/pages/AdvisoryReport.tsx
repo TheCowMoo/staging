@@ -464,7 +464,6 @@ export default function AdvisoryReport() {
 
         {/* Section 6 — Recommended Solution & Strategic Priorities (manual dropdowns) */}
         <h2 className="highlight">Strategic Priorities</h2>
-        <p style={{ fontSize: 13 }}>Select the recommended phased approach for this organization.</p>
 
         <div className="phase-block">
           <h3>Phase 1: Discovery &amp; Assessment</h3>
@@ -505,7 +504,6 @@ export default function AdvisoryReport() {
       <div className="page">
         {/* Section 7 — Recommended Solution Options (manual, prefilled editable) */}
         <h2 className="highlight" style={{ marginTop: 0 }}>Recommended Solution Options</h2>
-        <p style={{ fontSize: 13 }}>Select and edit the recommended solution for this organization.</p>
 
         <div className="phase-block">
           <h3>Option 1 — Full Liability Assessment</h3>

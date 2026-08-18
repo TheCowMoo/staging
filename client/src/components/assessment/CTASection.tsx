@@ -7,6 +7,7 @@
  * Reusable across Results Page, Dashboard, and future modules.
  */
 import { Card, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { ArrowRight, Download, ShieldCheck, BookOpen, Building2, Calendar, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { AssessmentCTAButton } from "./AssessmentCTAButton";
 import { HEADING_FONT } from "./brandUtils";
@@ -313,6 +314,11 @@ export function FinalCTABanner({
   secondaryLabel = "Download",
   onSecondary,
 }: FinalCTABannerProps) {
+  // The Executive Advisory Report is an ultra-admin tool — hide the
+  // "Executive Report / Download" box for everyone else (results + shared pages).
+  const { user } = useAuth();
+  if (user?.role !== "ultra_admin") return null;
+
   return (
     <div
       className="rounded-2xl p-8 text-white text-center space-y-4"
