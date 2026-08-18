@@ -406,6 +406,11 @@ All tables defined in `drizzle/schema.ts` (~1019 lines). Key tables:
 
 **`full_sync_remainder.sql` is now a no-op** (kept so existing deployment scripts don't break).
 
+**Schema tooling**
+- `scripts/dump-full-sync.ts` — regenerate `full_sync.sql` from `schema.ts`: `npx tsx scripts/dump-full-sync.ts --write`
+- `scripts/verify-full-sync.mjs` — import `full_sync.sql` into a scratch DB and verify: `node scripts/verify-full-sync.mjs`
+- `scripts/diff-live-schema.mjs` — read-only drift report of the live DB vs `full_sync.sql`; `--write-fixes` generates `drizzle/live_schema_fixes.sql` (CREATE missing tables → ADD COLUMN → MODIFY COLUMN, ordered safest-first). Run it on the server, review the fix file, then `mysql < live_schema_fixes.sql`.
+
 **⚠️ `split_01…split_05.sql` remain STALE** — `split_04` was hand-corrected (all 8 tables match `schema.ts`), but `split_01/02/03/05` still carry legacy definitions (`organizations`, `facilities`, `audits`, `audit_responses`, `threat_findings`, `audit_photos`, `tester_feedback`, `question_flags`, `facility_attachments`, `corrective_action_checks`, `audit_logs`, `visitor_logs`, all `alert_*`, `push_subscriptions`, `staff_checkins`, and all `btam_*`). **Never use the split files for a fresh DB — use `full_sync.sql`.**
 
 **Notes**
