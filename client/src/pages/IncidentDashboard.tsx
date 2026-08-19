@@ -421,12 +421,12 @@ export default function IncidentDashboard() {
 
       <div className="p-6 max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Incident Reports</h1>
             <p className="text-slate-500 text-sm mt-1">Anonymous incident reports submitted by staff, clients, or visitors</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mt-4 flex-wrap">
             <div className="flex items-center gap-2 text-sm text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
               <Shield size={14} className="text-primary" />
               <span>All reports are anonymous</span>

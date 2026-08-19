@@ -73,7 +73,7 @@ export default function Dashboard() {
 
         <div className="p-6 max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between mb-8">
+        <div className="flex flex-col gap-5 mb-8">
           <div>
             <h1 className="dashboard-title text-3xl sm:text-4xl">Dashboard</h1>
             <p className="text-sm text-muted-foreground mt-2 max-w-2xl">Overview of your facility safety assessments</p>

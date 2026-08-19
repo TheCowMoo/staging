@@ -287,7 +287,7 @@ export default function AnalyticsDashboard() {
           </div>
         )}
         {/* Header */}
-        <div className="flex items-start justify-between flex-wrap gap-4">
+        <div className="space-y-4">
           <div className="flex items-start gap-4">
             <div className="p-3 rounded-xl bg-primary/10">
               <BarChart3 className="h-6 w-6 text-primary" />

@@ -180,7 +180,7 @@ export default function VisitorManagement() {
             Dashboard
           </button>
         </div>
-        <div className="flex items-center justify-between">
+        <div className="space-y-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Users size={24} className="text-primary" />

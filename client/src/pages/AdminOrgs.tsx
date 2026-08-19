@@ -105,7 +105,7 @@ function AdminOrgsContent() {
       )}
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between">
+      <div className="space-y-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
             <Building2 className="h-6 w-6 text-primary" />

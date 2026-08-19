@@ -175,7 +175,7 @@ export default function MicroDrillAdmin() {
 
       <div className="container max-w-5xl py-8 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="space-y-4">
           <div>
             <h1 className="text-2xl font-bold">Micro Training Drills</h1>
             <p className="text-sm text-muted-foreground mt-1">

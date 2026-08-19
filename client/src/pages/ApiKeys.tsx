@@ -103,7 +103,7 @@ function ApiKeysContent() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Key className="w-6 h-6 text-primary" />
@@ -113,7 +113,7 @@ function ApiKeysContent() {
             Manage API keys for external integrations like the RAS Desktop Alert.
           </p>
         </div>
-        <Button onClick={() => setCreateOpen(true)} className="gap-2">
+        <Button onClick={() => setCreateOpen(true)} className="gap-2 mt-4">
           <Plus className="w-4 h-4" />
           Create Key
         </Button>

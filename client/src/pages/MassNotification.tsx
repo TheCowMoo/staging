@@ -68,7 +68,7 @@ export default function MassNotification() {
 
       <div className="max-w-3xl mx-auto px-6 py-8 space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="space-y-4">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Bell className="w-6 h-6" />

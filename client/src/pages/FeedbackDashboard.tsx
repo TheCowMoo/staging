@@ -151,7 +151,7 @@ export default function FeedbackDashboard() {
 
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-start justify-between">
+        <div className="space-y-4">
           <div className="flex items-start gap-4">
             <div className="p-3 rounded-xl bg-primary/10">
               <TrendingUp className="h-6 w-6 text-primary" />

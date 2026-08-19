@@ -256,7 +256,7 @@ export default function PersonnelTracking() {
   return (
 
       <div className="p-6 max-w-7xl mx-auto space-y-6">
-                <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div className="flex flex-col gap-4">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-2 text-sm uppercase tracking-[0.24em] text-primary">
               <MapPin className="h-4 w-4" />

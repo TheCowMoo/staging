@@ -85,7 +85,7 @@ export default function BtamDashboard() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
             <Shield className="w-6 h-6 text-indigo-700 dark:text-indigo-300" />
@@ -104,7 +104,7 @@ export default function BtamDashboard() {
           </div>
         </div>
         {isAdmin && (
-          <Link href="/btam/new">
+          <Link href="/btam/new" className="mt-4 inline-block">
             <Button className="gap-2 bg-indigo-700 hover:bg-indigo-800 dark:bg-indigo-600 dark:hover:bg-indigo-700">
               <Plus className="w-4 h-4" />
               New Referral

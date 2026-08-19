@@ -15,12 +15,12 @@ export default function Facilities() {
     <ProtectedLayout>
 
         <div className="p-6 max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="mb-8">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Facilities</h1>
             <p className="text-sm text-muted-foreground mt-1">Manage your facility profiles and assessments</p>
           </div>
-          <Button asChild>
+          <Button asChild className="mt-4">
             <Link href="/facilities/new" className="flex items-center gap-2"><Plus size={16} /> New Facility</Link>
           </Button>
         </div>
