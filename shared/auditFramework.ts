@@ -97,6 +97,10 @@ export const RESPONSE_SCORES: Record<string, number | null> = {
   "Minor Concern": 1,
   "Moderate Concern": 2,
   "Serious Vulnerability": 3,
+  // Legacy labels the client sends for decision-tree answers (positive polarity).
+  // "No — Not in place" = positive-polarity "No" (deficiency, defaults to moderate).
+  "No — Not in place": 2,
+  "Yes — Secure": 0,
   "Unknown": 1,
   "Not Applicable": null,
   "Unavoidable": null,
@@ -125,15 +129,22 @@ export const RISK_PRESENT_RESPONSE_SCORES: Record<string, number | null> = {
 };
 
 export const CATEGORY_WEIGHTS: Record<string, number> = {
+  // Must mirror the `weight` field on each AUDIT_CATEGORIES entry. All 14 scored
+  // categories are listed so no category is silently excluded from the overall score.
   "Exterior Environment": 0.15,
+  "Lighting & Visibility": 0.10,
   "Access Control": 0.15,
   "Doors & Locks": 0.15,
+  "Surveillance & Monitoring": 0.10,
+  "Parking Areas": 0.05,
   "Interior Layout & Visibility": 0.10,
+  "Escape & Evacuation": 0.05,
   "Lockdown Capability": 0.15,
   "Communication Systems": 0.10,
-  "Surveillance & Monitoring": 0.10,
-  "Operational Policies": 0.05,
   "Staff Awareness & Training": 0.05,
+  "Incident Response Procedures": 0.05,
+  "Operational Policies": 0.05,
+  "Vulnerable Populations": 0.05,
 };
 
 export const RISK_LEVELS = [

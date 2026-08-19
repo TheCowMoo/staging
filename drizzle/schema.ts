@@ -280,6 +280,15 @@ export const auditResponses = mysqlTable("audit_responses", {
     "Unknown",
     "Not Applicable",
     "Unavoidable",
+    // Append-only additions for parity with the tRPC saveResponse zod enum and
+    // the legacy labels the client sends (decision-tree aliases + em-dash/double-dash
+    // variants). Existing values keep their index so stored enum rows stay valid.
+    "No — Not in place",
+    "Yes — Secure",
+    "No -- Not Present",
+    "Yes -- Present",
+    "Yes",
+    "No",
   ]),
   conditionType: varchar("conditionType", { length: 128 }),
   conditionTypes: json("conditionTypes"),

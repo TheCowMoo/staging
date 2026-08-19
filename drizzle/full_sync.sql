@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS `audit_responses` (
   `primaryResponse` enum('Yes','No','Unknown','Not Applicable') NULL,
   `addToEap` boolean NULL DEFAULT false,
   `concernLevel` enum('Minor','Moderate','Serious') NULL,
-  `response` enum('Secure / Yes','Partial','Minor Concern','Moderate Concern','Serious Vulnerability','No — Not Present','Unlikely / Minimal','Partially Present','Yes — Present','Unknown','Not Applicable','Unavoidable') NULL,
+  `response` enum('Secure / Yes','Partial','Minor Concern','Moderate Concern','Serious Vulnerability','No — Not Present','Unlikely / Minimal','Partially Present','Yes — Present','Unknown','Not Applicable','Unavoidable','No — Not in place','Yes — Secure','No -- Not Present','Yes -- Present','Yes','No') NULL,
   `conditionType` varchar(128) NULL,
   `conditionTypes` json NULL,
   `isUnavoidable` boolean NULL DEFAULT false,
