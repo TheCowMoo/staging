@@ -144,7 +144,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const roleBadge = ROLE_BADGE[user?.role ?? "auditor"] ?? ROLE_BADGE.auditor;
 
   const NavLink = ({ item }: { item: NavItem }) => {
-    const isActive = location === item.href || (item.href !== "/dashboard" && item.href !== "/liability-scan" && item.href !== "/scan-history" && location.startsWith(item.href));
+    const isActive = isActiveHref(item.href);
 
     // Sandbox users: fully-blocked items (e.g. Training) show a lock icon.
     if (item.locked === "sandbox" && isSandbox) {
@@ -225,9 +225,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const SectionHeader = ({ section }: { section: NavSection }) => {
     const isOpen = openSections[section.id];
-    const hasActive = section.items.some(
-      (item) => !item.locked && (location === item.href || (item.href !== "/dashboard" && item.href !== "/liability-scan" && item.href !== "/scan-history" && location.startsWith(item.href)))
-    );
+    const hasActive = section.items.some((item) => !item.locked && isActiveHref(item.href));
     return (
       <div>
         <button
@@ -337,6 +335,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       ],
     },
   ];
+
+  // All nav hrefs (sections + top-level links). Used so the active-state check
+  // is "most-specific href wins" - sibling items like /facilities (list) and
+  // /facilities/new (setup wizard) don't both highlight at the same time.
+  const ALL_NAV_HREFS = [
+    ...NAV_SECTIONS.flatMap((s) => s.items.map((i) => i.href)),
+    "/dashboard", "/liability-scan", "/scan-history", "/standards",
+    "/analytics", "/organizations", "/admin/users", "/admin/api-keys",
+    "/admin/resource-links",
+  ];
+
+  // Active-state helper: exact match is always active; otherwise prefix-match
+  // only when no LONGER nav href also matches (most-specific wins). This keeps
+  // parent items highlighted on detail routes (/facilities/123, /btam/7,
+  // /drills/:id/run) while sibling items (/facilities/new, /btam/new,
+  // /drills/after-action) only highlight themselves.
+  const isActiveHref = (href: string): boolean => {
+    if (location === href) return true;
+    if (href === "/dashboard" || href === "/liability-scan" || href === "/scan-history") return false;
+    if (!location.startsWith(href + "/")) return false;
+    return !ALL_NAV_HREFS.some(
+      (h) => h.length > href.length && (location === h || location.startsWith(h + "/"))
+    );
+  };
 
   const Sidebar = ({ mobile = false }: { mobile?: boolean }) => (
     <aside className={`${mobile ? "flex flex-col h-full" : "hidden lg:flex flex-col min-h-screen fixed top-0 left-0 bottom-0"} w-64 sidebar-metallic overflow-y-auto`} style={{ zIndex: 2000 }}>
