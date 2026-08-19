@@ -203,6 +203,16 @@ export default function BtamCaseDetail() {
     onError: (err) => toast.error(err.message),
   });
 
+  // Fetch the linked incident report if one exists. This hook MUST run
+  // unconditionally, before the early returns below, so the hook order stays
+  // stable across renders (otherwise React error #310: "Rendered more hooks
+  // than during the previous render").
+  const linkedIncidentId = data?.case?.linkedIncidentId;
+  const { data: linkedIncident } = trpc.btam.getLinkedIncident.useQuery(
+    { incidentId: linkedIncidentId ?? 0 },
+    { enabled: !!linkedIncidentId }
+  );
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -227,13 +237,6 @@ export default function BtamCaseDetail() {
   }
 
   const { case: c, subject, intake, latestAssessment, plan, notes, history } = data;
-
-  // Fetch the linked incident report if one exists
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const { data: linkedIncident } = trpc.btam.getLinkedIncident.useQuery(
-    { incidentId: c.linkedIncidentId! },
-    { enabled: !!c.linkedIncidentId }
-  );
 
   return (
     <DashboardLayout>
