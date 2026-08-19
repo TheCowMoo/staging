@@ -159,15 +159,30 @@ export default function AuditWalkthrough() {
   });
 
   const { user } = useAuth();
+  const isSandbox = user?.role === "sandbox";
   const categories = useMemo(() => {
-    let cats = facility ? getQuestionsForFacility(facility.facilityType) : AUDIT_CATEGORIES;
-    // Sandbox users may only view ONE topic from CPTED and ONE from EAP —
-    // every other topic is locked for them.
-    if (user?.role === "sandbox") {
-      cats = cats.filter((c) => (SANDBOX_PREVIEW_CATEGORY_IDS as readonly string[]).includes(c.id));
+    return facility ? getQuestionsForFacility(facility.facilityType) : AUDIT_CATEGORIES;
+  }, [facility]);
+
+  // For sandbox, show the full Menu A (CPTED) + Menu B (EAP) but lock every
+  // category except the preview topics (one CPTED + one EAP).
+  const lockedCategoryIds = useMemo(() => {
+    if (!isSandbox) return new Set<string>();
+    const preview = SANDBOX_PREVIEW_CATEGORY_IDS as readonly string[];
+    return new Set(categories.filter((c) => !preview.includes(c.id)).map((c) => c.id));
+  }, [isSandbox, categories]);
+
+  // Sandbox starts on the first unlocked category (not the locked "Facility Profile").
+  useEffect(() => {
+    if (isSandbox) {
+      const cur = categories[activeCategoryIdx];
+      if (!cur || lockedCategoryIds.has(cur.id)) {
+        const firstUnlocked = categories.findIndex((c) => !lockedCategoryIds.has(c.id));
+        if (firstUnlocked >= 0) setActiveCategoryIdx(firstUnlocked);
+      }
     }
-    return cats;
-  }, [facility, user?.role]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSandbox, categories]);
 
   // Total steps = categories + EAP contacts step
   const totalSteps = categories.length + 1;
@@ -479,7 +494,25 @@ export default function AuditWalkthrough() {
   };
 
   const handleCategoryChange = (idx: number) => {
+    // Sandbox cannot navigate into locked categories.
+    if (idx >= 0 && idx < categories.length && lockedCategoryIds.has(categories[idx]?.id)) return;
     setActiveCategoryIdx(idx);
+  };
+
+  // Prev/Next that skip locked categories (sandbox) or behave as before.
+  const stepCategory = (dir: 1 | -1) => {
+    if (!isSandbox) {
+      handleCategoryChange(dir === 1 ? activeCategoryIdx + 1 : Math.max(0, activeCategoryIdx - 1));
+      return;
+    }
+    let i = activeCategoryIdx + dir;
+    while (i >= 0 && i < categories.length) {
+      if (!lockedCategoryIds.has(categories[i]?.id)) {
+        handleCategoryChange(i);
+        return;
+      }
+      i += dir;
+    }
   };
 
   const handleEapContactChange = (field: keyof EapContacts, value: string) => {
@@ -557,7 +590,7 @@ export default function AuditWalkthrough() {
             {user?.role === "sandbox" && (
               <div className="mt-3 rounded-md bg-sky-50 border border-sky-200 px-2.5 py-2 text-[10px] text-sky-800">
                 <p className="font-semibold flex items-center gap-1"><Lock size={9} className="text-sky-600" /> Sandbox preview</p>
-                <p className="mt-0.5 text-sky-700/80 leading-tight">One CPTED topic + one EAP topic. Other topics are locked.</p>
+                <p className="mt-0.5 text-sky-700/80 leading-tight">Two topics unlocked (one CPTED + one EAP). Everything else is locked (view-only).</p>
               </div>
             )}
           </div>
@@ -612,12 +645,13 @@ export default function AuditWalkthrough() {
                         const gateRule = CATEGORY_GATE_RULES[cat.id];
                         const isGated = gateRule ? isGateNegative(responses[gateRule.gateQuestionId]?.response) : false;
                         const isOpposite = isCategoryInOppositeMenu(cat);
+                        const isLocked = lockedCategoryIds.has(cat.id);
                         return (
                           <button
                             key={cat.id}
-                            onClick={() => { if (!isOpposite) handleCategoryChange(idx); }}
+                            onClick={() => { if (!isOpposite && !isLocked) handleCategoryChange(idx); }}
                             className={`w-full text-left flex items-center justify-between px-3 py-2.5 rounded-lg mb-0.5 transition-colors ${
-                              isOpposite
+                              isOpposite || isLocked
                                 ? "opacity-40 pointer-events-none cursor-not-allowed text-muted-foreground"
                                 : isActive
                                   ? "bg-primary/10 text-primary"
@@ -634,7 +668,9 @@ export default function AuditWalkthrough() {
                               )}
                               <span className="text-xs font-medium truncate">{cat.name}</span>
                             </div>
-                            {isGated ? (
+                            {isLocked ? (
+                              <Lock size={10} className="text-slate-400 flex-shrink-0 ml-1" />
+                            ) : isGated ? (
                               <span className="text-[10px] text-slate-400 flex-shrink-0 ml-1">N/A</span>
                             ) : (
                               <span className="text-[10px] text-muted-foreground flex-shrink-0 ml-1">{catAnswered}/{catTotal}</span>
@@ -659,12 +695,13 @@ export default function AuditWalkthrough() {
               const gateRule = CATEGORY_GATE_RULES[cat.id];
               const isGated = gateRule ? isGateNegative(responses[gateRule.gateQuestionId]?.response) : false;
               const isOpposite = isCategoryInOppositeMenu(cat);
+              const isLocked = lockedCategoryIds.has(cat.id);
               return (
                 <button
                   key={cat.id}
-                  onClick={() => { if (!isOpposite) handleCategoryChange(idx); }}
+                  onClick={() => { if (!isOpposite && !isLocked) handleCategoryChange(idx); }}
                   className={`w-full text-left flex items-center justify-between px-3 py-2.5 rounded-lg mb-0.5 transition-colors ${
-                    isOpposite
+                    isOpposite || isLocked
                       ? "opacity-40 pointer-events-none cursor-not-allowed text-muted-foreground"
                       : isActive
                         ? "bg-primary/10 text-primary"
@@ -681,7 +718,9 @@ export default function AuditWalkthrough() {
                     )}
                     <span className="text-xs font-medium truncate">{cat.name}</span>
                   </div>
-                  {isGated ? (
+                  {isLocked ? (
+                    <Lock size={10} className="text-slate-400 flex-shrink-0 ml-1" />
+                  ) : isGated ? (
                     <span className="text-[10px] text-slate-400 flex-shrink-0 ml-1">N/A</span>
                   ) : (
                     <span className="text-[10px] text-muted-foreground flex-shrink-0 ml-1">{catAnswered}/{catTotal}</span>
@@ -691,27 +730,29 @@ export default function AuditWalkthrough() {
             })}
             {/* EAP Contacts step */}
             <button
-              onClick={() => { handleCategoryChange(categories.length); setShowAttachments(false); }}
+              onClick={() => { if (!isSandbox) { handleCategoryChange(categories.length); setShowAttachments(false); } }}
               className={`w-full text-left flex items-center justify-between px-3 py-2.5 rounded-lg mb-0.5 transition-colors ${
-                isEapContactsStep && !showAttachments ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                isSandbox ? "opacity-40 pointer-events-none cursor-not-allowed text-muted-foreground" : isEapContactsStep && !showAttachments ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
               }`}
             >
               <div className="flex items-center gap-2 min-w-0">
                 <Users size={13} className="flex-shrink-0 opacity-70" />
                 <span className="text-xs font-medium truncate">Emergency Contacts</span>
               </div>
+              {isSandbox && <Lock size={10} className="text-slate-400 flex-shrink-0" />}
             </button>
             {/* Attachments */}
             <button
-              onClick={() => setShowAttachments(true)}
+              onClick={() => { if (!isSandbox) setShowAttachments(true); }}
               className={`w-full text-left flex items-center justify-between px-3 py-2.5 rounded-lg mb-0.5 transition-colors ${
-                showAttachments ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                isSandbox ? "opacity-40 pointer-events-none cursor-not-allowed text-muted-foreground" : showAttachments ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
               }`}
             >
               <div className="flex items-center gap-2 min-w-0">
                 <Paperclip size={13} className="flex-shrink-0 opacity-70" />
                 <span className="text-xs font-medium truncate">Photos & Documents</span>
               </div>
+              {isSandbox && <Lock size={10} className="text-slate-400 flex-shrink-0" />}
             </button>
           </nav>
           <div className="p-3 border-t border-border space-y-2">
@@ -860,7 +901,7 @@ export default function AuditWalkthrough() {
 
                 {/* Navigation */}
                 <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
-                  <Button variant="outline" onClick={() => handleCategoryChange(categories.length - 1)} className="flex items-center gap-2">
+                  <Button variant="outline" onClick={() => stepCategory(-1)} className="flex items-center gap-2">
                     <ArrowLeft size={15} /> Previous
                   </Button>
                   <span className="text-xs text-muted-foreground">Step {categories.length + 1} of {totalSteps}</span>
@@ -936,7 +977,7 @@ export default function AuditWalkthrough() {
                       ))}
                     </div>
                     <div className="mt-4 pt-4 border-t border-border flex justify-end">
-                      <Button onClick={() => handleCategoryChange(activeCategoryIdx + 1)} className="flex items-center gap-2">
+                      <Button onClick={() => stepCategory(1)} className="flex items-center gap-2">
                         Begin Assessment <ArrowRight size={15} />
                       </Button>
                     </div>
@@ -984,11 +1025,11 @@ export default function AuditWalkthrough() {
                       </div>
                     </div>
                     <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
-                      <Button variant="outline" onClick={() => handleCategoryChange(Math.max(0, activeCategoryIdx - 1))} disabled={activeCategoryIdx === 0} className="flex items-center gap-2">
+                      <Button variant="outline" onClick={() => stepCategory(-1)} disabled={activeCategoryIdx === 0} className="flex items-center gap-2">
                         <ArrowLeft size={15} /> Previous
                       </Button>
                       <span className="text-xs text-muted-foreground">Category {activeCategoryIdx + 1} of {categories.length}</span>
-                      <Button onClick={() => handleCategoryChange(activeCategoryIdx + 1)} className="flex items-center gap-2">
+                      <Button onClick={() => stepCategory(1)} className="flex items-center gap-2">
                         Next <ArrowRight size={15} />
                       </Button>
                     </div>
@@ -1379,7 +1420,7 @@ export default function AuditWalkthrough() {
                     <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
                       <Button
                         variant="outline"
-                        onClick={() => handleCategoryChange(Math.max(0, activeCategoryIdx - 1))}
+                        onClick={() => stepCategory(-1)}
                         disabled={activeCategoryIdx === 0}
                         className="flex items-center gap-2"
                       >
@@ -1389,7 +1430,7 @@ export default function AuditWalkthrough() {
                         Category {activeCategoryIdx + 1} of {categories.length}
                       </span>
                       <Button
-                        onClick={() => handleCategoryChange(activeCategoryIdx + 1)}
+                        onClick={() => stepCategory(1)}
                         className="flex items-center gap-2"
                       >
                         Next <ArrowRight size={15} />

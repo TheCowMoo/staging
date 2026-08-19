@@ -63,3 +63,13 @@ export async function executeRecaptcha(action: string): Promise<string> {
     });
   });
 }
+
+/**
+ * Load the reCAPTCHA v3 script (and render its badge) without executing a token.
+ * Call on form mount so the script + cookie are ready and reCAPTCHA starts
+ * collecting signals before the user submits — otherwise the first submit's
+ * token is cold and can fail (the badge also doesn't appear until first submit).
+ */
+export function warmUpRecaptcha(): void {
+  void loadRecaptchaScript();
+}

@@ -243,9 +243,11 @@ function ActivationScanSummary() {
 function ActivationScreen({
   facilityId,
   onActivated,
+  isSandbox,
 }: {
   facilityId: number;
   onActivated: () => void;
+  isSandbox?: boolean;
 }) {
   const [pending, setPending] = useState<"lockdown" | "lockout" | null>(null);
 
@@ -271,7 +273,9 @@ function ActivationScreen({
         {/* Lockdown */}
         <button
           onClick={() => setPending("lockdown")}
-          className="group relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-red-500/30 bg-red-500/5 hover:bg-red-500/10 hover:border-red-500/60 transition-all p-8 text-left focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+          disabled={isSandbox}
+          title={isSandbox ? "Disabled in sandbox mode" : undefined}
+          className="group relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-red-500/30 bg-red-500/5 hover:bg-red-500/10 hover:border-red-500/60 transition-all p-8 text-left focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-red-500/5 disabled:hover:border-red-500/30"
         >
           <div className="rounded-full bg-red-600 p-4 group-hover:scale-105 transition-transform">
             <Lock className="h-8 w-8 text-white" />
@@ -287,7 +291,9 @@ function ActivationScreen({
         {/* Lockout */}
         <button
           onClick={() => setPending("lockout")}
-          className="group relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-orange-500/30 bg-orange-500/5 hover:bg-orange-500/10 hover:border-orange-500/60 transition-all p-8 text-left focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+          disabled={isSandbox}
+          title={isSandbox ? "Disabled in sandbox mode" : undefined}
+          className="group relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-orange-500/30 bg-orange-500/5 hover:bg-orange-500/10 hover:border-orange-500/60 transition-all p-8 text-left focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-orange-500/5 disabled:hover:border-orange-500/30"
         >
           <div className="rounded-full bg-orange-600 p-4 group-hover:scale-105 transition-transform">
             <ShieldAlert className="h-8 w-8 text-white" />
@@ -1025,7 +1031,7 @@ export default function EmergencyAlerts() {
 
       {/* No active alert — admin/responder activation screen */}
       {!activeAlert && (rasRole === "admin" || rasRole === "responder") && facilityId && (
-        <ActivationScreen facilityId={facilityId} onActivated={() => refetch()} />
+        <ActivationScreen facilityId={facilityId} onActivated={() => refetch()} isSandbox={user?.role === "sandbox"} />
       )}
 
       {/* No active alert — staff standby */}

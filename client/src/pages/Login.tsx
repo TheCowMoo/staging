@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Shield, Sparkles, Eye, EyeOff } from "lucide-react";
-import { executeRecaptcha } from "@/lib/recaptcha";
+import { executeRecaptcha, warmUpRecaptcha } from "@/lib/recaptcha";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -22,6 +22,10 @@ export default function Login() {
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regLoading, setRegLoading] = useState(false);
+  // Preload reCAPTCHA v3 so the badge appears and the first submit's token is warm.
+  useEffect(() => {
+    warmUpRecaptcha();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

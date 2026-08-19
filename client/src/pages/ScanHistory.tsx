@@ -158,7 +158,8 @@ export default function ScanHistory() {
       <BackNavigation to="/dashboard" label="Back to Dashboard" className="mb-2" />
 
       {/* Page header */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="mb-6">
+        <div className="flex items-center gap-3">
         <div
           className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
           style={{ backgroundColor: BRAND.navy }}
@@ -176,7 +177,8 @@ export default function ScanHistory() {
             Live view of your scans — only scans tied to your account are shown.
           </p>
         </div>
-        <div className="ml-auto">
+        </div>
+        <div className="mt-4">
           <Button
             size="sm"
             onClick={() => navigate("/liability-scan")}
