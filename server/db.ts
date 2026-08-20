@@ -524,7 +524,7 @@ export async function findSimilarIncidents(
   incidentType: string,
   facilityId?: number,
   excludeId?: number,
-  orgId?: number
+  orgIds?: number[]
 ) {
   const db = await getDb();
   if (!db) return [];
@@ -537,7 +537,7 @@ export async function findSimilarIncidents(
       and(
         eq(incidentReports.incidentType, incidentType as any),
         gte(incidentReports.createdAt, twelveMonthsAgo),
-        orgId ? eq(incidentReports.orgId, orgId) : undefined
+        orgIds?.length ? inArray(incidentReports.orgId, orgIds) : undefined
       )
     )
     .orderBy(desc(incidentReports.createdAt));
@@ -551,7 +551,7 @@ export async function findSimilarIncidents(
 export async function findIncidentsByPerson(
   personName: string,
   excludeId?: number,
-  orgId?: number
+  orgIds?: number[]
 ) {
   const db = await getDb();
   if (!db) return [];
@@ -564,7 +564,7 @@ export async function findIncidentsByPerson(
     .where(
       and(
         gte(incidentReports.createdAt, twelveMonthsAgo),
-        orgId ? eq(incidentReports.orgId, orgId) : undefined
+        orgIds?.length ? inArray(incidentReports.orgId, orgIds) : undefined
       )
     )
     .orderBy(desc(incidentReports.createdAt));
@@ -807,7 +807,8 @@ export async function getOrgMembershipForUser(userId: number) {
   })
     .from(orgMembers)
     .leftJoin(organizations, eq(orgMembers.orgId, organizations.id))
-    .where(eq(orgMembers.userId, userId));
+    .where(eq(orgMembers.userId, userId))
+    .orderBy(orgMembers.id);
 }
 
 export async function getOrgMemberRecord(orgId: number, userId: number) {

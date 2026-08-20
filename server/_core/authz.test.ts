@@ -83,12 +83,28 @@ describe("requireFacilityAccess — cross-tenant (F-02)", () => {
   it("allows a user whose org owns the facility", async () => {
     mocked.getFacilityById.mockResolvedValue({ id: 42, orgId: 100 } as any);
     mocked.getOrgMembershipForUser.mockResolvedValue([{ orgId: 100 }] as any);
-    await expect(requireFacilityAccess(user(), 42)).resolves.toBeUndefined();
+    await expect(requireFacilityAccess(user(), 42)).resolves.toBe(100);
   });
 
   it("throws NOT_FOUND for missing facilities", async () => {
     mocked.getFacilityById.mockResolvedValue(undefined);
     await expect(requireFacilityAccess(user(), 999)).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+
+  it("allows the facility owner on legacy facilities with no org", async () => {
+    mocked.getFacilityById.mockResolvedValue({ id: 42, orgId: null, userId: 11 } as any);
+    await expect(requireFacilityAccess(user({ id: 11 }), 42)).resolves.toBeNull();
+  });
+
+  it("blocks non-owners from legacy facilities with no org", async () => {
+    mocked.getFacilityById.mockResolvedValue({ id: 42, orgId: null, userId: 11 } as any);
+    await expectForbidden(requireFacilityAccess(user({ id: 12 }), 42));
+  });
+
+  it("returns the facility's org for authorized callers", async () => {
+    mocked.getFacilityById.mockResolvedValue({ id: 42, orgId: 100 } as any);
+    mocked.getOrgMembershipForUser.mockResolvedValue([{ orgId: 100 }] as any);
+    await expect(requireFacilityAccess(user(), 42)).resolves.toBe(100);
   });
 });
 
@@ -168,6 +184,20 @@ describe("requireIncidentAccess — cross-tenant (F-04/F-05)", () => {
 
   it("blocks regular users from legacy incidents with no org", async () => {
     mocked.getIncidentReportById.mockResolvedValue({ id: 9, orgId: null } as any);
+    await expectForbidden(requireIncidentAccess(user(), 9));
+  });
+
+  it("resolves the org from the facility for legacy incidents", async () => {
+    mocked.getIncidentReportById.mockResolvedValue({ id: 9, orgId: null, facilityId: 1 } as any);
+    mocked.getFacilityById.mockResolvedValue({ id: 1, orgId: 100 } as any);
+    mocked.getOrgMembershipForUser.mockResolvedValue([{ orgId: 100 }] as any);
+    await expect(requireIncidentAccess(user(), 9)).resolves.toBeUndefined();
+  });
+
+  it("blocks a foreign user even when the org is resolved via the facility", async () => {
+    mocked.getIncidentReportById.mockResolvedValue({ id: 9, orgId: null, facilityId: 1 } as any);
+    mocked.getFacilityById.mockResolvedValue({ id: 1, orgId: 100 } as any);
+    mocked.getOrgMembershipForUser.mockResolvedValue([{ orgId: 200 }] as any);
     await expectForbidden(requireIncidentAccess(user(), 9));
   });
 });

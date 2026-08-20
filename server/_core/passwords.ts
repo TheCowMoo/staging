@@ -3,14 +3,16 @@
  *
  * Replaces the previous single-pass SHA-256(salt + password) scheme, which is
  * trivially brute-forceable on GPU hardware. New hashes use:
- *   scrypt$<N>$<saltHex>$<derivedHex(64 bytes)>
+ *   scrypt$<N>$<saltHex>$<derivedHex(32 bytes)>
  * Legacy SHA-256 hashes are still verified so existing users can log in, and
  * are transparently re-hashed with scrypt on their next successful login.
  */
 import { randomBytes, scryptSync, timingSafeEqual, createHash } from "crypto";
 
 const SCRYPT_PREFIX = "scrypt$";
-const SCRYPT_KEYLEN = 64;
+// 32-byte key (256-bit) — keeps the encoded hash at 110 chars so it fits the
+// `users.passwordHash varchar(128)` column (64-byte keys produced 174 chars).
+const SCRYPT_KEYLEN = 32;
 const SCRYPT_N = 16384; // CPU/memory cost (2^14) — OWASP-recommended range for scrypt
 
 export function hashPassword(password: string): { hash: string; salt: string } {
@@ -29,7 +31,10 @@ export function verifyPassword(
   if (storedHash.startsWith(SCRYPT_PREFIX)) {
     try {
       const [, n, salt, hash] = storedHash.split("$");
-      const derived = scryptSync(password, salt, SCRYPT_KEYLEN, { N: Number(n) }).toString("hex");
+      // Derive the key length from the stored hash so values written by older
+      // builds (SCRYPT_KEYLEN = 64) still verify after the constant changes.
+      const keyLen = Buffer.from(hash, "hex").length;
+      const derived = scryptSync(password, salt, keyLen, { N: Number(n) }).toString("hex");
       return timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(derived, "hex"));
     } catch {
       return false;

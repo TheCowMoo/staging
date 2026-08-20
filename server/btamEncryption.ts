@@ -1,7 +1,11 @@
 /**
  * BTAM PII Encryption — AES-256-GCM
  * Encrypts sensitive subject/target fields before writing to the database.
- * The encryption key is derived from JWT_SECRET so no additional secret is needed.
+ *
+ * The key is derived from BTAM_ENCRYPTION_KEY when set (recommended), otherwise
+ * from cookieSecret so existing deployments keep working. A dedicated key means
+ * rotating JWT_SECRET/cookieSecret can never silently lock out encrypted BTAM
+ * data (see DEPLOY_CHECKLIST.md — set BTAM_ENCRYPTION_KEY and re-encrypt rows).
  */
 import crypto from "crypto";
 import { ENV } from "./_core/env";
@@ -14,18 +18,26 @@ const TAG_LENGTH = 16;
 // with the old dev default (in development) can still be decrypted.
 const LEGACY_FALLBACK_SECRET = "fallback-dev-secret-do-not-use-in-prod";
 
-function getSecret(): string {
-  // In production ENV.cookieSecret is fail-closed (env.ts refuses to start without
-  // a real JWT_SECRET), so there is no known-default fallback for new encryptions.
-  return ENV.cookieSecret;
+// Key derivation versions. v1 = pre-hardening (single SHA-256), v2 = scrypt
+// derivation added during hardening, v3 = current (dedicated BTAM key).
+type KeyVersion = 1 | 2 | 3;
+const KEY_SALTS: Record<KeyVersion, string> = {
+  1: "",
+  2: "fivestones-btam-key-v2",
+  3: "fivestones-btam-key-v3",
+};
+
+// Current secret for NEW encryptions: the dedicated BTAM key if set, else
+// cookieSecret (keeps deployments that haven't set the key working).
+function getCurrentSecret(): string {
+  return ENV.btamEncryptionKey ?? ENV.cookieSecret;
 }
 
-// Derive a 32-byte AES key from the secret using scrypt (memory-hard). The old
-// single SHA-256 derivation is kept only as a fallback for decrypting rows that
-// were encrypted before this change.
-function deriveKey(secret: string, useScrypt: boolean): Buffer {
-  if (useScrypt) {
-    return crypto.scryptSync(secret, "fivestones-btam-key-v2", 32);
+// Derive a 32-byte AES key. v3/v2 use scrypt (memory-hard); v1 is the legacy
+// single SHA-256 derivation kept only to decrypt pre-hardening rows.
+function deriveKey(secret: string, version: KeyVersion): Buffer {
+  if (version >= 2) {
+    return crypto.scryptSync(secret, KEY_SALTS[version], 32);
   }
   return crypto.createHash("sha256").update(secret).digest();
 }
@@ -36,7 +48,7 @@ function deriveKey(secret: string, useScrypt: boolean): Buffer {
  */
 export function encryptPII(plaintext: string | null | undefined): string | null {
   if (!plaintext) return null;
-  const key = deriveKey(getSecret(), true);
+  const key = deriveKey(getCurrentSecret(), 3);
   const iv = crypto.randomBytes(IV_LENGTH);
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
   const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
@@ -51,7 +63,6 @@ export function encryptPII(plaintext: string | null | undefined): string | null 
  */
 export function decryptPII(ciphertext: string | null | undefined): string | null {
   if (!ciphertext) return null;
-  const secret = getSecret();
   const buf = Buffer.from(ciphertext, "base64");
   const tryDecrypt = (key: Buffer): string | null => {
     try {
@@ -65,11 +76,18 @@ export function decryptPII(ciphertext: string | null | undefined): string | null
       return null;
     }
   };
-  // Try the current scrypt-derived key, then fall back to the legacy SHA-256 key
-  // so rows encrypted before the upgrade still decrypt.
+  // Try every key derivation we have ever written, newest first, so data
+  // survives secret migration:
+  //   1. v3 scrypt(current)         — rows written after BTAM_ENCRYPTION_KEY was added
+  //   2. v2 scrypt(current)         — hardening-window rows (current == cookieSecret when no BTAM key)
+  //   3. v2 scrypt(cookieSecret)    — hardening-window rows after BTAM key was introduced
+  //   4. v1 sha256(cookieSecret)    — pre-hardening rows
+  //   5. v1 sha256(legacy default)  — old development rows
   return (
-    tryDecrypt(deriveKey(secret, true)) ??
-    tryDecrypt(deriveKey(secret, false)) ??
-    tryDecrypt(deriveKey(LEGACY_FALLBACK_SECRET, false))
+    tryDecrypt(deriveKey(getCurrentSecret(), 3)) ??
+    tryDecrypt(deriveKey(getCurrentSecret(), 2)) ??
+    tryDecrypt(deriveKey(ENV.cookieSecret, 2)) ??
+    tryDecrypt(deriveKey(ENV.cookieSecret, 1)) ??
+    tryDecrypt(deriveKey(LEGACY_FALLBACK_SECRET, 1))
   );
 }

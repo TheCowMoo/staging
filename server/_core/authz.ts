@@ -8,7 +8,8 @@
  * `facilityId` / `auditId` / `photoId` / `incidentId` / `keyId` MUST call the
  * matching `require*Access` helper as its first step. Platform admins
  * (ultra_admin / admin) bypass org checks. Legacy rows with no orgId are only
- * accessible to the owning auditor or a platform admin.
+ * accessible to the owning auditor (audits), the facility owner (facilities),
+ * or a platform admin.
  */
 import { TRPCError } from "@trpc/server";
 import {
@@ -53,21 +54,23 @@ export async function requireOrgAccess(
 
 /**
  * Require access to a facility. Throws NOT_FOUND if it doesn't exist and
- * FORBIDDEN if the caller is not a member of the facility's org.
+ * FORBIDDEN if the caller is not a member of the facility's org. Returns the
+ * facility's orgId (or null for legacy org-less facilities the caller owns or
+ * is platform staff for) so callers can scope downstream queries.
  */
 export async function requireFacilityAccess(
   user: User | null | undefined,
   facilityId: number
-): Promise<void> {
+): Promise<number | null> {
   const facility = await getFacilityById(facilityId);
   if (!facility) throw new TRPCError({ code: "NOT_FOUND", message: "Facility not found." });
   if (facility.orgId == null) {
-    if (!isPlatformAdmin(user)) {
-      throw new TRPCError({ code: "FORBIDDEN", message: "You do not have access to this facility." });
-    }
-    return;
+    // Legacy facility with no org — the facility owner or a platform admin.
+    if (facility.userId === user?.id || isPlatformAdmin(user)) return null;
+    throw new TRPCError({ code: "FORBIDDEN", message: "You do not have access to this facility." });
   }
   await requireOrgAccess(user, [facility.orgId], "You do not have access to this facility.");
+  return facility.orgId;
 }
 
 /**
@@ -103,8 +106,9 @@ export async function requirePhotoAccess(
 }
 
 /**
- * Require access to an incident report (resolves incident → org chain).
- * Throws NOT_FOUND if the incident doesn't exist.
+ * Require access to an incident report (resolves incident → org chain, falling
+ * back to the facility's org for legacy incidents). Throws NOT_FOUND if the
+ * incident doesn't exist.
  */
 export async function requireIncidentAccess(
   user: User | null | undefined,
@@ -112,8 +116,13 @@ export async function requireIncidentAccess(
 ): Promise<void> {
   const incident = await getIncidentReportById(incidentId);
   if (!incident) throw new TRPCError({ code: "NOT_FOUND", message: "Incident not found." });
-  const orgId = incident.orgId ?? null;
+  // Resolve the org: incident.orgId first, then the facility's org for
+  // incidents created before org isolation.
+  const orgId =
+    incident.orgId ??
+    (incident.facilityId != null ? (await getFacilityById(incident.facilityId))?.orgId ?? null : null);
   if (orgId == null) {
+    // Fully legacy incident (no org anywhere) — platform admin only.
     if (!isPlatformAdmin(user)) {
       throw new TRPCError({ code: "FORBIDDEN", message: "You do not have access to this incident." });
     }

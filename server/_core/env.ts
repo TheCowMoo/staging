@@ -14,6 +14,9 @@ if (
 if (isProductionEnv && rawJwtSecret && rawJwtSecret.length < 32) {
   console.error("[SECURITY] JWT_SECRET is shorter than 32 chars — sessions may be forgeable. Rotate it to a strong random value.");
 }
+if (isProductionEnv && !process.env.BTAM_ENCRYPTION_KEY?.trim()) {
+  console.error("[SECURITY] BTAM_ENCRYPTION_KEY is not set — BTAM PII will be encrypted with cookieSecret. Set a dedicated key (openssl rand -hex 32) and re-encrypt existing rows (see DEPLOY_CHECKLIST.md).");
+}
 
 export const ENV = {
   appId: process.env.APP_ID ?? "pursuitpathways",
@@ -54,6 +57,11 @@ export const ENV = {
 
   // Webhook secret
   webhookSecret: process.env.WEBHOOK_SECRET ?? "change-me",
+
+  // BTAM PII encryption key — dedicated secret so rotating JWT/COOKIE secrets
+  // never silently locks out encrypted BTAM subject/target data. Falls back to
+  // cookieSecret when unset (recommended: always set this in production).
+  btamEncryptionKey: process.env.BTAM_ENCRYPTION_KEY?.trim() || undefined,
 
   // reCAPTCHA v3 — bot protection for public forms (login, register, password reset)
   recaptchaSecretKey: process.env.RECAPTCHA_SECRET_KEY ?? "",

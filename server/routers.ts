@@ -1420,10 +1420,16 @@ const incidentRouter = router({
         }
       }
       // â”€â”€ Repeat incident detection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // F-04: scope repeat detection at submit time to the incident's own org
+      // (facility org takes precedence; falls back to the client-supplied orgId).
+      const submitOrgId =
+        input.facilityId != null
+          ? (await getFacilityById(input.facilityId))?.orgId ?? undefined
+          : input.orgId ?? undefined;
       const [similarIncidents, personIncidents] = await Promise.all([
-        findSimilarIncidents(input.incidentType, input.facilityId, newId),
+        findSimilarIncidents(input.incidentType, input.facilityId, newId, submitOrgId ? [submitOrgId] : undefined),
         input.involvedPersonName
-          ? findIncidentsByPerson(input.involvedPersonName, newId)
+          ? findIncidentsByPerson(input.involvedPersonName, newId, submitOrgId ? [submitOrgId] : undefined)
           : Promise.resolve([]),
       ]);
       const notifyParts: string[] = [];
@@ -1638,17 +1644,28 @@ const incidentRouter = router({
       excludeId: z.number().optional(),
     }))
     .query(async ({ ctx, input }) => {
-      // F-04: scope similar-incident search to the caller's org (or a facility they own)
+      // F-04: scope similar-incident search — to the facility's org when a
+      // facility is given (authoritative), otherwise to every org the caller
+      // belongs to (membership order is deterministic by org_members.id).
+      let orgIds: number[] | undefined;
       if (input.facilityId) {
-        await requireFacilityAccess(ctx.user, input.facilityId);
+        const facilityOrgId = await requireFacilityAccess(ctx.user, input.facilityId);
+        if (facilityOrgId != null) {
+          orgIds = [facilityOrgId];
+        } else if (!isPlatformAdmin(ctx.user)) {
+          // Legacy facility with no org — restrict to the caller's own orgs as a safety net.
+          orgIds = await getUserOrgIds(ctx.user.id);
+          if (orgIds.length === 0) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "You do not have access to similar-incident search." });
+          }
+        }
+      } else if (!isPlatformAdmin(ctx.user)) {
+        orgIds = await getUserOrgIds(ctx.user.id);
+        if (orgIds.length === 0) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "You do not have access to similar-incident search." });
+        }
       }
-      let orgId: number | undefined;
-      if (!isPlatformAdmin(ctx.user)) {
-        const memberships = await getOrgMembershipForUser(ctx.user.id);
-        orgId = memberships[0]?.orgId;
-        if (!orgId) throw new TRPCError({ code: "FORBIDDEN", message: "You do not have access to similar-incident search." });
-      }
-      return findSimilarIncidents(input.incidentType, input.facilityId, input.excludeId, orgId);
+      return findSimilarIncidents(input.incidentType, input.facilityId, input.excludeId, orgIds);
     }),
   // Protected (admin): find incidents involving the same person
   findByPerson: paidProcedure
@@ -1657,14 +1674,16 @@ const incidentRouter = router({
       excludeId: z.number().optional(),
     }))
     .query(async ({ ctx, input }) => {
-      // F-04: person search is PII-sensitive — scope to the caller's org unless platform staff
-      let orgId: number | undefined;
+      // F-04: person search is PII-sensitive — scope to every org the caller
+      // belongs to unless they are platform staff.
+      let orgIds: number[] | undefined;
       if (!isPlatformAdmin(ctx.user)) {
-        const memberships = await getOrgMembershipForUser(ctx.user.id);
-        orgId = memberships[0]?.orgId;
-        if (!orgId) throw new TRPCError({ code: "FORBIDDEN", message: "You do not have access to person search." });
+        orgIds = await getUserOrgIds(ctx.user.id);
+        if (orgIds.length === 0) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "You do not have access to person search." });
+        }
       }
-      return findIncidentsByPerson(input.personName, input.excludeId, orgId);
+      return findIncidentsByPerson(input.personName, input.excludeId, orgIds);
     }),
   // Protected (admin): manually mark a report as a repeat incident
   markRepeat: paidProcedure
@@ -4556,6 +4575,7 @@ export const appRouter = router({
         if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
         // F-06: the org is always resolved from the caller's membership — a
         // client-supplied orgId is never trusted (prevents cross-org key minting).
+        // Memberships are ordered by org_members.id, so this is deterministic.
         const memberships = await getOrgMembershipForUser(ctx.user.id);
         const orgId = memberships[0]?.orgId ?? null;
         const token = randomBytes(32).toString("hex");

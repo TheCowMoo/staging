@@ -652,3 +652,12 @@ if (scan.orgId) {
 - F-06: `apiKeys.create` resolves org from the caller's membership (client `orgId` removed from schema); `apiKeys.revoke` verifies the key belongs to the caller, their org, or a platform admin (`getApiKeyById` added to `server/db.ts`).
 - Added `getPhotoById` / `getApiKeyById` to `server/db.ts`.
 - Added cross-tenant regression tests `server/_core/authz.test.ts` (19 cases) — all pass (`npx vitest run`). tsc baseline unchanged at 19 pre-existing errors, 0 new.
+
+### 2026-08-21 — DB-layer hardening (audit review follow-ups)
+
+- `server/_core/passwords.ts`: `SCRYPT_KEYLEN` 64 → 32 (encoded hash 174 → 110 chars, fits `users.passwordHash varchar(128)`); `verifyPassword` now derives the key length from the stored hash so any previously-written 64-byte scrypt hashes still verify. Verified: round-trip, wrong-password, legacy SHA-256, and old-64-byte-hash cases.
+- `server/_core/authz.ts`: `requireFacilityAccess` returns the facility's orgId and now allows the facility owner on legacy org-less facilities (was platform-admin-only); `requireIncidentAccess` falls back to the facility's org for legacy org-less incidents (was platform-admin-only).
+- `server/db.ts`: `getOrgMembershipForUser` now `ORDER BY org_members.id` (deterministic first membership); `findSimilarIncidents`/`findIncidentsByPerson` accept `orgIds?: number[]` and use `inArray` instead of a single `orgId`.
+- `server/routers.ts`: `findSimilar` scopes to the facility's org when a `facilityId` is given, else to all of the caller's orgs; `findByPerson` scopes to all of the caller's orgs; incident-submit repeat detection is now scoped to the incident's own org (facility org, else submitted orgId).
+- Tests: `server/_core/authz.test.ts` 19 → 24 cases (legacy facility owner allowed/blocked, legacy incident facility-org fallback, `requireFacilityAccess` return value). 24/24 pass. tsc still 19 pre-existing errors, 0 new.
+- `server/_core/env.ts` + `server/btamEncryption.ts`: added dedicated `BTAM_ENCRYPTION_KEY` (v3 scrypt derivation); new rows encrypt with the dedicated key when set, else `cookieSecret`. `decryptPII` tries all historical derivations newest-first (v3 → v2 scrypt(current) → v2 scrypt(cookieSecret) → v1 sha256(cookieSecret) → v1 sha256(legacy default)) so existing rows survive key introduction/rotation. Prod warns if the key is unset. Verified: v3 round-trip + all legacy rows decrypt + garbage → null. Added `DEPLOY_CHECKLIST.md` (env → schema-sync → build → restart → smoke tests → BTAM re-encryption).
