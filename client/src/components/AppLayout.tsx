@@ -290,7 +290,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       label: "Reporting",
       icon: <FileText size={18} />,
       items: [
-        { href: "/report-incident", label: "Report an Incident", icon: <FilePlus size={15} />,    locked: isPaid ? undefined : "paid" },
+        { href: "/report-incident", label: "Employee Incident Reporting", icon: <FilePlus size={15} />,    locked: isPaid ? undefined : "paid" },
         { href: "/incidents",       label: "Incident Reports",   icon: <AlertCircle size={15} />, locked: isPaid ? undefined : "paid" },
       ],
     },

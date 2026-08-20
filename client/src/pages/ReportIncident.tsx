@@ -215,7 +215,7 @@ export default function ReportIncident() {
             <Shield className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-foreground">Anonymous Incident Report</h1>
+            <h1 className="text-xl font-bold text-foreground">Employee Incident Reporting</h1>
             <p className="text-sm text-muted-foreground">Your identity is protected. Reports are reviewed by safety administrators only.</p>
           </div>
         </div>
