@@ -2,6 +2,8 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
+import { ENV } from "./_core/env";
+import { requireAuditAccess, requireFacilityAccess, requirePhotoAccess, requireIncidentAccess, isPlatformAdmin, getUserOrgIds } from "./_core/authz";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, auditorProcedure, adminProcedure, ultraAdminProcedure, superAdminProcedure, orgAdminProcedure, paidProcedure, router, paidSandboxRestrictedProcedure } from "./_core/trpc";
 import {
@@ -51,7 +53,7 @@ import {
   insertScanShareToken, getScanShareToken, updateLiabilityScanTierScores,
 } from "./db";
 import { randomBytes, createHash } from "crypto";
-import { createApiKey, getApiKeyByHash, listApiKeysByUser, revokeApiKey } from "./db";
+import { createApiKey, getApiKeyById, getApiKeyByHash, listApiKeysByUser, revokeApiKey } from "./db";
 import { getDb } from "./db";
 import { sql } from "drizzle-orm";
 import { generateLiabilityScanResult } from "./liabilityScanAi";
@@ -91,20 +93,8 @@ const facilityRouter = router({
   }),
 
   get: paidProcedure.input(z.object({ id: z.number() })).query(async ({ ctx, input }) => {
-    const facility = await getFacilityById(input.id);
-    if (!facility) throw new TRPCError({ code: "NOT_FOUND" });
-    // Allow: direct owner, platform admin, or org member of the facility's org
-    const isOwner = facility.userId === ctx.user.id;
-    const isPlatformAdmin = (["admin","ultra_admin"].includes(ctx.user.role));
-    let isOrgMember = false;
-    if (!isOwner && !isPlatformAdmin && facility.orgId) {
-      const membership = await getOrgMemberRecord(facility.orgId, ctx.user.id);
-      isOrgMember = !!membership;
-    }
-    if (!isOwner && !isPlatformAdmin && !isOrgMember) {
-      throw new TRPCError({ code: "FORBIDDEN" });
-    }
-    return facility;
+    await requireFacilityAccess(ctx.user, input.id);
+    return getFacilityById(input.id);
   }),
 
   create: paidProcedure
@@ -188,7 +178,7 @@ const facilityRouter = router({
       const { id, ...data } = input;
       const facility = await getFacilityById(id);
       if (!facility) throw new TRPCError({ code: "NOT_FOUND" });
-      if (facility.userId !== ctx.user.id && (!["admin","ultra_admin"].includes(ctx.user.role))) throw new TRPCError({ code: "FORBIDDEN" });
+      await requireFacilityAccess(ctx.user, id);
       await updateFacility(id, data);
       return getFacilityById(id);
     }),
@@ -198,7 +188,7 @@ const facilityRouter = router({
     .mutation(async ({ ctx, input }) => {
       const facility = await getFacilityById(input.id);
       if (!facility) throw new TRPCError({ code: "NOT_FOUND" });
-      if (facility.userId !== ctx.user.id && (!["admin","ultra_admin"].includes(ctx.user.role))) throw new TRPCError({ code: "FORBIDDEN" });
+      await requireFacilityAccess(ctx.user, input.id);
       const newFacility = await duplicateFacility(input.id, ctx.user.id);
       await writeAuditLog(buildLogContext({ user: ctx.user, req: ctx.req }), {
         action: "create",
@@ -215,7 +205,7 @@ const facilityRouter = router({
     .mutation(async ({ ctx, input }) => {
       const facility = await getFacilityById(input.id);
       if (!facility) throw new TRPCError({ code: "NOT_FOUND" });
-      if (facility.userId !== ctx.user.id && (!["admin","ultra_admin"].includes(ctx.user.role))) throw new TRPCError({ code: "FORBIDDEN" });
+      await requireFacilityAccess(ctx.user, input.id);
       await deleteFacility(input.id);
       await writeAuditLog(buildLogContext({ user: ctx.user, req: ctx.req }), {
         action: "delete",
@@ -232,9 +222,7 @@ const auditRouter = router({
   listByFacility: paidProcedure
     .input(z.object({ facilityId: z.number() }))
     .query(async ({ ctx, input }) => {
-      const facility = await getFacilityById(input.facilityId);
-      if (!facility) throw new TRPCError({ code: "NOT_FOUND" });
-      if (facility.userId !== ctx.user.id && (!["admin","ultra_admin"].includes(ctx.user.role))) throw new TRPCError({ code: "FORBIDDEN" });
+      await requireFacilityAccess(ctx.user, input.facilityId);
       return getAuditsByFacility(input.facilityId);
     }),
 
@@ -245,25 +233,14 @@ const auditRouter = router({
   get: paidProcedure.input(z.object({ id: z.number() })).query(async ({ ctx, input }) => {
     const audit = await getAuditById(input.id);
     if (!audit) throw new TRPCError({ code: "NOT_FOUND" });
-    // Verify caller has access to the facility this audit belongs to
-    const facility = await getFacilityById(audit.facilityId);
-    if (!facility) throw new TRPCError({ code: "NOT_FOUND" });
-    const isOwner = facility.userId === ctx.user.id || audit.auditorId === ctx.user.id;
-    const isPlatformAdmin = (["admin","ultra_admin"].includes(ctx.user.role));
-    let isOrgMember = false;
-    if (!isOwner && !isPlatformAdmin && facility.orgId) {
-      const membership = await getOrgMemberRecord(facility.orgId, ctx.user.id);
-      isOrgMember = !!membership;
-    }
-    if (!isOwner && !isPlatformAdmin && !isOrgMember) {
-      throw new TRPCError({ code: "FORBIDDEN" });
-    }
+    await requireAuditAccess(ctx.user, input.id);
     return audit;
   }),
 
   create: paidProcedure
     .input(z.object({ facilityId: z.number(), auditorNotes: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
+      await requireFacilityAccess(ctx.user, input.facilityId);
       const facility = await getFacilityById(input.facilityId);
       if (!facility) throw new TRPCError({ code: "NOT_FOUND" });
       const newAudit = await createAudit({
@@ -310,6 +287,7 @@ const auditRouter = router({
       addToEap: z.boolean().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
+      await requireAuditAccess(ctx.user, input.auditId);
       await upsertAuditResponse(input as any);
       return { success: true };
     }),
@@ -317,12 +295,14 @@ const auditRouter = router({
   getResponses: paidProcedure
     .input(z.object({ auditId: z.number() }))
     .query(async ({ ctx, input }) => {
+      await requireAuditAccess(ctx.user, input.auditId);
       return getResponsesByAudit(input.auditId);
     }),
 
   complete: paidProcedure
     .input(z.object({ auditId: z.number(), auditorNotes: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
+      await requireAuditAccess(ctx.user, input.auditId);
       const responses = await getResponsesByAudit(input.auditId);
 
       // Build polarity lookup from AUDIT_CATEGORIES (no DB schema change needed)
@@ -382,6 +362,7 @@ const auditRouter = router({
   updateNotes: paidProcedure
     .input(z.object({ auditId: z.number(), notes: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      await requireAuditAccess(ctx.user, input.auditId);
       await updateAudit(input.auditId, { auditorNotes: input.notes });
       return { success: true };
     }),
@@ -400,12 +381,14 @@ const auditRouter = router({
       }),
     }))
     .mutation(async ({ ctx, input }) => {
+      await requireAuditAccess(ctx.user, input.auditId);
       await updateAudit(input.auditId, { eapContacts: input.eapContacts as any });
       return { success: true };
     }),
   getEapContacts: paidProcedure
     .input(z.object({ auditId: z.number() }))
     .query(async ({ ctx, input }) => {
+      await requireAuditAccess(ctx.user, input.auditId);
       const audit = await getAuditById(input.auditId);
       return (audit?.eapContacts as any) ?? null;
     }),
@@ -415,18 +398,21 @@ const auditRouter = router({
       sectionEapNotes: z.record(z.string(), z.string()),
     }))
     .mutation(async ({ ctx, input }) => {
+      await requireAuditAccess(ctx.user, input.auditId);
       await updateAudit(input.auditId, { sectionEapNotes: input.sectionEapNotes as any });
       return { success: true };
     }),
   getSectionEapNotes: paidProcedure
     .input(z.object({ auditId: z.number() }))
     .query(async ({ ctx, input }) => {
+      await requireAuditAccess(ctx.user, input.auditId);
       const audit = await getAuditById(input.auditId);
       return (audit?.sectionEapNotes as Record<string, string> | null) ?? {};
     }),
   duplicate: paidProcedure
     .input(z.object({ auditId: z.number() }))
     .mutation(async ({ ctx, input }) => {
+      await requireAuditAccess(ctx.user, input.auditId);
       const sourceAudit = await getAuditById(input.auditId);
       if (!sourceAudit) throw new TRPCError({ code: "NOT_FOUND" });
       const facility = await getFacilityById(sourceAudit.facilityId);
@@ -451,7 +437,7 @@ const auditRouter = router({
       if (!audit) throw new TRPCError({ code: "NOT_FOUND" });
       const facility = await getFacilityById(audit.facilityId);
       if (!facility) throw new TRPCError({ code: "NOT_FOUND" });
-      if (facility.userId !== ctx.user.id && (!["admin","ultra_admin"].includes(ctx.user.role))) throw new TRPCError({ code: "FORBIDDEN" });
+      await requireAuditAccess(ctx.user, input.auditId);
       await updateAudit(input.auditId, {
         status: "in_progress",
         completedAt: null as any,
@@ -476,7 +462,7 @@ const auditRouter = router({
       if (!audit) throw new TRPCError({ code: "NOT_FOUND" });
       const facility = await getFacilityById(audit.facilityId);
       if (!facility) throw new TRPCError({ code: "NOT_FOUND" });
-      if (facility.userId !== ctx.user.id && (!["admin","ultra_admin"].includes(ctx.user.role))) throw new TRPCError({ code: "FORBIDDEN" });
+      await requireAuditAccess(ctx.user, input.auditId);
       await deleteAudit(input.auditId);
       await writeAuditLog(buildLogContext({ user: ctx.user, req: ctx.req }), {
         action: "delete",
@@ -493,6 +479,7 @@ const threatRouter = router({
   list: paidProcedure
     .input(z.object({ auditId: z.number() }))
     .query(async ({ ctx, input }) => {
+      await requireAuditAccess(ctx.user, input.auditId);
       return getThreatFindingsByAudit(input.auditId);
     }),
 
@@ -507,6 +494,7 @@ const threatRouter = router({
       description: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
+      await requireAuditAccess(ctx.user, input.auditId);
       const { baseScore, modifier, finalScore, severityLevel, priority } = calculateThreatSeverity(
         input.likelihood, input.impact, input.preparedness
       );
@@ -524,6 +512,7 @@ const threatRouter = router({
   deleteAll: paidProcedure
     .input(z.object({ auditId: z.number() }))
     .mutation(async ({ ctx, input }) => {
+      await requireAuditAccess(ctx.user, input.auditId);
       await deleteThreatFindingsByAudit(input.auditId);
       return { success: true };
     }),
@@ -534,6 +523,7 @@ const reportRouter = router({
   generate: paidProcedure
     .input(z.object({ auditId: z.number() }))
     .query(async ({ ctx, input }) => {
+      await requireAuditAccess(ctx.user, input.auditId);
       const audit = await getAuditById(input.auditId);
       if (!audit) throw new TRPCError({ code: "NOT_FOUND" });
 
@@ -634,6 +624,7 @@ const reportRouter = router({
   generateMarkdown: paidProcedure
     .input(z.object({ auditId: z.number() }))
     .query(async ({ ctx, input }) => {
+      await requireAuditAccess(ctx.user, input.auditId);
       const audit = await getAuditById(input.auditId);
       if (!audit) throw new TRPCError({ code: "NOT_FOUND" });
       const facility = await getFacilityById(audit.facilityId);
@@ -716,6 +707,7 @@ const reportRouter = router({
   getEAP: paidProcedure
     .input(z.object({ auditId: z.number() }))
     .query(async ({ ctx, input }) => {
+      await requireAuditAccess(ctx.user, input.auditId);
       const audit = await getAuditById(input.auditId);
       if (!audit) throw new TRPCError({ code: "NOT_FOUND" });
       const facility = await getFacilityById(audit.facilityId);
@@ -749,6 +741,7 @@ const reportRouter = router({
   generateEAP: paidSandboxRestrictedProcedure
     .input(z.object({ auditId: z.number() }))
     .mutation(async ({ ctx, input }) => {
+      await requireAuditAccess(ctx.user, input.auditId);
       const audit = await getAuditById(input.auditId);
       if (!audit) throw new TRPCError({ code: "NOT_FOUND" });
       const facility = await getFacilityById(audit.facilityId);
@@ -1181,6 +1174,7 @@ const photoRouter = router({
   list: paidProcedure
     .input(z.object({ auditId: z.number() }))
     .query(async ({ ctx, input }) => {
+      await requireAuditAccess(ctx.user, input.auditId);
       return getPhotosByAudit(input.auditId);
     }),
 
@@ -1194,6 +1188,7 @@ const photoRouter = router({
       photoType: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
+      await requireAuditAccess(ctx.user, input.auditId);
       const buffer = Buffer.from(input.base64Data, "base64");
       const ext = input.mimeType.split("/")[1] ?? "jpg";
       const fileKey = `audit-photos/${input.auditId}/${nanoid()}.${ext}`;
@@ -1212,6 +1207,7 @@ const photoRouter = router({
   delete: paidProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
+      await requirePhotoAccess(ctx.user, input.id);
       await deletePhoto(input.id);
       return { success: true };
     }),
@@ -1295,13 +1291,15 @@ const feedbackRouter = router({
       wouldUseForClient: z.boolean().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
+      await requireAuditAccess(ctx.user, input.auditId);
       await createTesterFeedback({ ...input, userId: ctx.user.id });
       return { success: true };
     }),
 
   getFeedbackForAudit: paidProcedure
     .input(z.object({ auditId: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      await requireAuditAccess(ctx.user, input.auditId);
       return getFeedbackByAudit(input.auditId);
     }),
 
@@ -1327,13 +1325,15 @@ const feedbackRouter = router({
       notes: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
+      await requireAuditAccess(ctx.user, input.auditId);
       await createQuestionFlag({ ...input, userId: ctx.user.id });
       return { success: true };
     }),
 
   getFlags: paidProcedure
     .input(z.object({ auditId: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      await requireAuditAccess(ctx.user, input.auditId);
       return getQuestionFlagsByAudit(input.auditId);
     }),
 
@@ -1529,6 +1529,7 @@ const incidentRouter = router({
       referredTo: z.number().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
+      await requireIncidentAccess(ctx.user, input.id);
       await updateIncidentReportStatus(
         input.id,
         input.status,
@@ -1623,9 +1624,10 @@ const incidentRouter = router({
   // Protected (admin/auditor): look up a specific incident report by tracking token
   adminLookup: paidProcedure
     .input(z.object({ token: z.string().min(1) }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const report = await getIncidentReportByToken(input.token);
       if (!report) throw new TRPCError({ code: "NOT_FOUND", message: "No report found with that tracking token." });
+      await requireIncidentAccess(ctx.user, report.id);
       return report;
     }),
   // Protected (admin): find similar incidents by type for repeat detection
@@ -1635,8 +1637,18 @@ const incidentRouter = router({
       facilityId: z.number().optional(),
       excludeId: z.number().optional(),
     }))
-    .query(async ({ input }) => {
-      return findSimilarIncidents(input.incidentType, input.facilityId, input.excludeId);
+    .query(async ({ ctx, input }) => {
+      // F-04: scope similar-incident search to the caller's org (or a facility they own)
+      if (input.facilityId) {
+        await requireFacilityAccess(ctx.user, input.facilityId);
+      }
+      let orgId: number | undefined;
+      if (!isPlatformAdmin(ctx.user)) {
+        const memberships = await getOrgMembershipForUser(ctx.user.id);
+        orgId = memberships[0]?.orgId;
+        if (!orgId) throw new TRPCError({ code: "FORBIDDEN", message: "You do not have access to similar-incident search." });
+      }
+      return findSimilarIncidents(input.incidentType, input.facilityId, input.excludeId, orgId);
     }),
   // Protected (admin): find incidents involving the same person
   findByPerson: paidProcedure
@@ -1644,8 +1656,15 @@ const incidentRouter = router({
       personName: z.string().min(1),
       excludeId: z.number().optional(),
     }))
-    .query(async ({ input }) => {
-      return findIncidentsByPerson(input.personName, input.excludeId);
+    .query(async ({ ctx, input }) => {
+      // F-04: person search is PII-sensitive — scope to the caller's org unless platform staff
+      let orgId: number | undefined;
+      if (!isPlatformAdmin(ctx.user)) {
+        const memberships = await getOrgMembershipForUser(ctx.user.id);
+        orgId = memberships[0]?.orgId;
+        if (!orgId) throw new TRPCError({ code: "FORBIDDEN", message: "You do not have access to person search." });
+      }
+      return findIncidentsByPerson(input.personName, input.excludeId, orgId);
     }),
   // Protected (admin): manually mark a report as a repeat incident
   markRepeat: paidProcedure
@@ -1653,7 +1672,8 @@ const incidentRouter = router({
       id: z.number(),
       repeatGroupId: z.string().min(1),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await requireIncidentAccess(ctx.user, input.id);
       await markAsRepeatIncident(input.id, input.repeatGroupId);
       return { success: true };
     }),
@@ -4406,9 +4426,7 @@ const settingsRouter = router({
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const { users: usersTable } = await import("../drizzle/schema");
       const { eq } = await import("drizzle-orm");
-      const { createHash, randomBytes: rb } = await import("crypto");
-      const hashPw = (pw: string, salt: string) =>
-        createHash("sha256").update(salt + pw).digest("hex");
+      const { hashPassword: hashPw, verifyPassword: verifyPw } = await import("./_core/passwords");
       const [user] = await db.select().from(usersTable).where(eq(usersTable.id, ctx.user.id)).limit(1);
       if (!user) throw new TRPCError({ code: "NOT_FOUND" });
       if (!user.passwordHash || !user.passwordSalt) {
@@ -4417,14 +4435,12 @@ const settingsRouter = router({
           message: "Password change is not available for accounts created via SSO. Use your identity provider to change your password.",
         });
       }
-      const currentHash = hashPw(input.currentPassword, user.passwordSalt);
-      if (currentHash !== user.passwordHash) {
+      if (!verifyPw(input.currentPassword, user.passwordHash, user.passwordSalt)) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Current password is incorrect." });
       }
-      const newSalt = rb(16).toString("hex");
-      const newHash = hashPw(input.newPassword, newSalt);
+      const { hash, salt } = hashPw(input.newPassword);
       await db.update(usersTable)
-        .set({ passwordHash: newHash, passwordSalt: newSalt })
+        .set({ passwordHash: hash, passwordSalt: salt })
         .where(eq(usersTable.id, ctx.user.id));
       return { success: true };
     }),
@@ -4535,15 +4551,19 @@ export const appRouter = router({
   // API Key management (create/list/revoke) -- accessible to org admins and platform admins
   apiKeys: router({
     create: orgAdminProcedure
-      .input(z.object({ label: z.string().optional(), orgId: z.number().optional(), expiresInDays: z.number().optional() }))
+      .input(z.object({ label: z.string().optional(), expiresInDays: z.number().optional() }))
       .mutation(async ({ ctx, input }) => {
         if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+        // F-06: the org is always resolved from the caller's membership — a
+        // client-supplied orgId is never trusted (prevents cross-org key minting).
+        const memberships = await getOrgMembershipForUser(ctx.user.id);
+        const orgId = memberships[0]?.orgId ?? null;
         const token = randomBytes(32).toString("hex");
         const hash = createHash("sha256").update(token).digest("hex");
         const expiresAt = input.expiresInDays ? new Date(Date.now() + input.expiresInDays * 24 * 60 * 60 * 1000) : undefined;
         await createApiKey({
           userId: ctx.user.id,
-          orgId: input.orgId ?? undefined,
+          orgId: orgId ?? undefined,
           label: input.label ?? undefined,
           keyHash: hash,
           permissions: [],
@@ -4558,7 +4578,15 @@ export const appRouter = router({
       return rows.map(r => ({ id: r.id, label: r.label, orgId: r.orgId, revokedAt: r.revokedAt, expiresAt: r.expiresAt, createdAt: r.createdAt }));
     }),
 
-    revoke: orgAdminProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+    revoke: orgAdminProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
+      // F-06: only the key's creator, an admin of the key's org, or a platform admin may revoke it
+      const key = await getApiKeyById(input.id);
+      if (!key) throw new TRPCError({ code: "NOT_FOUND", message: "API key not found." });
+      const isOwner = key.userId === ctx.user.id;
+      const isOrgAdmin = key.orgId != null && (await getUserOrgIds(ctx.user.id)).includes(key.orgId);
+      if (!isOwner && !isPlatformAdmin(ctx.user) && !isOrgAdmin) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "You do not have access to this API key." });
+      }
       await revokeApiKey(input.id);
       return { success: true } as const;
     }),
@@ -4567,6 +4595,14 @@ export const appRouter = router({
   settings: settingsRouter,
   migrate: router({
     runPending: publicProcedure.mutation(async () => {
+      // F-01: never expose runtime DDL in production. Migrations are run via the
+      // operator-controlled CLI (`pnpm migrate:apply`) or the deployment job.
+      if (ENV.isProduction) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Migrations are managed by the deployment process. Use `pnpm migrate:apply` on the server.",
+        });
+      }
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "No DB" });
       const stmts = [

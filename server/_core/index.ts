@@ -125,6 +125,18 @@ async function startServer() {
   });
   app.use("/api/trpc", apiLimiter);
 
+  // Stricter limit for auth endpoints (login/register/reset) to slow brute-force
+  // attempts. reCAPTCHA v3 already provides bot detection; this adds IP throttling
+  // as a second layer.
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Too many authentication attempts. Please try again later." },
+  });
+  app.use("/api/auth", authLimiter);
+
   // Stricter limit for anonymous incident report submission: 10 per hour per IP
   const incidentSubmitLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
@@ -140,40 +152,43 @@ async function startServer() {
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-  // ─── Debug Endpoint ──────────────────────────────────────────────────────────
-  // Visit /debug to see server status, env vars (masked), and request headers
-  app.get("/debug", (_req, res) => {
-    const env = process.env;
-    const mask = (val?: string) => val ? (val.length > 8 ? val.slice(0, 4) + "****" + val.slice(-4) : "****") : "(not set)";
-    res.setHeader("Content-Type", "text/plain");
-    res.send([
-      "=== SAFEGUARD DEBUG ===",
-      `Time: ${new Date().toISOString()}`,
-      `Node: ${process.version}`,
-      `ENV: ${env.NODE_ENV || "(not set)"}`,
-      `PORT: ${env.PORT || "3000 (default)"}`,
-      `HTTPS flag: ${env.HTTPS || "(not set)"}`,
-      "",
-      "--- Config ---",
-      `APP_ID: ${env.APP_ID || "(not set)"}`,
-      `DATABASE_URL: ${mask(env.DATABASE_URL)}`,
-      `OPENAI_API_KEY: ${mask(env.OPENAI_API_KEY)}`,
-      `GEMINI_API_KEY: ${mask(env.GEMINI_API_KEY)}`,
-      `LLM_MODEL: ${env.LLM_MODEL || "(not set)"}`,
-      `S3_BUCKET_NAME: ${env.S3_BUCKET_NAME || "(not set)"}`,
-      `S3_REGION: ${env.S3_REGION || "(not set)"}`,
-      `S3_ACCESS_KEY_ID: ${mask(env.S3_ACCESS_KEY_ID)}`,
-      `GOOGLE_MAPS_API_KEY: ${mask(env.GOOGLE_MAPS_API_KEY)}`,
-      "",
-      "--- dist/public contents ---",
-      `cwd: ${process.cwd()}`,
-      `resolved: ${path.resolve(process.cwd(), "dist", "public")}`,
-      (() => { try { return fs.readdirSync(path.resolve(process.cwd(), "dist", "public")).join(", "); } catch (e) { return `(not found: ${e})`; } })(),
-      "",
-      "--- Request Headers ---",
-      ...Object.entries(_req.headers).map(([k, v]) => `${k}: ${v}`),
-    ].join("\n"));
-  });
+  // ─── Debug Endpoint (dev only) ───────────────────────────────────────────────
+  // Visit /debug to see server status, env vars (masked), and request headers.
+  // Disabled in production to avoid leaking configuration/headers.
+  if (process.env.NODE_ENV !== "production") {
+    app.get("/debug", (_req, res) => {
+      const env = process.env;
+      const mask = (val?: string) => val ? (val.length > 8 ? val.slice(0, 4) + "****" + val.slice(-4) : "****") : "(not set)";
+      res.setHeader("Content-Type", "text/plain");
+      res.send([
+        "=== SAFEGUARD DEBUG ===",
+        `Time: ${new Date().toISOString()}`,
+        `Node: ${process.version}`,
+        `ENV: ${env.NODE_ENV || "(not set)"}`,
+        `PORT: ${env.PORT || "3000 (default)"}`,
+        `HTTPS flag: ${env.HTTPS || "(not set)"}`,
+        "",
+        "--- Config ---",
+        `APP_ID: ${env.APP_ID || "(not set)"}`,
+        `DATABASE_URL: ${mask(env.DATABASE_URL)}`,
+        `OPENAI_API_KEY: ${mask(env.OPENAI_API_KEY)}`,
+        `GEMINI_API_KEY: ${mask(env.GEMINI_API_KEY)}`,
+        `LLM_MODEL: ${env.LLM_MODEL || "(not set)"}`,
+        `S3_BUCKET_NAME: ${env.S3_BUCKET_NAME || "(not set)"}`,
+        `S3_REGION: ${env.S3_REGION || "(not set)"}`,
+        `S3_ACCESS_KEY_ID: ${mask(env.S3_ACCESS_KEY_ID)}`,
+        `GOOGLE_MAPS_API_KEY: ${mask(env.GOOGLE_MAPS_API_KEY)}`,
+        "",
+        "--- dist/public contents ---",
+        `cwd: ${process.cwd()}`,
+        `resolved: ${path.resolve(process.cwd(), "dist", "public")}`,
+        (() => { try { return fs.readdirSync(path.resolve(process.cwd(), "dist", "public")).join(", "); } catch (e) { return `(not found: ${e})`; } })(),
+        "",
+        "--- Request Headers ---",
+        ...Object.entries(_req.headers).map(([k, v]) => `${k}: ${v}`),
+      ].join("\n"));
+    });
+  }
 
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
@@ -232,6 +247,17 @@ async function startServer() {
 
   // Liability Scan PDF export
   app.use(liabilityScanPdfRouter);
+
+  // Privileged webhook endpoints (register, plan changes, ultra-admin creation):
+  // rate-limit by IP. Shared-secret HMAC hardening is tracked separately (F-10).
+  const webhookLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Too many webhook requests. Please try again later." },
+  });
+  app.use("/api/webhook", webhookLimiter);
 
   // Plan upgrade/downgrade webhook (called by payment processor)
   app.use(webhookRouter);

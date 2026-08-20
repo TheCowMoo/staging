@@ -1,6 +1,23 @@
+const rawJwtSecret = process.env.JWT_SECRET;
+const isProductionEnv = process.env.NODE_ENV === "production";
+// Fail closed in production: if JWT_SECRET is missing or the placeholder value,
+// session cookies would be signed with a known secret, letting an attacker forge
+// admin sessions. Refusing to start is safer than running with a known secret.
+if (
+  isProductionEnv &&
+  (!rawJwtSecret || rawJwtSecret === "change-me")
+) {
+  throw new Error(
+    "[FATAL] JWT_SECRET must be set to a strong random value in production (>= 32 chars). Refusing to start."
+  );
+}
+if (isProductionEnv && rawJwtSecret && rawJwtSecret.length < 32) {
+  console.error("[SECURITY] JWT_SECRET is shorter than 32 chars — sessions may be forgeable. Rotate it to a strong random value.");
+}
+
 export const ENV = {
   appId: process.env.APP_ID ?? "pursuitpathways",
-  cookieSecret: process.env.JWT_SECRET ?? "change-me",
+  cookieSecret: rawJwtSecret || "dev-only-change-me",
   databaseUrl: process.env.DATABASE_URL ?? 'mysql://root:password@127.0.0.1:3306/safeguard',
   ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
   isProduction: process.env.NODE_ENV === "production",

@@ -124,6 +124,13 @@ export async function getApiKeyByHash(hash: string) {
   return result[0];
 }
 
+export async function getApiKeyById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(apiKeys).where(eq(apiKeys.id, id)).limit(1);
+  return result[0];
+}
+
 export async function touchApiKeyLastUsed(id: number) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
@@ -396,6 +403,13 @@ export async function getPhotosByAudit(auditId: number) {
   return db.select().from(auditPhotos).where(eq(auditPhotos.auditId, auditId));
 }
 
+export async function getPhotoById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(auditPhotos).where(eq(auditPhotos.id, id)).limit(1);
+  return result[0];
+}
+
 export async function deletePhoto(id: number) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
@@ -509,7 +523,8 @@ export async function updateIncidentThreatFlags(
 export async function findSimilarIncidents(
   incidentType: string,
   facilityId?: number,
-  excludeId?: number
+  excludeId?: number,
+  orgId?: number
 ) {
   const db = await getDb();
   if (!db) return [];
@@ -521,7 +536,8 @@ export async function findSimilarIncidents(
     .where(
       and(
         eq(incidentReports.incidentType, incidentType as any),
-        gte(incidentReports.createdAt, twelveMonthsAgo)
+        gte(incidentReports.createdAt, twelveMonthsAgo),
+        orgId ? eq(incidentReports.orgId, orgId) : undefined
       )
     )
     .orderBy(desc(incidentReports.createdAt));
@@ -534,7 +550,8 @@ export async function findSimilarIncidents(
  */
 export async function findIncidentsByPerson(
   personName: string,
-  excludeId?: number
+  excludeId?: number,
+  orgId?: number
 ) {
   const db = await getDb();
   if (!db) return [];
@@ -544,7 +561,12 @@ export async function findIncidentsByPerson(
   const rows = await db
     .select()
     .from(incidentReports)
-    .where(gte(incidentReports.createdAt, twelveMonthsAgo))
+    .where(
+      and(
+        gte(incidentReports.createdAt, twelveMonthsAgo),
+        orgId ? eq(incidentReports.orgId, orgId) : undefined
+      )
+    )
     .orderBy(desc(incidentReports.createdAt));
   const normalized = personName.trim().toLowerCase();
   return rows.filter(

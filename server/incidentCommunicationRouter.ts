@@ -4,6 +4,7 @@ import { router, protectedProcedure, publicProcedure } from "./_core/trpc";
 import { eq, asc } from "drizzle-orm";
 import { getDb } from "./db";
 import { incidentCommunications } from "../drizzle/schema";
+import { requireIncidentAccess } from "./_core/authz";
 
 export const incidentCommunicationRouter = router({
   // Admin sends a message to a reporter
@@ -11,15 +12,16 @@ export const incidentCommunicationRouter = router({
     .input(z.object({
       incidentId: z.number(),
       message: z.string().min(1).max(2000),
-      senderName: z.string().optional(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await requireIncidentAccess(ctx.user, input.incidentId);
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       await db.insert(incidentCommunications).values({
         incidentId: input.incidentId,
         senderRole: "admin",
-        senderName: input.senderName ?? "Admin",
+        // F-05: sender identity is always derived server-side — never trusted from the client
+        senderName: ctx.user?.name || ctx.user?.email || "Admin",
         message: input.message,
         isFromAdmin: true,
       } as any);
@@ -55,7 +57,8 @@ export const incidentCommunicationRouter = router({
   // Get messages for an incident (admin view)
   getMessages: protectedProcedure
     .input(z.object({ incidentId: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      await requireIncidentAccess(ctx.user, input.incidentId);
       const db = await getDb();
       if (!db) return [];
       return db.select()

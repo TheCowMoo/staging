@@ -569,10 +569,31 @@ Key tables with `orgId` for scoping:
 
 ### How Org Isolation is Enforced
 
-The key helper is `getOrgMemberRecord(orgId, userId)` from `server/db.ts`. It checks if a user is a member of an organization. Combined with `getOrgMembershipForUser(userId)`, this is used to:
+**Centralized object-level authorization — `server/_core/authz.ts` (security audit F-02…F-06).**
 
-1. **At Save Time**: Resolve the user's org (via `getOrgMembershipForUser`) and store `orgId` on the record
-2. **At Read/Update Time**: Verify the admin caller shares org membership with the record owner
+Every tRPC procedure that accepts a caller-supplied `facilityId` / `auditId` / `photoId` / `incidentId` / `keyId` calls the matching `require*Access` helper as its first step:
+
+| Helper | Resolves through | Throws on failure |
+|--------|------------------|-------------------|
+| `requireFacilityAccess(user, facilityId)` | facility → org | `NOT_FOUND`, `FORBIDDEN` |
+| `requireAuditAccess(user, auditId)` | audit → (facility →) org | `NOT_FOUND`, `FORBIDDEN` |
+| `requirePhotoAccess(user, photoId)` | photo → audit → org | `NOT_FOUND`, `FORBIDDEN` |
+| `requireIncidentAccess(user, incidentId)` | incident → org | `NOT_FOUND`, `FORBIDDEN` |
+| `requireOrgAccess(user, orgIds)` | `org_members` membership set | `UNAUTHORIZED`, `FORBIDDEN` |
+
+Rules enforced by the helpers:
+
+1. **Membership is the gatekeeper** — the user's org set comes from `org_members` via `getOrgMembershipForUser(userId)`; a target record is accessible only if its org is in that set.
+2. **Platform admins** (`ultra_admin`, `admin`) bypass org checks (platform staff only).
+3. **Legacy rows with `orgId IS NULL`** are accessible only to the owning auditor (for audits) or a platform admin — no membership shortcut.
+4. **At Save Time** — `orgId` is resolved server-side from the caller's memberships and stored; a client-supplied `orgId` is never trusted (see `apiKeys.create`).
+5. **At Read/Update Time** — the `require*Access` helper runs before any DB read/write of the object.
+
+Procedures now guarded: `facilityRouter` (get/update/duplicate/delete), `auditRouter` (all), `threatRouter` (list/create/deleteAll), `reportRouter` (generate/generateMarkdown/getEAP/generateEAP), `photoRouter` (list/upload/delete), `feedbackRouter` (submitFeedback/getFeedbackForAudit/flagQuestion/getFlags), `incidentRouter` (updateStatus/adminLookup/findSimilar/findByPerson/markRepeat + org-scoped searches), `incidentCommunicationRouter` (sendAdminMessage/getMessages), `apiKeys` (create/revoke).
+
+Cross-tenant regression tests: `server/_core/authz.test.ts` (vitest) — acceptance: a foreign `auditId`/`facilityId`/`photoId`/`incidentId` → `FORBIDDEN`.
+
+> Legacy pattern (still valid for reference, superseded by the helpers above): `getOrgMemberRecord(orgId, userId)` + manual role checks in each procedure.
 
 ### Liability Scan Isolation (Reference Implementation)
 
@@ -617,3 +638,17 @@ if (scan.orgId) {
 - `JWT_SECRET` — Token signing secret
 - `OPENAI_API_KEY` — LLM provider key
 - `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET` — File storage
+
+---
+
+## 11. Session Log
+
+### 2026-08-20 — P0 Object-Level Authorization (security audit F-02…F-06)
+
+- Added `server/_core/authz.ts` with centralized `requireOrgAccess` / `requireFacilityAccess` / `requireAuditAccess` / `requirePhotoAccess` / `requireIncidentAccess` helpers (membership-based, platform-admin bypass, legacy-row auditor fallback).
+- Guarded every tRPC procedure taking a caller-supplied `facilityId`/`auditId`/`photoId`/`incidentId`/`keyId` in `server/routers.ts`: facilityRouter (get/update/duplicate/delete), auditRouter (all 14 procedures), threatRouter, reportRouter (generate/generateMarkdown/getEAP/generateEAP), photoRouter (list/upload/delete), feedbackRouter, incidentRouter (updateStatus/adminLookup/findSimilar/findByPerson/markRepeat), apiKeys (create/revoke).
+- F-04: `incident.findSimilar` and `incident.findByPerson` are now org-scoped (db helpers gained an optional `orgId` filter); non-admins must belong to an org to search.
+- F-05: `incidentCommunication.sendAdminMessage` no longer trusts a client-supplied `senderName` — sender identity is derived server-side; both admin message procedures require incident access.
+- F-06: `apiKeys.create` resolves org from the caller's membership (client `orgId` removed from schema); `apiKeys.revoke` verifies the key belongs to the caller, their org, or a platform admin (`getApiKeyById` added to `server/db.ts`).
+- Added `getPhotoById` / `getApiKeyById` to `server/db.ts`.
+- Added cross-tenant regression tests `server/_core/authz.test.ts` (19 cases) — all pass (`npx vitest run`). tsc baseline unchanged at 19 pre-existing errors, 0 new.

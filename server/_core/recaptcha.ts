@@ -27,7 +27,12 @@ export async function verifyRecaptcha(
 
   const secret = ENV.recaptchaSecretKey;
   if (!secret) {
-    console.warn("[reCAPTCHA] RECAPTCHA_SECRET_KEY not configured — skipping verification");
+    // F-16: fail closed in production — bot protection must not silently turn off.
+    if (ENV.isProduction) {
+      console.error("[reCAPTCHA] RECAPTCHA_SECRET_KEY not configured in production — blocking request");
+      return { success: false, skipped: false, reason: "recaptcha_not_configured" };
+    }
+    console.warn("[reCAPTCHA] RECAPTCHA_SECRET_KEY not configured — skipping verification (dev only)");
     return { success: true, skipped: true };
   }
 

@@ -13,14 +13,11 @@ import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
-import { createHash, randomBytes } from "crypto";
+import { randomBytes } from "crypto";
 import { createGhlContact, sendGhlEmail } from "./ghl";
+import { hashPassword, verifyPassword, needsRehash } from "./passwords";
 import { ENV } from "./env";
 import { verifyRecaptcha } from "./recaptcha";
-
-function hashPassword(password: string, salt: string): string {
-  return createHash("sha256").update(salt + password).digest("hex");
-}
 
 function generateToken(): string {
   return randomBytes(32).toString("hex");
@@ -121,10 +118,14 @@ export function registerOAuthRoutes(app: Express) {
         res.status(401).json({ error: "Invalid email or password" });
         return;
       }
-      const hash = hashPassword(password, user.passwordSalt);
-      if (hash !== user.passwordHash) {
+      if (!verifyPassword(password, user.passwordHash, user.passwordSalt)) {
         res.status(401).json({ error: "Invalid email or password" });
         return;
+      }
+      // Progressive upgrade: re-hash legacy SHA-256 hashes with scrypt on login.
+      if (needsRehash(user.passwordHash)) {
+        const { hash, salt } = hashPassword(password);
+        await db.upsertUser({ openId: user.openId, passwordHash: hash, passwordSalt: salt });
       }
       await db.upsertUser({ openId: user.openId, lastSignedIn: new Date() });
       const sessionToken = await sdk.createSessionToken(user.openId, {
@@ -154,8 +155,7 @@ export function registerOAuthRoutes(app: Express) {
         res.status(409).json({ error: "An account with this email already exists" });
         return;
       }
-      const salt = randomBytes(16).toString("hex");
-      const hash = hashPassword(password, salt);
+      const { hash, salt } = hashPassword(password);
       const openId = randomBytes(16).toString("hex");
       await db.upsertUser({
         openId,
@@ -279,8 +279,7 @@ export function registerOAuthRoutes(app: Express) {
     }
     if (!(await requireRecaptcha(req, res, "reset_password"))) return;
     try {
-      const salt = randomBytes(16).toString("hex");
-      const hash = hashPassword(newPassword, salt);
+      const { hash, salt } = hashPassword(newPassword);
       const ok = await db.resetPasswordWithToken(token, hash, salt);
       if (!ok) {
         res.status(400).json({ error: "Invalid or expired reset token" });
