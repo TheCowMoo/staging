@@ -10,6 +10,7 @@
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,11 +26,12 @@ import {
   Sparkles, ClipboardList, Calendar, Play, Clock, Building2,
   ChevronRight, CheckCircle2, Loader2, Eye, Brain, AlertCircle,
   Zap, Info, Users, GitBranch, MessageSquare, FileText, ChevronDown, ChevronUp,
-  RefreshCw, BookOpen, Shield, ShieldAlert, ExternalLink, Target,
+  RefreshCw, BookOpen, Shield, ShieldAlert, Lock, ExternalLink, Target,
   Shuffle, UserCheck, CheckSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import { MICRO_DRILLS, type MicroDrillScenario, type MicroDrillStep2Option } from "../../../shared/microDrillsData";
+import { EXTENDED_DRILLS } from "../../../shared/extendedDrillsData";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DRILL_TYPES = [
@@ -1477,6 +1479,12 @@ function MicroTrainingDrillCard({
 export default function DrillScheduler() {
   const [, navigate] = useLocation();
 
+  const { user } = useAuth();
+  const isSandbox = user?.role === "sandbox";
+  // Sandbox preview: only these drills are viewable; everything else renders locked.
+  const SANDBOX_PREVIEW_MICRO_DRILL_ID = 1;
+  const SANDBOX_PREVIEW_EXTENDED_DRILL_ID = 1;
+
   const [mode, setMode] = useState<"system" | "user">("system");
   const [drillType, setDrillType] = useState<"micro" | "extended">("micro");
   const [industry, setIndustry] = useState("none");
@@ -1582,6 +1590,10 @@ export default function DrillScheduler() {
   };
 
   const selectDrill = (drill: MicroDrillScenario) => {
+    if (isSandbox && drill.id !== SANDBOX_PREVIEW_MICRO_DRILL_ID) {
+      toast.info("This drill is locked in the sandbox environment. Full access requires standard setup.");
+      return;
+    }
     setSelectedDrill(drill);
     resetDrill();
   };
@@ -1650,8 +1662,8 @@ export default function DrillScheduler() {
                       Select a category, choose a drill, and assign it to personnel. Each drill takes 2–3 minutes.
                     </p>
                   </div>
-                  <Button variant="outline" size="sm" onClick={selectRandomDrill} className="gap-1.5">
-                    <Shuffle className="h-3.5 w-3.5" /> Random Drill
+                  <Button variant="outline" size="sm" onClick={selectRandomDrill} disabled={isSandbox} title={isSandbox ? "Locked in sandbox" : undefined} className="gap-1.5">
+                    {isSandbox ? <Lock className="h-3.5 w-3.5" /> : <Shuffle className="h-3.5 w-3.5" />} Random Drill
                   </Button>
                 </div>
 
@@ -1702,25 +1714,36 @@ export default function DrillScheduler() {
                       Select a drill to assign. Each drill has two decision steps and post-scenario considerations.
                     </p>
                   </div>
-                  <Button variant="outline" size="sm" onClick={selectRandomDrill} className="gap-1.5">
-                    <Shuffle className="h-3.5 w-3.5" /> Random Drill
+                  <Button variant="outline" size="sm" onClick={selectRandomDrill} disabled={isSandbox} title={isSandbox ? "Locked in sandbox" : undefined} className="gap-1.5">
+                    {isSandbox ? <Lock className="h-3.5 w-3.5" /> : <Shuffle className="h-3.5 w-3.5" />} Random Drill
                   </Button>
                 </div>
 
                 <div className="grid grid-cols-1 gap-2">
-                  {drillsInCategory.map(d => (
-                    <button
-                      key={d.id}
-                      onClick={() => selectDrill(d)}
-                      className="flex items-center justify-between rounded-lg border p-3 text-left hover:border-primary hover:bg-accent/30 transition-all"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold">Scenario #{d.id}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 break-words">{d.scenario}</p>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
-                    </button>
-                  ))}
+                  {drillsInCategory.map(d => {
+                    const isLocked = isSandbox && d.id !== SANDBOX_PREVIEW_MICRO_DRILL_ID;
+                    return (
+                      <button
+                        key={d.id}
+                        onClick={() => { if (!isLocked) selectDrill(d); }}
+                        className={`flex items-center justify-between rounded-lg border p-3 text-left transition-all ${
+                          isLocked
+                            ? "opacity-40 cursor-not-allowed"
+                            : "hover:border-primary hover:bg-accent/30"
+                        }`}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold">Scenario #{d.id}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 break-words">{d.scenario}</p>
+                        </div>
+                        {isLocked ? (
+                          <Lock className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -1865,6 +1888,55 @@ export default function DrillScheduler() {
                 )}
               </div>
             )}
+          </TabsContent>
+
+          {/* ── Extended Drills tab ── */}
+          <TabsContent value="extended-drills" className="space-y-6 mt-4">
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-bold">Extended Drills</h2>
+                <p className="text-sm text-muted-foreground">
+                  Facilitator-led, multi-decision-point scenarios (10–15 min each). Run them live with your team.
+                </p>
+              </div>
+              <div className="grid gap-3">
+                {EXTENDED_DRILLS.map((drill) => {
+                  const isLocked = isSandbox && drill.id !== SANDBOX_PREVIEW_EXTENDED_DRILL_ID;
+                  return (
+                    <button
+                      key={drill.id}
+                      onClick={() => { if (!isLocked) navigate(`/extended-drills/${drill.id}`); }}
+                      className={`flex items-center justify-between rounded-lg border p-4 text-left transition-all ${
+                        isLocked
+                          ? "opacity-40 cursor-not-allowed"
+                          : "hover:border-primary hover:bg-accent/30"
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-blue-100 text-blue-700 border-blue-200">{drill.coreCompetency}</Badge>
+                          <Badge variant="outline" className="text-xs">
+                            <Clock className="h-2.5 w-2.5 mr-1" />{drill.durationMinutes} min
+                          </Badge>
+                        </div>
+                        <p className="font-semibold mt-1 break-words">{drill.title}</p>
+                      </div>
+                      {isLocked ? (
+                        <Lock className="h-5 w-5 text-muted-foreground shrink-0 ml-3" />
+                      ) : (
+                        <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0 ml-3" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              {EXTENDED_DRILLS.length === 0 && (
+                <div className="text-center py-12 text-muted-foreground">
+                  <BookOpen className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                  <p className="font-medium">No extended drills available</p>
+                </div>
+              )}
+            </div>
           </TabsContent>
 
           {/* ── Generate tab ── */}

@@ -132,7 +132,7 @@ function Router() {
               <Route path="/drills/:id/run" component={DrillRunner} />
               <Route path="/drills/:id/debrief" component={DrillAfterAction} />
               <Route path="/ras" component={EmergencyAlerts} />
-              <Route path="/ras/activate"><SandboxBlocked><RASActivation /></SandboxBlocked></Route>
+              <Route path="/ras/activate" component={RASActivation} />
               <Route path="/staff-checkin" component={StaffCheckin} />
               <Route path="/training-modules"><SandboxBlocked><TrainingModules /></SandboxBlocked></Route>
               <Route path="/training/:id"><SandboxBlocked><TrainingPlayer /></SandboxBlocked></Route>

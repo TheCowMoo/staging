@@ -36,8 +36,9 @@ const FS = {
   orange: "#F0AD4E",
 };
 
-// Five Stones logo (same source used by AppLayout)
-const LOGO_URL = "https://pursuitpathways.com/content/logo%20five%20stones.png";
+// Self-hosted brand logos (served from client/public)
+const LOGO_URL = "/logo-five-stones.png";
+const PURSUIT_LOGO_URL = "/PursuitPathwaysLogo.png";
 
 const CATEGORIES: { key: CategoryKey; scoreKey: string; label: string }[] = [
   { key: "planning_documentation", scoreKey: "planningDocumentation", label: "Planning & Documentation" },
@@ -74,6 +75,7 @@ const OWNER_OPTIONS = [
   "IT",
   "Designated Safety Coordinator",
   "Not Assigned",
+  "Other",
 ];
 
 type StatusLevel = "complete" | "partial" | "not_in_place";
@@ -245,10 +247,12 @@ const REPORT_CSS = `
 }
 .advisory-root .report-footer .footer-page { font-weight: 600; color: var(--fs-navy); }
 .advisory-root .logo-band {
-  background: #4B5563; border-radius: 8px; display: flex; justify-content: center; align-items: center;
-  padding: 18px 16px; margin: 0 0 18px;
+  background: #4B5563; border-radius: 8px; display: flex; justify-content: flex-start; align-items: center;
+  padding: 14px 18px; margin: 0 0 18px;
 }
-.advisory-root .logo-band img { max-width: 280px; height: auto; display: block; }
+.advisory-root .logo-brand { display: flex; align-items: center; gap: 18px; }
+.advisory-root .logo-band img.logo-pursuit { height: 88px; width: auto; display: block; }
+.advisory-root .logo-band img.logo-fivestones { height: 52px; width: auto; display: block; }
 .advisory-root .header-section { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 3px solid var(--fs-mid-blue); }
 .advisory-root .brand-wordmark { font-weight: 700; font-size: 20px; letter-spacing: 3px; color: var(--fs-navy); text-transform: uppercase; margin-bottom: 12px; }
 .advisory-root h1, .advisory-root h2, .advisory-root h3, .advisory-root h4, .advisory-root th { color: var(--fs-navy); margin: 0; }
@@ -413,6 +417,7 @@ export default function AdvisoryReport() {
     for (const c of PROGRAM_COMPONENTS) out[c.label] = "";
     return out;
   });
+  const [customOwners, setCustomOwners] = useState<Record<string, string>>({});
   const [componentStatus, setComponentStatus] = useState<Record<string, StatusLevel>>(() => {
     const out: Record<string, StatusLevel> = {};
     for (const c of PROGRAM_COMPONENTS) {
@@ -575,7 +580,10 @@ export default function AdvisoryReport() {
       <div className="page">
         <div className="header-section">
           <div className="logo-band">
-            <img src={LOGO_URL} alt="Five Stones Technology" />
+            <div className="logo-brand">
+              <img src={PURSUIT_LOGO_URL} alt="Pursuit Pathways" className="logo-pursuit" />
+              <img src={LOGO_URL} alt="Five Stones Technology" className="logo-fivestones" />
+            </div>
           </div>
           <h1>Executive Advisory Report</h1>
           <h3 style={{ color: "var(--fs-dark-teal)", marginTop: 5 }}>
@@ -766,7 +774,7 @@ export default function AdvisoryReport() {
               <th style={{ width: "30%" }}>Program Component</th>
               <th style={{ width: "18%" }}>Current Owner</th>
               <th style={{ width: "18%" }}>Status</th>
-              <th>Executive Observation</th>
+              <th>Advisor Observation</th>
             </tr>
           </thead>
           <tbody>
@@ -783,6 +791,16 @@ export default function AdvisoryReport() {
                       <option key={o} value={o}>{o}</option>
                     ))}
                   </select>
+                  {componentOwners[c.label] === "Other" && (
+                    <div className="mt-1">
+                      <input
+                        type="text"
+                        value={customOwners[c.label] ?? ""}
+                        onChange={(e) => setCustomOwners((prev) => ({ ...prev, [c.label]: e.target.value }))}
+                        placeholder="Specify owner..."
+                      />
+                    </div>
+                  )}
                 </td>
                 <td>
                   <button
@@ -798,7 +816,7 @@ export default function AdvisoryReport() {
                     rows={2}
                     value={componentNotes[c.label] ?? ""}
                     onChange={(e) => setComponentNotes((prev) => ({ ...prev, [c.label]: e.target.value }))}
-                    placeholder="Executive observation..."
+                    placeholder="Advisor observation..."
                   />
                 </td>
               </tr>

@@ -139,6 +139,7 @@ function ActivationConfirmModal({
 
 export default function RASActivation() {
   const { user } = useAuth();
+  const isSandbox = user?.role === "sandbox";
   const [, navigate] = useLocation();
   const [facilityId, setFacilityId] = useState<number | null>(null);
   const [pending, setPending] = useState<"lockdown" | "lockout" | "fire" | "weather" | null>(null);
@@ -207,7 +208,13 @@ export default function RASActivation() {
           </div>
           <Button
             size="sm"
-            onClick={() => window.open("/api/ras/installer/FiveStonesRASAlert.exe", "_blank")}
+            onClick={() => {
+              if (isSandbox) {
+                toast.info("Installer download is locked for sandbox mode. Full access requires standard setup.");
+                return;
+              }
+              window.open("/api/ras/installer/FiveStonesRASAlert.exe", "_blank");
+            }}
           >
             <Download className="h-4 w-4 mr-1.5" />
             Download Installer
@@ -244,7 +251,13 @@ export default function RASActivation() {
           return (
             <button
               key={block.type}
-              onClick={() => setPending(block.type)}
+              onClick={() => {
+                if (isSandbox) {
+                  toast.info("This feature is locked for sandbox mode. Full access requires standard setup.");
+                  return;
+                }
+                setPending(block.type);
+              }}
               className={`group relative flex flex-col items-center justify-center gap-4 rounded-2xl ${block.solidBgClass} text-white shadow-lg transition-all p-8 sm:p-10 focus:outline-none focus:ring-2 ${block.ringColor} focus:ring-offset-2 min-h-[200px] sm:min-h-[240px]`}
             >
               <div className={`rounded-2xl bg-black/15 p-4 sm:p-5 group-hover:scale-110 transition-transform`}>

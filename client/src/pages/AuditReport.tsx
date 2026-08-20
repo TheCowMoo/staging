@@ -22,6 +22,16 @@ import { generateRecommendedActions, getCategoryToRecommendationMap, getActionPr
 import { toast } from "sonner";
 import { HeroScoreCard } from "@/components/assessment";
 import { NewAuditButton } from "@/components/NewAuditButton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const LIKELIHOOD_OPTIONS = Object.keys(LIKELIHOOD_VALUES);
 const IMPACT_OPTIONS = Object.keys(IMPACT_VALUES);
@@ -272,6 +282,7 @@ export default function AuditReport() {
   const [eapGenError, setEapGenError] = useState<string | null>(null);
   const [pdfDownloading, setPdfDownloading] = useState(false);
   const [topBarPdfDownloading, setTopBarPdfDownloading] = useState(false);
+  const [showReopenConfirm, setShowReopenConfirm] = useState(false);
   const { data: eapData, isLoading: eapLoading, refetch: refetchEAP } = trpc.report.getEAP.useQuery(
     { auditId },
     {
@@ -517,11 +528,7 @@ export default function AuditReport() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                if (confirm("Reopen this audit to edit responses? The completed report will be cleared until you re-complete the audit.")) {
-                  reopenAudit.mutate({ auditId });
-                }
-              }}
+              onClick={() => setShowReopenConfirm(true)}
               disabled={reopenAudit.isPending}
               className="flex items-center gap-2"
             >
@@ -1466,6 +1473,31 @@ export default function AuditReport() {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Reopen audit confirmation (in-app dialog) */}
+        <AlertDialog open={showReopenConfirm} onOpenChange={setShowReopenConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Reopen this audit?</AlertDialogTitle>
+              <AlertDialogDescription>
+                The completed report will be cleared until you re-complete the audit.
+                You'll be able to edit responses after reopening.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-amber-600 hover:bg-amber-700"
+                onClick={() => {
+                  setShowReopenConfirm(false);
+                  reopenAudit.mutate({ auditId });
+                }}
+              >
+                Reopen Audit
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
   );

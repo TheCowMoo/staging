@@ -42,14 +42,14 @@ function getScanRiskStyle(status: string | null | undefined) {
 
 function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: number | string; sub?: string }) {
   return (
-    <div className="metal-card p-5">
+    <div className="bg-card border border-border rounded-xl shadow-sm p-5">
         <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm uppercase tracking-[0.16em] text-muted-foreground mb-2">{label}</p>
-          <p className="metric-number">{value}</p>
+          <p className="text-sm text-muted-foreground mb-2">{label}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-foreground">{value}</p>
           {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
         </div>
-        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary dark:text-[#C9A86A] shadow-inner shadow-black/5">
+        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary dark:text-[#C9A86A] shrink-0">
           {icon}
         </div>
       </div>
@@ -71,27 +71,27 @@ export default function Dashboard() {
   return (
     <ProtectedLayout>
 
-        <div className="p-6 max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Header */}
-        <div className="flex flex-col gap-5 mb-8">
+        <div className="flex flex-col gap-4 mb-8">
           <div>
-            <h1 className="dashboard-title text-3xl sm:text-4xl">Dashboard</h1>
-            <p className="text-sm text-muted-foreground mt-2 max-w-2xl">Overview of your facility safety assessments</p>
+            <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
+            <p className="text-sm text-muted-foreground mt-1 max-w-2xl">Overview of your facility safety assessments</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <Button variant="outline" size="lg" asChild>
+            <Button variant="outline" asChild>
               <Link href="/liability-scan" className="flex items-center gap-2"><ShieldAlert size={16} /> Run Scan</Link>
             </Button>
-            <Button size="lg" asChild>
+            <Button asChild>
               <Link href="/facilities/new" className="flex items-center gap-2"><Plus size={16} /> New Facility</Link>
             </Button>
           </div>
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="metal-card p-5 h-28">
+              <div key={i} className="bg-card border border-border rounded-xl shadow-sm p-5 h-28">
                 <div className="skeleton-shimmer h-4 w-20 mb-4" />
                 <div className="skeleton-shimmer h-8 w-16 mt-2" />
               </div>
@@ -100,7 +100,7 @@ export default function Dashboard() {
         ) : (
           <>
             {/* Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
               <StatCard icon={<Building2 size={18} />} label="Total Facilities" value={data?.totalFacilities ?? 0} />
               <StatCard icon={<ClipboardList size={18} />} label="Total Audits" value={data?.totalAudits ?? 0} />
               <StatCard icon={<CheckCircle2 size={18} />} label="Completed" value={data?.completedAudits ?? 0} />
@@ -108,10 +108,10 @@ export default function Dashboard() {
               <StatCard icon={<ShieldAlert size={18} />} label="Liability Scans" value={allScans ?? 0} />
             </div>
 
-            <div className="grid lg:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Risk Distribution */}
-              <div className="metal-card p-5">
-                <h2 className="section-heading mb-4">Risk Distribution</h2>
+              <div className="bg-card border border-border rounded-xl shadow-sm p-5">
+                <h2 className="text-sm font-semibold mb-4">Risk Distribution</h2>
                 {data?.completedAudits === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Shield size={32} className="mx-auto mb-2 opacity-30" />
@@ -143,9 +143,9 @@ export default function Dashboard() {
               </div>
 
               {/* Recent Audits */}
-              <div className="metal-card p-5">
+              <div className="bg-card border border-border rounded-xl shadow-sm p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="section-heading">Recent Audits</h2>
+                  <h2 className="text-sm font-semibold">Recent Audits</h2>
                   <Button variant="ghost" size="sm" asChild>
                     <Link href="/audits" className="flex items-center gap-1 text-xs">View All <ArrowRight size={12} /></Link>
                   </Button>
@@ -195,9 +195,9 @@ export default function Dashboard() {
               </div>
 
               {/* Recent Scans */}
-              <div className="metal-card p-5">
+              <div className="bg-card border border-border rounded-xl shadow-sm p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="section-heading">Recent Scans</h2>
+                  <h2 className="text-sm font-semibold">Recent Scans</h2>
                   <Button variant="ghost" size="sm" asChild>
                     <Link href="/scan-history" className="flex items-center gap-1 text-xs">View All <ArrowRight size={12} /></Link>
                   </Button>
@@ -265,9 +265,9 @@ export default function Dashboard() {
 
             {/* Facilities quick access */}
             {data?.facilities && data.facilities.length > 0 && (
-              <div className="mt-6 metal-card p-5">
+              <div className="mt-6 bg-card border border-border rounded-xl shadow-sm p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="section-heading">Your Facilities</h2>
+                  <h2 className="text-sm font-semibold">Your Facilities</h2>
                   <Button variant="ghost" size="sm" asChild>
                     <Link href="/facilities" className="flex items-center gap-1 text-xs">Manage <ArrowRight size={12} /></Link>
                   </Button>

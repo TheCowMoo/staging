@@ -272,10 +272,14 @@ function ActivationScreen({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Lockdown */}
         <button
-          onClick={() => setPending("lockdown")}
-          disabled={isSandbox}
-          title={isSandbox ? "Disabled in sandbox mode" : undefined}
-          className="group relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-red-500/30 bg-red-500/5 hover:bg-red-500/10 hover:border-red-500/60 transition-all p-8 text-left focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-red-500/5 disabled:hover:border-red-500/30"
+          onClick={() => {
+            if (isSandbox) {
+              toast.info("This feature is locked for sandbox mode. Full access requires standard setup.");
+              return;
+            }
+            setPending("lockdown");
+          }}
+          className="group relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-red-500/30 bg-red-500/5 hover:bg-red-500/10 hover:border-red-500/60 transition-all p-8 text-left focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
         >
           <div className="rounded-full bg-red-600 p-4 group-hover:scale-105 transition-transform">
             <Lock className="h-8 w-8 text-white" />
@@ -290,10 +294,14 @@ function ActivationScreen({
 
         {/* Lockout */}
         <button
-          onClick={() => setPending("lockout")}
-          disabled={isSandbox}
-          title={isSandbox ? "Disabled in sandbox mode" : undefined}
-          className="group relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-orange-500/30 bg-orange-500/5 hover:bg-orange-500/10 hover:border-orange-500/60 transition-all p-8 text-left focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-orange-500/5 disabled:hover:border-orange-500/30"
+          onClick={() => {
+            if (isSandbox) {
+              toast.info("This feature is locked for sandbox mode. Full access requires standard setup.");
+              return;
+            }
+            setPending("lockout");
+          }}
+          className="group relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-orange-500/30 bg-orange-500/5 hover:bg-orange-500/10 hover:border-orange-500/60 transition-all p-8 text-left focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
         >
           <div className="rounded-full bg-orange-600 p-4 group-hover:scale-105 transition-transform">
             <ShieldAlert className="h-8 w-8 text-white" />

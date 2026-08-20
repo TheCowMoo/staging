@@ -49,11 +49,11 @@ function StatCard({ icon, label, value, sub, trend, trendUp }: {
   trendUp?: boolean;
 }) {
   return (
-    <div className="metal-card p-5">
+    <div className="bg-card border border-border rounded-xl shadow-sm p-5">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-sm uppercase tracking-[0.16em] text-muted-foreground mb-2">{label}</p>
-          <p className="metric-number text-2xl sm:text-3xl">{value}</p>
+          <p className="text-sm text-muted-foreground mb-2">{label}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-foreground">{value}</p>
           {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
           {trend && (
             <div className={`flex items-center gap-1 mt-2 text-xs ${trendUp ? "text-green-600" : "text-red-500"}`}>
@@ -62,7 +62,7 @@ function StatCard({ icon, label, value, sub, trend, trendUp }: {
             </div>
           )}
         </div>
-        <div className="w-12 h-12 rounded-xl bg-[#0B1F33]/5 flex items-center justify-center text-[#0B1F33] shadow-inner shadow-black/5 shrink-0">
+        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
           {icon}
         </div>
       </div>
@@ -275,7 +275,7 @@ export default function AnalyticsDashboard() {
 
   return (
 
-      <div className="space-y-6 px-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Sandbox notice */}
         {isSandbox && (
           <div className="rounded-md border border-sky-300 bg-sky-50/70 px-4 py-3 text-sm text-sky-800">

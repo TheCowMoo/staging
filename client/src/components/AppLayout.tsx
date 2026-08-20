@@ -19,7 +19,7 @@ import { PrivacyPolicyModal } from "@/components/PrivacyPolicyModal";
 import { NotificationBell } from "@/components/NotificationBell";
 import { toast } from "sonner";
 
-const LOGO_URL = "https://pursuitpathways.com/content/logo%20five%20stones.png";
+const LOGO_URL = "/logo-five-stones.png";
 
 interface NavItem {
   href: string;
