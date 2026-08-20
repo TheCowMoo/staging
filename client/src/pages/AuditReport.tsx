@@ -569,7 +569,13 @@ export default function AuditReport() {
                     if (attempt < MAX_RETRIES) await new Promise(r => setTimeout(r, 1500));
                   }
                 }
-                if (lastErr) toast.error("EAP PDF generation failed. Please try again.");
+                if (lastErr) {
+                  toast.error(
+                    /No EAP has been generated/i.test(lastErr.message)
+                      ? "Please generate the Emergency Action Plan first, then download the PDF."
+                      : "EAP PDF generation failed. Please try again."
+                  );
+                }
                 setTopBarPdfDownloading(false);
               }}
             >
@@ -1244,7 +1250,13 @@ export default function AuditReport() {
                               if (attempt < MAX_RETRIES) await new Promise(r => setTimeout(r, 1500));
                             }
                           }
-                          if (lastErr) toast.error("Report generation failed. Please try again.");
+                          if (lastErr) {
+                            toast.error(
+                              /No EAP has been generated/i.test(lastErr.message)
+                                ? "Please generate the Emergency Action Plan first, then download the PDF."
+                                : "Report generation failed. Please try again."
+                            );
+                          }
                           setPdfDownloading(false);
                         }}
                       >

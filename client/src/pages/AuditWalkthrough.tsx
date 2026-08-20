@@ -311,10 +311,18 @@ export default function AuditWalkthrough() {
   ).length;
   const totalInCategory = visibleQuestions.filter((q) => q.inputType === "scored").length;
 
-  const totalAnswered = Object.keys(responses).filter((k) => responses[k]?.primaryResponse || responses[k]?.response).length;
-  const totalQuestions = categories.reduce(
-    (sum, c) => sum + c.questions.filter((q) => q.inputType === "scored").length, 0
-  );
+  // Progress totals are aligned with the sidebar: info-type categories (Facility
+  // Profile, EAP Coordinator Contacts) are auto-filled from the facility record and
+  // count as complete; scored categories count only their scored questions.
+  const infoQuestionTotal = categories
+    .filter((c) => c.questions.every((q) => q.inputType === "info"))
+    .reduce((sum, c) => sum + c.questions.length, 0);
+  const totalAnswered =
+    Object.keys(responses).filter((k) => responses[k]?.primaryResponse || responses[k]?.response).length
+    + infoQuestionTotal;
+  const totalQuestions =
+    categories.reduce((sum, c) => sum + c.questions.filter((q) => q.inputType === "scored").length, 0)
+    + infoQuestionTotal;
 
   const getFacilityFieldValue = (field?: string): string => {
     if (!field || !facility) return "Not recorded";
@@ -913,15 +921,15 @@ export default function AuditWalkthrough() {
             ) : !showAttachments && activeCategory ? (
               <>
                 {/* Breadcrumb */}
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Link href={`/facilities/${audit?.facilityId}`} className="hover:text-primary">
+                <div className="flex items-center justify-between gap-4 mb-2">
+                  <div className="flex items-center gap-2 text-xs leading-none text-muted-foreground whitespace-nowrap min-w-0">
+                    <Link href={`/facilities/${audit?.facilityId}`} className="hover:text-primary truncate min-w-0 max-w-[180px]">
                       {facility?.name ?? "Facility"}
                     </Link>
-                    <ChevronRight size={12} />
-                    <span>Assessment</span>
-                    <ChevronRight size={12} />
-                    <span className="text-foreground font-medium">{activeCategory.name}</span>
+                    <ChevronRight size={12} className="shrink-0" />
+                    <span className="shrink-0">Assessment</span>
+                    <ChevronRight size={12} className="shrink-0" />
+                    <span className="text-foreground font-medium truncate min-w-0 max-w-[240px]">{activeCategory.name}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-muted-foreground">{answeredInCategory} / {totalInCategory} answered</span>

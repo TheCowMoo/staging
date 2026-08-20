@@ -135,6 +135,10 @@ export default function BtamIntake() {
 
   const handleConfirmSubmit = () => {
     setShowConfirm(false);
+    if (form.concernDescription.trim().length < 10) {
+      toast.error("Please describe the concern in at least 10 characters before submitting.");
+      return;
+    }
     createReferral.mutate({
       reporterRole: (form.isAnonymous ? "anonymous" : form.reporterRole || "anonymous") as any,
       concernDescription: form.concernDescription,
@@ -566,6 +570,9 @@ export default function BtamIntake() {
                 rows={5}
                 className="mt-1 resize-none"
               />
+              <p className={`text-xs mt-1 ${form.concernDescription.trim().length >= 10 ? "text-muted-foreground" : "text-amber-600"}`}>
+                {form.concernDescription.trim().length} / 10 characters minimum
+              </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -735,7 +742,7 @@ export default function BtamIntake() {
               disabled={
                 (step === 0 && form.immediateDanger !== false) ||
                 (step === 2 && !form.subjectType) ||
-                (step === 3 && !form.concernDescription)
+                (step === 3 && form.concernDescription.trim().length < 10)
               }
               onClick={() => setStep(step + 1)}
             >
