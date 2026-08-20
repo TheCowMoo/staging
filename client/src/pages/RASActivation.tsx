@@ -153,7 +153,9 @@ export default function RASActivation() {
   }, [facilities, facilityId]);
 
   const rasRole = (user as Record<string, unknown> | null)?.rasRole as string | null | undefined;
-  if (!user || !rasRole) {
+  // Sandbox users preview the activation screen (buttons are toast-blocked);
+  // everyone else must have a RAS role to use RAS.
+  if (!user || (!rasRole && !isSandbox)) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-12">
         <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
@@ -170,7 +172,7 @@ export default function RASActivation() {
     );
   }
 
-  if (!facilityId) {
+  if (!facilityId && !isSandbox) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-12">
         <div className="text-center py-16 text-muted-foreground">
@@ -192,6 +194,17 @@ export default function RASActivation() {
           Select an alert type to immediately notify all personnel. Push notifications will be sent to all registered devices.
         </p>
       </div>
+
+      {/* Sandbox view-only notice */}
+      {isSandbox && (
+        <div className="mb-8 rounded-md border border-sky-300 bg-sky-50/70 px-4 py-3 text-sm text-sky-800">
+          <p className="font-medium flex items-center gap-2"><Lock className="h-4 w-4" /> Sandbox mode — view only</p>
+          <p className="mt-1 text-sky-700/80">
+            You can preview how the Response Activation System works, but you cannot initiate alerts or download
+            the installer, and you will not receive emergency notifications in the sandbox.
+          </p>
+        </div>
+      )}
 
       {/* Download Desktop Alert (shown to all users with RAS role) */}
       <div className="mb-8 p-5 rounded-lg border border-border bg-card">

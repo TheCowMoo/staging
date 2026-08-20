@@ -20,6 +20,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { loadScanSession } from "@/lib/scanSession";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { categoryInsight } from "@/components/assessment/CategoryBreakdownBar";
 import type { CategoryKey, CategoryScores } from "../../../shared/assessmentEngine";
 
@@ -368,6 +369,9 @@ export default function AdvisoryReport() {
   const session = useMemo(() => loadScanSession(), []);
   const [, navigate] = useLocation();
   const result = session.result;
+  // Only platform advisors may see/export the admin-only report (Discovery Call Notes).
+  const { user } = useAuth();
+  const isAdvisor = user?.role === "ultra_admin" || user?.role === "admin";
 
   // ── Auto-populated intake fields (editable before export) ──────────────
   const [organization, setOrganization] = useState(session.organization);
@@ -559,13 +563,15 @@ export default function AdvisoryReport() {
   }
 
   return (
-    <div ref={rootRef} className={`advisory-root${exportMode === "client" ? " client-mode" : ""}`}>
+    <div ref={rootRef} className={`advisory-root${exportMode === "client" || !isAdvisor ? " client-mode" : ""}`}>
       <style>{REPORT_CSS}</style>
 
       {/* Floating export buttons (hidden when printing) */}
-      <button className="print-btn no-print" onClick={() => exportPdf("advisor")}>
-        Save Advisor PDF
-      </button>
+      {isAdvisor && (
+        <button className="print-btn no-print" onClick={() => exportPdf("advisor")}>
+          Save Advisor PDF
+        </button>
+      )}
       <button className="print-btn client-export no-print" onClick={() => exportPdf("client")}>
         Save Client PDF
       </button>
