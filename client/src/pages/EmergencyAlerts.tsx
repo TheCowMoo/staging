@@ -245,7 +245,7 @@ function ActivationScreen({
   onActivated,
   isSandbox,
 }: {
-  facilityId: number;
+  facilityId?: number;
   onActivated: () => void;
   isSandbox?: boolean;
 }) {
@@ -253,7 +253,8 @@ function ActivationScreen({
 
   return (
     <div className="space-y-6">
-      <PushEnrollmentBanner />
+      {/* Sandbox users never enroll a device — no push enrollment prompt */}
+      {!isSandbox && <PushEnrollmentBanner />}
 
       <div className="rounded-lg border border-border bg-card p-6 space-y-2">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -315,7 +316,7 @@ function ActivationScreen({
         </button>
       </div>
 
-      {pending && (
+      {pending && facilityId && (
         <ActivationModal
           alertType={pending}
           facilityId={facilityId}
@@ -949,6 +950,7 @@ export default function EmergencyAlerts() {
   }, [facilities, facilityId]);
 
   const rasRole = (user as Record<string, unknown> | null)?.rasRole as string | null | undefined;
+  const isSandbox = user?.role === "sandbox";
 
   const { data: activeAlert, isLoading: alertLoading, refetch } = trpc.ras.getActiveAlert.useQuery(
     { facilityId: facilityId ?? undefined },
@@ -983,7 +985,8 @@ export default function EmergencyAlerts() {
             </DialogTitle>
             <DialogDescription>
               You can explore how this system works. Full access to use it comes with our standard setup.
-              In the sandbox, you cannot initiate any emergency communication or download the installer.
+              In the sandbox, you cannot initiate emergency communications or download the installer,
+              and you will not receive any emergency notifications.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -992,7 +995,7 @@ export default function EmergencyAlerts() {
         </DialogContent>
       </Dialog>
 
-      {rasRole ? (
+      {rasRole || isSandbox ? (
         <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
       {/* Sandbox view-only notice */}
       {user.role === "sandbox" && (
@@ -1000,7 +1003,8 @@ export default function EmergencyAlerts() {
           <p className="font-medium flex items-center gap-2"><Lock className="h-4 w-4" /> Sandbox mode — view only</p>
           <p className="mt-1 text-sky-700/80">
             You can explore how the Response Activation System works, but initiating emergency communications
-            and downloading the installer require standard setup. Full access comes with a paid plan.
+            and downloading the installer require standard setup, and you will not receive emergency
+            notifications in the sandbox. Full access comes with a paid plan.
           </p>
         </div>
       )}
@@ -1039,7 +1043,12 @@ export default function EmergencyAlerts() {
 
       {/* No active alert — admin/responder activation screen */}
       {!activeAlert && (rasRole === "admin" || rasRole === "responder") && facilityId && (
-        <ActivationScreen facilityId={facilityId} onActivated={() => refetch()} isSandbox={user?.role === "sandbox"} />
+        <ActivationScreen facilityId={facilityId} onActivated={() => refetch()} />
+      )}
+
+      {/* No active alert — sandbox preview: show the buttons but keep them non-functional */}
+      {!activeAlert && isSandbox && (
+        <ActivationScreen facilityId={facilityId ?? undefined} onActivated={() => refetch()} isSandbox />
       )}
 
       {/* No active alert — staff standby */}

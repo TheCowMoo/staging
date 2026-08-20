@@ -140,7 +140,9 @@ export const rasRouter = router({
   }),
 
   // ── Save/update push subscription for current device ──────────────────────
-  savePushSubscription: paidProcedure
+  // Sandbox / demo users never enroll a device — they must not receive emergency
+  // notifications. Blocking enrollment here is the authoritative guard.
+  savePushSubscription: paidSandboxRestrictedProcedure
     .input(z.object({
       subscription: z.object({
         endpoint: z.string().url(),
