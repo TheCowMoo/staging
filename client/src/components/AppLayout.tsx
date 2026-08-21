@@ -25,8 +25,8 @@ interface NavItem {
   href: string;
   label: string;
   icon: React.ReactNode;
-  /** "coming-soon" = feature not built yet; "paid" = requires paid plan; "sandbox" = hidden for sandbox users */
-  locked?: "coming-soon" | "paid" | "sandbox";
+  /** "locked" = unavailable for everyone; "coming-soon" = feature not built yet; "paid" = requires paid plan; "sandbox" = hidden for sandbox users */
+  locked?: "locked" | "coming-soon" | "paid" | "sandbox";
   /** Show a "Limited" badge for sandbox users (view-only / partial access) */
   sandboxLimited?: boolean;
   beta?: boolean;
@@ -145,6 +145,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const NavLink = ({ item }: { item: NavItem }) => {
     const isActive = isActiveHref(item.href);
+
+    // Fully locked for every role (including ultra admins) - never clickable.
+    if (item.locked === "locked") {
+      return (
+        <div
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/40 cursor-not-allowed select-none transition-colors"
+          title="Locked"
+          onClick={() => toast.info("This feature is currently locked.")}
+        >
+          {item.icon}
+          <span className="flex-1">{item.label}</span>
+          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-sidebar-foreground/10 text-sidebar-foreground/60 border border-sidebar-foreground/20 leading-none">Locked</span>
+          <Lock size={10} className="text-sidebar-foreground/40 flex-shrink-0" />
+        </div>
+      );
+    }
 
     // Sandbox users: fully-blocked items (e.g. Training) show a lock icon.
     if (item.locked === "sandbox" && isSandbox) {
@@ -292,7 +308,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       items: [
         { href: "/report-incident", label: "Employee Incident Reporting", icon: <FilePlus size={15} />,    locked: isPaid ? undefined : "paid" },
         { href: "/incidents",       label: "Incident Reports",   icon: <AlertCircle size={15} />, locked: isPaid ? undefined : "paid" },
-        { href: "/violent-incident-log", label: "Violent Incident Report Log", icon: <ClipboardList size={15} />, locked: "coming-soon" },
+        { href: "/violent-incident-log", label: "Violent Incident Report Log", icon: <ClipboardList size={15} />, locked: "locked" },
       ],
     },
     {
