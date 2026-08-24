@@ -238,7 +238,7 @@ const REPORT_CSS = `
   background: #4B5563; border-radius: 8px; display: flex; justify-content: center; align-items: center;
   padding: 14px 18px; margin: 0 0 18px;
 }
-.advisory-root .logo-pursuit { height: 30px; width: auto; opacity: 0.5; position: absolute; top: 0; left: 0; }
+.advisory-root .logo-pursuit { height: 30px; width: auto; opacity: 0.5; position: absolute; top: 8px; left: 8px; }
 .advisory-root .logo-band img.logo-fivestones { height: 90px; width: auto; display: block; }
 .advisory-root .header-section { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 3px solid var(--fs-mid-blue); }
 .advisory-root .brand-wordmark { font-weight: 700; font-size: 20px; letter-spacing: 3px; color: var(--fs-navy); text-transform: uppercase; margin-bottom: 12px; }
