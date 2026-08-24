@@ -235,11 +235,10 @@ const REPORT_CSS = `
 }
 .advisory-root .report-footer .footer-page { font-weight: 600; color: var(--fs-navy); }
 .advisory-root .logo-band {
-  background: #4B5563; border-radius: 8px; display: flex; justify-content: flex-start; align-items: center;
+  background: #4B5563; border-radius: 8px; display: flex; justify-content: center; align-items: center;
   padding: 14px 18px; margin: 0 0 18px;
 }
-.advisory-root .logo-brand { display: flex; align-items: flex-start; gap: 18px; }
-.advisory-root .logo-band img.logo-pursuit { height: 26px; width: auto; display: block; opacity: 0.5; }
+.advisory-root .logo-pursuit { height: 26px; width: auto; display: block; opacity: 0.5; margin-bottom: 10px; }
 .advisory-root .logo-band img.logo-fivestones { height: 90px; width: auto; display: block; }
 .advisory-root .header-section { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 3px solid var(--fs-mid-blue); }
 .advisory-root .brand-wordmark { font-weight: 700; font-size: 20px; letter-spacing: 3px; color: var(--fs-navy); text-transform: uppercase; margin-bottom: 12px; }
@@ -568,11 +567,9 @@ export default function AdvisoryReport() {
       {/* PAGE 1: INTAKE & SCAN DATA */}
       <div className="page">
         <div className="header-section">
+          <img src={PURSUIT_LOGO_URL} alt="Pursuit Pathways" className="logo-pursuit" />
           <div className="logo-band">
-            <div className="logo-brand">
-              <img src={PURSUIT_LOGO_URL} alt="Pursuit Pathways" className="logo-pursuit" />
-              <img src={LOGO_URL} alt="Five Stones Technology" className="logo-fivestones" />
-            </div>
+            <img src={LOGO_URL} alt="Five Stones Technology" className="logo-fivestones" />
           </div>
           <h1>Executive Advisory Report</h1>
           <h3 style={{ color: "var(--fs-dark-teal)", marginTop: 5 }}>
