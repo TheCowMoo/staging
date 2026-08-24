@@ -195,19 +195,6 @@ const DEFAULT_ROI_LINES: RoiLine[] = [
   { id: "roi-total", label: "Total Estimated Annual Value", value: "", total: true },
 ];
 
-interface CapacityLine {
-  id: string;
-  label: string;   // "Leadership time returned"
-  value: string;   // hours number
-  unit: string;    // "hours/year"
-}
-
-const DEFAULT_CAPACITY: CapacityLine[] = [
-  { id: "cap-1", label: "Leadership time returned", value: "", unit: "hours/year" },
-  { id: "cap-2", label: "Administrative time reduced", value: "", unit: "hours/year" },
-  { id: "cap-3", label: "Operational efficiency gained", value: "", unit: "hours/year" },
-];
-
 const DEFAULT_ROI_NOTE =
   "Based on conservative estimates generated through the Pursuit Pathways ROI Calculator using client-provided information.";
 
@@ -251,9 +238,9 @@ const REPORT_CSS = `
   background: #4B5563; border-radius: 8px; display: flex; justify-content: flex-start; align-items: center;
   padding: 14px 18px; margin: 0 0 18px;
 }
-.advisory-root .logo-brand { display: flex; align-items: center; gap: 18px; }
-.advisory-root .logo-band img.logo-pursuit { height: 88px; width: auto; display: block; }
-.advisory-root .logo-band img.logo-fivestones { height: 52px; width: auto; display: block; }
+.advisory-root .logo-brand { display: flex; align-items: flex-start; gap: 18px; }
+.advisory-root .logo-band img.logo-pursuit { height: 26px; width: auto; display: block; opacity: 0.5; }
+.advisory-root .logo-band img.logo-fivestones { height: 90px; width: auto; display: block; }
 .advisory-root .header-section { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 3px solid var(--fs-mid-blue); }
 .advisory-root .brand-wordmark { font-weight: 700; font-size: 20px; letter-spacing: 3px; color: var(--fs-navy); text-transform: uppercase; margin-bottom: 12px; }
 .advisory-root h1, .advisory-root h2, .advisory-root h3, .advisory-root h4, .advisory-root th { color: var(--fs-navy); margin: 0; }
@@ -480,15 +467,11 @@ export default function AdvisoryReport() {
 
   // ── Section 6 — Quantified Return on Investment (prefilled, editable) ────
   const [roiLines, setRoiLines] = useState<RoiLine[]>(DEFAULT_ROI_LINES);
-  const [capacityLines, setCapacityLines] = useState<CapacityLine[]>(DEFAULT_CAPACITY);
   const [paybackMonths, setPaybackMonths] = useState("");
   const [roiNote, setRoiNote] = useState(DEFAULT_ROI_NOTE);
 
   function updateRoiLine(id: string, patch: Partial<RoiLine>) {
     setRoiLines((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
-  }
-  function updateCapacity(id: string, patch: Partial<CapacityLine>) {
-    setCapacityLines((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
   }
 
   // ── Export mode: advisor = full report, client = hides admin-only ─────
@@ -973,15 +956,6 @@ export default function AdvisoryReport() {
             ))}
           </tbody>
         </table>
-
-        <h3>Estimated Capacity Created</h3>
-        {capacityLines.map((line) => (
-          <div className="cap-row" key={line.id}>
-            <input className="cap-label" type="text" value={line.label} onChange={(e) => updateCapacity(line.id, { label: e.target.value })} />
-            <input className="cap-value" type="text" value={line.value} onChange={(e) => updateCapacity(line.id, { value: e.target.value })} placeholder="_____" />
-            <span className="cap-unit">{line.unit}</span>
-          </div>
-        ))}
 
         <h3>Estimated Payback Period</h3>
         <div className="cap-row">
