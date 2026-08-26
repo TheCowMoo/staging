@@ -1386,7 +1386,7 @@ const incidentRouter = router({
       hospitalizedOvernight: z.boolean().default(false),
       // Follow-up request fields
       followUpRequested: z.boolean().default(false),
-      followUpMethod: z.enum(["phone", "email", "in_person"]).optional(),
+      followUpMethod: z.enum(["phone", "email", "in_person", "in_app"]).optional(),
       followUpContact: z.string().optional(),
       // Repeat incident tracking -- name of involved person
       involvedPersonName: z.string().optional(),
@@ -4634,6 +4634,7 @@ export const appRouter = router({
         { name: "ADD users.rasRole", q: sql`ALTER TABLE \`users\` ADD COLUMN IF NOT EXISTS \`rasRole\` enum('admin','responder','staff')` },
         { name: "ADD incident_reports.followUpRequested", q: sql`ALTER TABLE \`incident_reports\` ADD COLUMN IF NOT EXISTS \`followUpRequested\` boolean DEFAULT false` },
         { name: "ADD incident_reports.followUpMethod", q: sql`ALTER TABLE \`incident_reports\` ADD COLUMN IF NOT EXISTS \`followUpMethod\` enum('phone','email','in_person')` },
+        { name: "MODIFY incident_reports.followUpMethod add in_app", q: sql`ALTER TABLE \`incident_reports\` MODIFY COLUMN \`followUpMethod\` enum('phone','email','in_person','in_app')` },
         { name: "ADD incident_reports.followUpContact", q: sql`ALTER TABLE \`incident_reports\` ADD COLUMN IF NOT EXISTS \`followUpContact\` varchar(320)` },
         { name: "ADD incident_reports.involvedPersonName", q: sql`ALTER TABLE \`incident_reports\` ADD COLUMN IF NOT EXISTS \`involvedPersonName\` varchar(255)` },
         { name: "ADD incident_reports.isRepeatIncident", q: sql`ALTER TABLE \`incident_reports\` ADD COLUMN IF NOT EXISTS \`isRepeatIncident\` boolean DEFAULT false` },

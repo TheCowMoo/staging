@@ -122,7 +122,7 @@ export default function ReportIncident() {
     hospitalizedOvernight: false,
     // Follow-up request
     followUpRequested: null as boolean | null,
-    followUpMethod: "" as "phone" | "email" | "in_person" | "",
+    followUpMethod: "" as "phone" | "email" | "in_person" | "in_app" | "",
     followUpContact: "",
     // Involved person name (for repeat detection)
     involvedPersonName: "",
@@ -180,7 +180,7 @@ export default function ReportIncident() {
       treatedInER: form.treatedInER,
       hospitalizedOvernight: form.hospitalizedOvernight,
       followUpRequested: form.followUpRequested === true,
-      followUpMethod: (form.followUpMethod as "phone" | "email" | "in_person") || undefined,
+      followUpMethod: (form.followUpMethod as "phone" | "email" | "in_person" | "in_app") || undefined,
       followUpContact: form.followUpContact || undefined,
       involvedPersonName: form.involvedPersonName || undefined,
     });
@@ -624,9 +624,9 @@ export default function ReportIncident() {
               Would you like someone to follow up with you about this report? This is entirely optional and will not affect how your report is handled.
             </p>
             {/* Yes / No toggle */}
-            <div className="grid grid-cols-2 gap-3 mb-5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
               <button
-                onClick={() => set("followUpRequested", true)}
+                onClick={() => { set("followUpRequested", true); set("followUpMethod", ""); set("followUpContact", ""); }}
                 className={`p-4 rounded-lg border-2 text-left transition-all ${
                   form.followUpRequested === true
                     ? "border-blue-600 bg-blue-50 dark:bg-blue-950"
@@ -635,6 +635,17 @@ export default function ReportIncident() {
               >
                 <div className="font-semibold text-sm mb-0.5">Yes, I'd like a follow-up</div>
                 <div className="text-xs text-muted-foreground">A safety administrator will reach out to you</div>
+              </button>
+              <button
+                onClick={() => { set("followUpRequested", true); set("followUpMethod", "in_app"); set("followUpContact", ""); }}
+                className={`p-4 rounded-lg border-2 text-left transition-all ${
+                  form.followUpMethod === "in_app"
+                    ? "border-blue-600 bg-blue-50 dark:bg-blue-950"
+                    : "border-border hover:border-blue-400"
+                }`}
+              >
+                <div className="font-semibold text-sm mb-0.5">Anonymous communication</div>
+                <div className="text-xs text-muted-foreground">Message the safety team in-app without sharing your identity</div>
               </button>
               <button
                 onClick={() => { set("followUpRequested", false); set("followUpMethod", ""); set("followUpContact", ""); }}
@@ -650,7 +661,7 @@ export default function ReportIncident() {
             </div>
 
             {/* Contact method — only shown if yes */}
-            {form.followUpRequested === true && (
+            {form.followUpRequested === true && form.followUpMethod !== "in_app" && (
               <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-border mb-4">
                 <div>
                   <Label className="mb-2 block font-medium">Preferred contact method</Label>
@@ -705,6 +716,16 @@ export default function ReportIncident() {
                 <p className="text-xs text-muted-foreground">
                   <Lock className="w-3 h-3 inline mr-1" />
                   Contact details are only shared with the safety administrator reviewing your report.
+                </p>
+              </div>
+            )}
+
+            {/* In-app anonymous communication info */}
+            {form.followUpMethod === "in_app" && (
+              <div className="p-4 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 rounded-lg mb-4 text-sm">
+                <p className="font-medium mb-1">Anonymous communication</p>
+                <p className="text-xs text-muted-foreground">
+                  You can securely message the safety team through this platform using your tracking token. No contact details are shared.
                 </p>
               </div>
             )}

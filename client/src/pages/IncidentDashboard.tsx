@@ -724,11 +724,11 @@ export default function IncidentDashboard() {
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div className="bg-white rounded-lg p-2">
                         <p className="text-xs text-slate-500 mb-0.5">Preferred Method</p>
-                        <p className="font-medium capitalize">{selectedReport.followUpMethod?.replace("_", "-") ?? "Not specified"}</p>
+                        <p className="font-medium capitalize">{selectedReport.followUpMethod === "in_app" ? "In-app messaging (anonymous)" : (selectedReport.followUpMethod?.replace("_", "-") ?? "Not specified")}</p>
                       </div>
                       <div className="bg-white rounded-lg p-2">
                         <p className="text-xs text-slate-500 mb-0.5">Contact Details</p>
-                        <p className="font-medium">{selectedReport.followUpContact || "Not provided"}</p>
+                        <p className="font-medium">{selectedReport.followUpMethod === "in_app" ? "Anonymous" : (selectedReport.followUpContact || "Not provided")}</p>
                       </div>
                     </div>
                   </div>

@@ -439,7 +439,7 @@ export const incidentReports = mysqlTable("incident_reports", {
   trackingToken: varchar("trackingToken", { length: 64 }).unique(),
   // ── Follow-up request fields ──────────────────────────────────────────────
   followUpRequested: boolean("followUpRequested").default(false),
-  followUpMethod: mysqlEnum("followUpMethod", ["phone", "email", "in_person"]),
+  followUpMethod: mysqlEnum("followUpMethod", ["phone", "email", "in_person", "in_app"]),
   followUpContact: varchar("followUpContact", { length: 320 }),
   // ── Repeat incident tracking ──────────────────────────────────────────────
   // Normalized name of the involved person (for repeat-person detection)
