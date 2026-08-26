@@ -51,6 +51,12 @@ mysql -u root -p'Marketingcow1!' -h 127.0.0.1 -P 3306 safeguard -e "
   SHOW COLUMNS FROM users;                    -- passwordHash varchar(128) is fine (hash is 110 chars)"
 ```
 
+> **This deploy also includes the "Anonymous communication" follow-up migration** - `followUpMethod` gains `in_app`:
+> ```sql
+> ALTER TABLE incident_reports MODIFY COLUMN followUpMethod enum('phone','email','in_person','in_app') NULL;
+> ```
+> Generated automatically by the `diff-live-schema.mjs` step above; if applying manually, run it before restarting the app.
+
 Re-run the diff to confirm it now reports nothing missing:
 
 ```bash
