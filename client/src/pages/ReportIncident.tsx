@@ -702,17 +702,15 @@ export default function ReportIncident() {
                     />
                   </div>
                 )}
-                {form.followUpMethod !== "in_app" && (
+                <div className="rounded-md bg-blue-50 dark:bg-blue-950/40 border border-blue-200 p-3 space-y-1.5">
                   <p className="text-xs text-muted-foreground">
                     <Lock className="w-3 h-3 inline mr-1" />
-                    Contact details are only shared with the safety administrator reviewing your report.
+                    If you choose Phone, Email, or In-Person, your contact details will be shared with the safety administrator reviewing your report.
                   </p>
-                )}
-                {form.followUpMethod === "in_app" && (
-                  <p className="text-sm text-muted-foreground">
-                    You will message the safety team anonymously via your tracking token. No contact details are shared.
+                  <p className="text-xs text-muted-foreground">
+                    If you'd like to remain anonymous, select "Anonymous communication" to message through the FiveStones platform.
                   </p>
-                )}
+                </div>
               </div>
             )}
 
