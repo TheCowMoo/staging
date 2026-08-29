@@ -1166,7 +1166,7 @@ export const violentIncidentLogs = mysqlTable("violent_incident_logs", {
   environmentalFactors: json("environmentalFactors"),
   industryCircumstances: json("industryCircumstances"),
   narrative: text("narrative"),
-  lawEnforcementContacted: boolean("lawEnforcementContacted").default(false),
+  lawEnforcementContacted: boolean("lawEnforcementContacted").default(false).notNull(),
   leAgencyName: varchar("leAgencyName", { length: 255 }),
   policeReportNumber: varchar("policeReportNumber", { length: 128 }),
   protectiveActions: text("protectiveActions"),
