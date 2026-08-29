@@ -28,6 +28,7 @@ import OrgAdmin from "./pages/OrgAdmin";
 import AdminOrgs from "./pages/AdminOrgs";
 import JoinOrg from "./pages/JoinOrg";
 import OrgIncidentReport from "./pages/OrgIncidentReport";
+import ViolentIncidentLog from "./pages/ViolentIncidentLog";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import TermsAndConditions from "./pages/TermsAndConditions";
@@ -107,6 +108,7 @@ function Router() {
               <Route path="/report-incident" component={ReportIncident} />
               <Route path="/check-report" component={CheckReport} />
               <Route path="/incidents" component={IncidentDashboard} />
+              <Route path="/violent-incident-log" component={ViolentIncidentLog} />
               <Route path="/glossary" component={Glossary} />
               <Route path="/organizations" component={AdminOrgs} />
               <Route path="/org/:id">{(params) => <OrgAdmin orgId={Number(params.id)} />}</Route>

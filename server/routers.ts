@@ -76,6 +76,7 @@ import { massNotificationRouter } from "./massNotificationRouter";
 import { microDrillRouter } from "./microDrillRouter";
 import { facilityMapRouter } from "./facilityMapRouter";
 import { incidentCommunicationRouter } from "./incidentCommunicationRouter";
+import { violentIncidentLogRouter } from "./violentIncidentLogRouter";
 import { notificationRouter } from "./notificationRouter";
 // â”€â”€â”€ Facility Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Initialise VAPID keys at server startup (no-op if keys not configured)
@@ -4513,6 +4514,7 @@ const jurisdictionRouter = router({
 
 export const appRouter = router({
   incidentCommunication: incidentCommunicationRouter,
+  violentIncidentLog: violentIncidentLogRouter,
   notification: notificationRouter,
   facilityMap: facilityMapRouter,
   microDrill: microDrillRouter,

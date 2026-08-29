@@ -292,7 +292,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       items: [
         { href: "/report-incident", label: "Employee Incident Reporting", icon: <FilePlus size={15} />,    locked: isPaid ? undefined : "paid" },
         { href: "/incidents",       label: "Incident Reports",   icon: <AlertCircle size={15} />, locked: isPaid ? undefined : "paid" },
-        { href: "/violent-incident-log", label: "Violent Incident Report Log", icon: <ClipboardList size={15} />, locked: "coming-soon" },
+        { href: "/violent-incident-log", label: "Violent Incident Report Log", icon: <ClipboardList size={15} />, locked: isPaid ? undefined : "paid" },
       ],
     },
     {

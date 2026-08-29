@@ -15,6 +15,7 @@ import { liabilityScanPdfRouter } from "../liabilityScanPdf";
 import { webhookRouter } from "./webhookRouter";
 import { apiKeyRouter } from "../apiKeyRouter";
 import { rasDesktopApi } from "../rasDesktopApi";
+import { startViolentLogScheduler } from "../violentIncidentLogScheduler";
 import helmet from "helmet";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import fs from "fs";
@@ -289,6 +290,9 @@ async function startServer() {
   server.timeout = 300000; // 5 minutes
   server.keepAliveTimeout = 305000;
   server.headersTimeout = 310000;
+  // California Violent Incident Log (SB 553) - 15-day request scheduler
+  startViolentLogScheduler();
+
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
   });

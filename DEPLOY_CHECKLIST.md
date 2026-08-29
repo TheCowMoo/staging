@@ -56,6 +56,7 @@ mysql -u root -p'Marketingcow1!' -h 127.0.0.1 -P 3306 safeguard -e "
 > ALTER TABLE incident_reports MODIFY COLUMN followUpMethod enum('phone','email','in_person','in_app') NULL;
 > ```
 > Generated automatically by the `diff-live-schema.mjs` step above; if applying manually, run it before restarting the app.
+> **This deploy also includes the California Violent Incident Log (SB 553 / Labor Code §6401.9)** — apply `drizzle/0046_violent_incident_log.sql` (creates the PII-free `violent_incident_logs` + `violent_incident_log_requests` tables). The hourly in-process scheduler (`startViolentLogScheduler`) starts automatically on server boot — no cron job needed. The log has no delete endpoint (5-year retention).
 
 Re-run the diff to confirm it now reports nothing missing:
 

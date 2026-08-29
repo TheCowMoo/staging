@@ -1147,3 +1147,53 @@ export const notifications = mysqlTable("notifications", {
 });
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = typeof notifications.$inferInsert;
+
+// ─── California Violent Incident Log (SB 553 / Labor Code §6401.9) ─────────
+// PII-free by design: no victim/witness/perpetrator name, contact, address,
+// SSN, or medical fields. Records are retained ≥ 5 years (no delete endpoint).
+export const violentIncidentLogs = mysqlTable("violent_incident_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  orgId: int("orgId"),
+  facilityId: int("facilityId"),
+  incidentDate: timestamp("incidentDate"),
+  incidentTime: varchar("incidentTime", { length: 16 }),
+  location: varchar("location", { length: 255 }),
+  violenceType: mysqlEnum("violenceType", ["type_i_criminal", "type_ii_client", "type_iii_worker_on_worker", "type_iv_personal_relationship"]),
+  perpetratorCategory: mysqlEnum("perpetratorCategory", ["customer_client", "current_employee", "former_employee", "personal_relationship", "stranger", "other_unknown"]),
+  characteristics: json("characteristics"),
+  weaponType: mysqlEnum("weaponType", ["none", "firearm", "edged", "blunt", "chemical", "other"]),
+  weaponOther: varchar("weaponOther", { length: 255 }),
+  environmentalFactors: json("environmentalFactors"),
+  industryCircumstances: json("industryCircumstances"),
+  narrative: text("narrative"),
+  lawEnforcementContacted: boolean("lawEnforcementContacted").default(false),
+  leAgencyName: varchar("leAgencyName", { length: 255 }),
+  policeReportNumber: varchar("policeReportNumber", { length: 128 }),
+  protectiveActions: text("protectiveActions"),
+  hazardEvaluation: text("hazardEvaluation"),
+  correctiveActions: text("correctiveActions"),
+  loggedByUserId: int("loggedByUserId"),
+  loggedByName: varchar("loggedByName", { length: 255 }),
+  loggedByTitle: varchar("loggedByTitle", { length: 128 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ViolentIncidentLog = typeof violentIncidentLogs.$inferSelect;
+export type InsertViolentIncidentLog = typeof violentIncidentLogs.$inferInsert;
+
+// 15-day "Log Requested" workflow (California: copy of log within 15 calendar days)
+export const violentIncidentLogRequests = mysqlTable("violent_incident_log_requests", {
+  id: int("id").autoincrement().primaryKey(),
+  orgId: int("orgId"),
+  requestedByUserId: int("requestedByUserId"),
+  requestedAt: timestamp("requestedAt").defaultNow().notNull(),
+  dueAt: timestamp("dueAt"),
+  status: mysqlEnum("status", ["pending", "fulfilled"]).default("pending").notNull(),
+  notifiedDay1At: timestamp("notifiedDay1At"),
+  notifiedDay10At: timestamp("notifiedDay10At"),
+  notifiedDay14At: timestamp("notifiedDay14At"),
+  fulfilledAt: timestamp("fulfilledAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ViolentIncidentLogRequest = typeof violentIncidentLogRequests.$inferSelect;
+export type InsertViolentIncidentLogRequest = typeof violentIncidentLogRequests.$inferInsert;
