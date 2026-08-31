@@ -134,28 +134,56 @@ export default function ViolentIncidentLog() {
         <p>Records are retained for a minimum of 5 years and cannot be deleted.</p>
       </div>
 
-      {/* Request a copy (employees) */}
+      {/* Log requests: employees request a copy; admins track org requests (org-scoped) */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2"><CalendarClock className="h-5 w-5 text-primary" /> Request a copy of the log</CardTitle>
-          <CardDescription>By California law, your organization must provide a copy of this log within 15 calendar days of your request.</CardDescription>
+          <CardTitle className="text-base flex items-center gap-2">
+            <CalendarClock className="h-5 w-5 text-primary" />
+            {isAdmin ? "Employee Log Requests" : "Request a copy of the log"}
+          </CardTitle>
+          <CardDescription>
+            {isAdmin
+              ? "California law requires your organization to provide a copy of this log within 15 calendar days of an employee's request."
+              : "You have the right to request a copy of this log. Your employer is legally required to provide it within 15 calendar days."}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Button onClick={() => requestLog.mutate({ orgId })} disabled={requestLog.isPending || !orgId}>
-            {requestLog.isPending ? "Submitting..." : "Request a copy (15-day deadline)"}
-          </Button>
-          {myRequests.data && myRequests.data.length > 0 && (
-            <div className="space-y-2 text-sm">
-              <p className="font-medium">Your requests:</p>
-              {myRequests.data.map((r: any) => (
-                <div key={r.id} className="flex items-center justify-between rounded-md border border-border bg-muted/40 px-3 py-2 text-xs">
-                  <span>Requested {new Date(r.requestedAt).toLocaleDateString()}</span>
-                  <span className={r.status === "fulfilled" ? "text-green-600" : "text-amber-600"}>
-                    {r.status === "fulfilled" ? "Fulfilled" : `Due ${r.dueAt ? new Date(r.dueAt).toLocaleDateString() : "N/A"}`}
-                  </span>
+          {!isAdmin && (
+            <Button onClick={() => requestLog.mutate({ orgId })} disabled={requestLog.isPending || !orgId}>
+              {requestLog.isPending ? "Submitting..." : "Request a copy (15-day deadline)"}
+            </Button>
+          )}
+
+          {isAdmin ? (
+            <>
+              <p className="font-medium text-sm">Pending Employee Requests</p>
+              {requests.data && requests.data.length === 0 && <p className="text-xs text-muted-foreground">No requests yet.</p>}
+              {requests.data?.map((r: any) => (
+                <div key={r.id} className="flex items-center justify-between gap-3 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs">
+                  <div>
+                    <p className="font-medium">Requested {new Date(r.requestedAt).toLocaleString()}</p>
+                    <p className="text-muted-foreground">Due {r.dueAt ? new Date(r.dueAt).toLocaleDateString() : "N/A"} · {r.status}</p>
+                  </div>
+                  {r.status === "pending" && (
+                    <Button size="sm" variant="outline" onClick={() => fulfill.mutate({ id: r.id })}>Mark fulfilled</Button>
+                  )}
                 </div>
               ))}
-            </div>
+            </>
+          ) : (
+            myRequests.data && myRequests.data.length > 0 && (
+              <div className="space-y-2 text-sm">
+                <p className="font-medium">My Request History</p>
+                {myRequests.data.map((r: any) => (
+                  <div key={r.id} className="flex items-center justify-between rounded-md border border-border bg-muted/40 px-3 py-2 text-xs">
+                    <span>Requested {new Date(r.requestedAt).toLocaleDateString()}</span>
+                    <span className={r.status === "fulfilled" ? "text-green-600" : "text-amber-600"}>
+                      {r.status === "fulfilled" ? "Fulfilled" : `Due ${r.dueAt ? new Date(r.dueAt).toLocaleDateString() : "N/A"}`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )
           )}
         </CardContent>
       </Card>
@@ -289,25 +317,6 @@ export default function ViolentIncidentLog() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Log requests (15-day deadline)</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          {requests.data && requests.data.length === 0 && <p className="text-xs text-muted-foreground">No requests yet.</p>}
-          {requests.data?.map((r: any) => (
-            <div key={r.id} className="flex items-center justify-between gap-3 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs">
-              <div>
-                <p className="font-medium">Requested {new Date(r.requestedAt).toLocaleString()}</p>
-                <p className="text-muted-foreground">Due {r.dueAt ? new Date(r.dueAt).toLocaleDateString() : "N/A"} · {r.status}</p>
-              </div>
-              {r.status === "pending" && (
-                <Button size="sm" variant="outline" onClick={() => fulfill.mutate({ id: r.id })}>Mark fulfilled</Button>
-              )}
-            </div>
-          ))}
-        </CardContent>
-      </Card>
       </>
       )}
     </div>
