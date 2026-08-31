@@ -128,7 +128,14 @@ pm2 logs safeguard --lines 50    # confirm no FATAL/Unknown column errors
 
 ## 7. BTAM key migration (one-time, after setting BTAM_ENCRYPTION_KEY)
 
-New rows are encrypted with `BTAM_ENCRYPTION_KEY` (v3); old rows still decrypt via the fallback chain, so nothing breaks. For a clean state, re-encrypt existing rows on the next maintenance window (read → `encryptPII(decryptPII(field))` → write per BTAM table).
+New rows are encrypted with `BTAM_ENCRYPTION_KEY` (v3); old rows still decrypt via the fallback chain. To move existing rows to the dedicated key **before rotating `JWT_SECRET`** (a rotation would orphan them — they were encrypted with the old `cookieSecret`), run the one-time re-encryption script:
+
+```bash
+cd ~/staging
+npx tsx scripts/reencrypt-btam.ts    # expect: re-encrypted=N skipped=0
+```
+
+Order matters: 1) add `BTAM_ENCRYPTION_KEY` to `.env` → 2) restart → 3) run the script → 4) rotate `JWT_SECRET` → 5) restart.
 
 ## 8. Commit & push
 
