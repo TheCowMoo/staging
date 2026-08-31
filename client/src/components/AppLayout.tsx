@@ -46,8 +46,8 @@ const ROLE_BADGE: Record<string, { label: string; variant: "default" | "secondar
   super_admin: { label: "Super Admin", variant: "default" },
   auditor:     { label: "Auditor",     variant: "secondary" },
   user:        { label: "User",        variant: "secondary" },
-  viewer:      { label: "Viewer",      variant: "outline" },
-  sandbox:     { label: "Sandbox",     variant: "outline" },
+  viewer:      { label: "Viewer",      variant: "secondary" },
+  sandbox:     { label: "Sandbox",     variant: "secondary" },
 };
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
