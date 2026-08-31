@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 // liabilityScanScoring removed — risk level is now derived directly from assessmentEngine classification
 import { useLocation } from "wouter";
 import { BackNavigation } from "@/components/BackNavigation";
@@ -221,45 +221,6 @@ export default function LiabilityScan() {
   });
 
   const computeScoreMutation = trpc.liabilityScan.computeScore.useMutation();
-
-  // ── Pre-fill assessment context from existing org/facility data (logged-in users) ──
-  const { data: memberships = [] } = trpc.org.myMemberships.useQuery(undefined, {
-    enabled: !!user,
-  });
-  const firstOrgId = memberships[0]?.orgId ?? 0;
-  const { data: currentOrg } = trpc.org.get.useQuery(
-    { orgId: firstOrgId },
-    { enabled: !!user && firstOrgId > 0 }
-  );
-  const { data: orgFacilities = [] } = trpc.facility.list.useQuery(undefined, {
-    enabled: !!user,
-  });
-
-  const facilityLabel = useMemo(
-    () =>
-      orgFacilities
-        .map((f) => [f.name, f.city, f.state].filter(Boolean).join(", "))
-        .join("; "),
-    [orgFacilities]
-  );
-
-  // Pre-fill the context fields once (on first org/facility data arrival), then
-  // leave them alone so the user can clear or edit without being reverted.
-  const orgPrefillDone = useRef(false);
-  useEffect(() => {
-    if (orgPrefillDone.current || !currentOrg?.name) return;
-    if (!organization) setOrganization(currentOrg.name);
-    orgPrefillDone.current = true;
-  }, [currentOrg?.name, organization]);
-
-  const facilityPrefillDone = useRef(false);
-  useEffect(() => {
-    if (facilityPrefillDone.current || !facilityLabel) return;
-    if (!facilityLocation) setFacilityLocation(facilityLabel);
-    facilityPrefillDone.current = true;
-  }, [facilityLabel, facilityLocation]);
-
-
 
   // Navigate to Defensibility Plan carrying full assessment context
   const handleDefensibilityPlan = useCallback(() => {
