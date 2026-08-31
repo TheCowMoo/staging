@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 // liabilityScanScoring removed — risk level is now derived directly from assessmentEngine classification
 import { useLocation } from "wouter";
 import { BackNavigation } from "@/components/BackNavigation";
@@ -243,13 +243,20 @@ export default function LiabilityScan() {
     [orgFacilities]
   );
 
-  // Only pre-fill when the field is still empty so user edits are never overwritten
+  // Pre-fill the context fields once (on first org/facility data arrival), then
+  // leave them alone so the user can clear or edit without being reverted.
+  const orgPrefillDone = useRef(false);
   useEffect(() => {
-    if (currentOrg?.name && !organization) setOrganization(currentOrg.name);
+    if (orgPrefillDone.current || !currentOrg?.name) return;
+    if (!organization) setOrganization(currentOrg.name);
+    orgPrefillDone.current = true;
   }, [currentOrg?.name, organization]);
 
+  const facilityPrefillDone = useRef(false);
   useEffect(() => {
-    if (facilityLabel && !facilityLocation) setFacilityLocation(facilityLabel);
+    if (facilityPrefillDone.current || !facilityLabel) return;
+    if (!facilityLocation) setFacilityLocation(facilityLabel);
+    facilityPrefillDone.current = true;
   }, [facilityLabel, facilityLocation]);
 
 
