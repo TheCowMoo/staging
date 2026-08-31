@@ -141,6 +141,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isViewer = user?.role === "viewer";
   const isSandbox = user?.role === "sandbox";
   const isAdmin  = effectiveRole === "admin" || effectiveRole === "ultra_admin" || user?.role === "admin" || user?.role === "ultra_admin";
+  // Incident Reports tab: admins see the dashboard, regular users check their submitted reports by tracking token
+  const isIncidentAdmin = effectiveRole === "ultra_admin" || effectiveRole === "admin" || effectiveRole === "super_admin";
   const roleBadge = ROLE_BADGE[user?.role ?? "auditor"] ?? ROLE_BADGE.auditor;
 
   const NavLink = ({ item }: { item: NavItem }) => {
@@ -291,7 +293,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       icon: <FileText size={18} />,
       items: [
         { href: "/report-incident", label: "Employee Incident Reporting", icon: <FilePlus size={15} />,    locked: isPaid ? undefined : "paid" },
-        { href: "/incidents",       label: "Incident Reports",   icon: <AlertCircle size={15} />, locked: isPaid ? undefined : "paid" },
+        { href: isIncidentAdmin ? "/incidents" : "/check-report", label: isIncidentAdmin ? "Incident Reports" : "Check Report Status", icon: <AlertCircle size={15} />, locked: isPaid ? undefined : "paid" },
         { href: "/violent-incident-log", label: "Violent Incident Report Log", icon: <ClipboardList size={15} />, locked: isPaid ? undefined : "paid" },
       ],
     },
