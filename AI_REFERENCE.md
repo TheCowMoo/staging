@@ -676,3 +676,9 @@ if (scan.orgId) {
 - New client page `client/src/pages/ViolentIncidentLog.tsx` at `/violent-incident-log`: PII-free compliance banner, employee “Request a copy” + request-status list, and for admins a multi-section log form (violence classification 1–4, perpetrator classification, characteristics, weapons, environmental factors, industry-specific 7a options, objective narrative, consequences/post-incident actions) plus the logged-incident list and request-fulfillment management.
 - Nav: “Violent Incident Report Log” in `client/src/components/AppLayout.tsx` is no longer `coming-soon`; it now uses `locked: isPaid ? undefined : "paid"` (matches the sibling Reporting items) so paid users of every role reach the page.
 - Tests: `server/violentIncidentLog.test.ts` — 17 cases (admin-only access control, org-scoped create/get/fulfill, employee 15-day request + admin notification, scheduler Day 1/10/14 firing + fulfilled-skip, and the no-delete retention lock). All pass.
+
+### 2026-08-31 — Prod deploy hardening (NODE_ENV + env secrets)
+- Found during the CA Violent Incident Log deploy: PM2 runs `dist/index.js` directly (not `npm start`), so `cross-env NODE_ENV=production` is bypassed → `ENV.isProduction` is false → reCAPTCHA skips ("dev only"), the JWT fail-closed guard is off, and the BTAM-key warning is suppressed. Captured in `DEPLOY_CHECKLIST.md` §1a.
+- `~/staging/.env` was missing `NODE_ENV`, `RECAPTCHA_SECRET_KEY`, `VITE_RECAPTCHA_SITE_KEY`, `BTAM_ENCRYPTION_KEY`; `JWT_SECRET` was a weak 14-char value.
+- Fix: add `NODE_ENV=production` + strong `JWT_SECRET`/`BTAM_ENCRYPTION_KEY` (`openssl rand -hex 32`) + the reCAPTCHA key pair; `pnpm build` (re-bakes `VITE_RECAPTCHA_SITE_KEY`); `pm2 restart safeguard`.
+- Caveats: (1) `RECAPTCHA_SECRET_KEY` must be set with `NODE_ENV=production` or login fails closed; (2) rotating `JWT_SECRET` logs everyone out and, if BTAM PII exists, requires a decrypt→re-encrypt pass first.

@@ -24,6 +24,40 @@ grep -c '^BTAM_ENCRYPTION_KEY=.\{32,\}' .env
 grep -c '^RECAPTCHA_SECRET_KEY=.\{20,\}' .env
 ```
 
+### 1a. Production mode (`NODE_ENV`) — the easiest thing to miss
+
+If PM2 was started as `pm2 start dist/index.js` (instead of `npm start`), the
+`cross-env NODE_ENV=production` wrapper is bypassed and the app boots in
+**dev-security mode** — reCAPTCHA is silently skipped, the JWT fail-closed
+guard is off, and the BTAM-key warning is suppressed. Symptom in `pm2 logs`:
+
+```
+[reCAPTCHA] RECAPTCHA_SECRET_KEY not configured — skipping verification (dev only)
+```
+
+Add `NODE_ENV=production` to `.env` (dotenv loads it on boot when PM2 doesn't
+already set it) and confirm:
+
+```bash
+pm2 env 0 | grep NODE_ENV     # or: pm2 describe safeguard | grep NODE_ENV
+```
+
+- `JWT_SECRET` must be ≥32 chars and random (`openssl rand -hex 32`). A short/
+  guessable secret still boots (only a `[SECURITY]` warning is logged) — never
+  rely on the server to refuse a weak-but-set value.
+- Set `RECAPTCHA_SECRET_KEY` + `VITE_RECAPTCHA_SITE_KEY` **together with**
+  `NODE_ENV=production` — in production a missing reCAPTCHA secret fails
+  *closed* and blocks login/register/reset.
+- Rotating `JWT_SECRET` invalidates every session (all users re-login). If
+  BTAM PII was encrypted with the old `cookieSecret` fallback, re-encrypt BTAM
+  rows **before** rotating (see Step 7).
+
+Post-restart, verify no dev-mode lines remain:
+
+```bash
+pm2 logs safeguard --lines 50    # must contain NO "dev only" / "not configured"
+```
+
 ## 2. Pull & install
 
 ```bash
