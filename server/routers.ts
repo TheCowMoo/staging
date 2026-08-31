@@ -1394,8 +1394,16 @@ const incidentRouter = router({
     }))
     .mutation(async ({ input }) => {
       const trackingToken = nanoid(16);
+      // Derive orgId from the facility when not provided, so anonymous reports
+      // are associated with the facility's org and appear in that org's dashboard.
+      let resolvedOrgId: number | null | undefined = input.orgId;
+      if (resolvedOrgId == null && input.facilityId) {
+        const facility = await getFacilityById(input.facilityId);
+        resolvedOrgId = facility?.orgId ?? null;
+      }
       const result = await createIncidentReport({
         ...input,
+        orgId: resolvedOrgId ?? undefined,
         incidentDate: input.incidentDate ? new Date(input.incidentDate) : undefined,
         contactEmail: input.contactEmail || undefined,
         followUpRequested: input.followUpRequested,
